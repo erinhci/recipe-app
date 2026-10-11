@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test src/lib/units.test.js src/lib/ingredients.test.js src/lib/sync.test.js src/lib/textRecipe.test.js && node --experimental-strip-types --test supabase/functions/import-recipe/index.test.ts"
+    "test": "node --test src/lib/units.test.js src/lib/ingredients.test.js src/lib/sync.test.js src/lib/textRecipe.test.js src/lib/cooking.test.js src/lib/stats.test.js && node --experimental-strip-types --test supabase/functions/import-recipe/index.test.ts supabase/functions/ask-step/index.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

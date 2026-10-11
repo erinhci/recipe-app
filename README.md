@@ -10,8 +10,10 @@ The product plan and build spec live in the project doc (Build spec tab).
 ## Status
 
 Done: sign-in and shared kitchens; recipes with scaling, units, notes, and
-offline sync; import from screenshots, PDFs, links, and pasted text.
-Next: cooking mode, cook log with ratings, and stats.
+offline sync; import from screenshots, PDFs, links, and pasted text;
+cooking mode with step questions; cook log with a rating from each cook;
+kitchen stats and milestones.
+Next: AI-drafted edits from notes, then the Next features in the build spec.
 
 ## One-time setup
 
@@ -35,6 +37,9 @@ Next: cooking mode, cook log with ratings, and stats.
    the browser editor, and paste in
    `supabase/functions/import-recipe/index.ts`. Leave JWT verification on,
    so only signed-in cooks can use your Gemini quota.
+7. Do the same for a function named `ask-step`, pasting in
+   `supabase/functions/ask-step/index.ts`. It answers questions typed in
+   cooking mode and uses the same Gemini secret.
 
 ### 2. Vercel
 

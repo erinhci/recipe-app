@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
 import { isConfigured } from './lib/supabase'
 import { useOnline } from './lib/useOnline'
@@ -14,6 +14,8 @@ import ComingSoon from './screens/ComingSoon'
 import Import from './screens/Import'
 import RecipeView from './screens/RecipeView'
 import RecipeEdit from './screens/RecipeEdit'
+import CookingMode from './screens/CookingMode'
+import Stats from './screens/Stats'
 import { startSync } from './lib/sync'
 
 function NotConfigured() {
@@ -30,6 +32,9 @@ function NotConfigured() {
 function Shell() {
   const { session, member, loading } = useAuth()
   const online = useOnline()
+  const { pathname } = useLocation()
+  // Cooking mode uses the bottom of the screen for its step buttons.
+  const cooking = pathname.endsWith('/cook')
   const kitchenId = member?.kitchen_id
 
   // Keep this phone in sync with the kitchen while signed in.
@@ -81,22 +86,15 @@ function Shell() {
         <Route path="/recipe/new" element={<RecipeEdit />} />
         <Route path="/recipe/:id" element={<RecipeView />} />
         <Route path="/recipe/:id/edit" element={<RecipeEdit />} />
-        <Route
-          path="/stats"
-          element={
-            <ComingSoon
-              title="Stats"
-              description="What you cook most, your favorite cuisines, and hours cooked together."
-            />
-          }
-        />
+        <Route path="/recipe/:id/cook" element={<CookingMode />} />
+        <Route path="/stats" element={<Stats />} />
         <Route path="/settings" element={<Settings />} />
         <Route
           path="*"
           element={<ComingSoon title="Not found" description="That page doesn't exist." />}
         />
       </Routes>
-      <BottomNav />
+      {!cooking && <BottomNav />}
     </>
   )
 }

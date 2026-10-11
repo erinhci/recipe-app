@@ -147,3 +147,94 @@ async function setDeleted(recipeId, fields) {
   })
   afterWrite()
 }
+
+// ---------------------------------------------------------------------------
+// Cooking sessions, the cook log, and ratings
+// ---------------------------------------------------------------------------
+
+const SESSION_FIELDS = ['id', 'recipe_id', 'started_by', 'started_at', 'ended_at']
+const LOG_FIELDS = ['id', 'recipe_id', 'cooked_on', 'session_id', 'created_by', 'created_at']
+const RATING_FIELDS = ['id', 'cook_log_id', 'member_id', 'stars', 'created_at']
+
+async function putAndQueue(table, row, fields) {
+  const clean = pick(row, fields)
+  await db.transaction('rw', [db[table], db.outbox], async () => {
+    await db[table].put(clean)
+    await enqueue(table, 'upsert', clean)
+  })
+  afterWrite()
+  return clean
+}
+
+// Starts timing a cook. Time from both phones counts once in stats.
+export async function startCookingSession(recipeId, member) {
+  const session = await putAndQueue(
+    'cooking_sessions',
+    { id: newId(), recipe_id: recipeId, started_by: member.user_id, started_at: now(), ended_at: null },
+    SESSION_FIELDS,
+  )
+  return session.id
+}
+
+// Marks the session's end time. Called again if cooking resumes later
+// (for example, the phone was locked), so the latest time wins.
+export async function endCookingSession(sessionId) {
+  const session = await db.cooking_sessions.get(sessionId)
+  if (!session) return
+  await putAndQueue('cooking_sessions', { ...session, ended_at: now() }, SESSION_FIELDS)
+}
+
+// Today's date on this phone, as YYYY-MM-DD.
+export function localDate(date = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+// Adds a meal to the cook log, with this cook's rating if given.
+export async function logMeal({ recipeId, cookedOn, sessionId = null, stars = null }, member) {
+  const entry = await putAndQueue(
+    'cook_log',
+    {
+      id: newId(),
+      recipe_id: recipeId,
+      cooked_on: cookedOn || localDate(),
+      session_id: sessionId,
+      created_by: member.user_id,
+      created_at: now(),
+    },
+    LOG_FIELDS,
+  )
+  if (stars) await rateMeal(entry.id, stars, member)
+  return entry.id
+}
+
+// Each cook rates for themselves; rating again changes their rating.
+export async function rateMeal(cookLogId, stars, member) {
+  const existing = await db.ratings
+    .where('cook_log_id')
+    .equals(cookLogId)
+    .filter((r) => r.member_id === member.user_id)
+    .first()
+  await putAndQueue(
+    'ratings',
+    {
+      id: existing?.id ?? newId(),
+      cook_log_id: cookLogId,
+      member_id: member.user_id,
+      stars,
+      created_at: existing?.created_at ?? now(),
+    },
+    RATING_FIELDS,
+  )
+}
+
+export async function deleteMealLog(cookLogId) {
+  const ratingIds = await db.ratings.where('cook_log_id').equals(cookLogId).primaryKeys()
+  await db.transaction('rw', [db.cook_log, db.ratings, db.outbox], async () => {
+    await db.ratings.bulkDelete(ratingIds)
+    await db.cook_log.delete(cookLogId)
+    // Ratings go with the log entry on the server (on delete cascade).
+    await enqueue('cook_log', 'delete', { id: cookLogId })
+  })
+  afterWrite()
+}

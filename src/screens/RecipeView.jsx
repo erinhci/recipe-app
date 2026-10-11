@@ -1,16 +1,21 @@
-import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
-import { addNote, deleteRecipe } from '../lib/data'
+import { addNote, deleteMealLog, deleteRecipe, localDate, logMeal, rateMeal } from '../lib/data'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 import { originalLinks } from '../lib/importRecipe'
 import { useOnline } from '../lib/useOnline'
+import { recipeRatings } from '../lib/stats'
+import StarPicker from '../components/StarPicker'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+// cooked_on is a calendar date; read it as local noon so it never shifts a day.
+const formatDay = (day) => dateFormat.format(new Date(`${day}T12:00:00`))
+const HISTORY_SHOWN = 10
 
 export default function RecipeView() {
   const { id } = useParams()
@@ -20,13 +25,16 @@ export default function RecipeView() {
   const data = useLiveQuery(async () => {
     const recipe = await db.recipes.get(id)
     if (!recipe) return { recipe: null }
-    const [ingredients, steps, notes, members] = await Promise.all([
+    const [ingredients, steps, notes, members, cookLog] = await Promise.all([
       db.ingredients.where('recipe_id').equals(id).sortBy('position'),
       db.steps.where('recipe_id').equals(id).sortBy('position'),
       db.notes.where('recipe_id').equals(id).reverse().sortBy('created_at'),
       db.members.toArray(),
+      db.cook_log.where('recipe_id').equals(id).toArray(),
     ])
-    return { recipe, ingredients, steps, notes, members }
+    cookLog.sort((a, b) => b.cooked_on.localeCompare(a.cooked_on) || (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+    const ratings = await db.ratings.where('cook_log_id').anyOf(cookLog.map((c) => c.id)).toArray()
+    return { recipe, ingredients, steps, notes, members, cookLog, ratings }
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
@@ -35,6 +43,23 @@ export default function RecipeView() {
   const [noteText, setNoteText] = useState('')
   const [originals, setOriginals] = useState(null) // null = not loaded
   const online = useOnline()
+  const location = useLocation()
+  const finishedSession = location.state?.finishedSession ?? null
+  const [logDate, setLogDate] = useState(localDate())
+  const [logStars, setLogStars] = useState(null)
+  const [logStatus, setLogStatus] = useState('')
+  const [showAllHistory, setShowAllHistory] = useState(false)
+  const [changingRating, setChangingRating] = useState(null) // cook log id
+  const logHeadingRef = useRef(null)
+  const loaded = Boolean(data?.recipe)
+
+  // Coming back from cooking mode: go straight to "How was it?".
+  useEffect(() => {
+    if (finishedSession && loaded) {
+      logHeadingRef.current?.focus()
+      logHeadingRef.current?.scrollIntoView({ block: 'start' })
+    }
+  }, [finishedSession, loaded])
 
   if (data === undefined) {
     return (
@@ -55,7 +80,7 @@ export default function RecipeView() {
     )
   }
 
-  const { recipe, ingredients, steps, notes, members } = data
+  const { recipe, ingredients, steps, notes, members, cookLog, ratings } = data
   const shownServings = showOriginal ? recipe.base_servings : servings
   const factor = scaleFactor(recipe.base_servings, shownServings)
   const nameFor = (userId) => members.find((m) => m.user_id === userId)?.display_name ?? 'A former cook'
@@ -65,6 +90,26 @@ export default function RecipeView() {
     await deleteRecipe(recipe.id, member)
     navigate('/', { replace: true })
   }
+
+  async function handleLogMeal(event) {
+    event.preventDefault()
+    await logMeal({ recipeId: recipe.id, cookedOn: logDate, sessionId: finishedSession, stars: logStars }, member)
+    setLogStars(null)
+    setLogDate(localDate())
+    setLogStatus(`Logged for ${formatDay(logDate)}.`)
+    // Clear the "just finished" state so a refresh doesn't ask again.
+    if (finishedSession) navigate(location.pathname, { replace: true, state: null })
+  }
+
+  async function handleDeleteLog(entry) {
+    if (!window.confirm(`Remove the ${formatDay(entry.cooked_on)} entry and its ratings?`)) return
+    await deleteMealLog(entry.id)
+  }
+
+  const summary = recipeRatings(recipe.id, cookLog, ratings)
+  const ratedMembers = Object.keys(summary.byMember)
+  const history = showAllHistory ? cookLog : cookLog.slice(0, HISTORY_SHOWN)
+  const stars = (n) => `${n}★`
 
   async function handleAddNote(event) {
     event.preventDefault()
@@ -77,6 +122,14 @@ export default function RecipeView() {
     <Page title={recipe.title}>
       {(recipe.cuisine || recipe.meal_type) && (
         <p className="hint">{[recipe.cuisine, recipe.meal_type].filter(Boolean).join(' · ')}</p>
+      )}
+
+      {ratedMembers.length > 0 && (
+        <p>
+          <strong>{stars(Math.round(summary.average * 10) / 10)}</strong> average (
+          {ratedMembers.map((m) => `${nameFor(m)} ${stars(summary.byMember[m])}`).join(', ')})
+          {cookLog.length > 0 && ` · made ${cookLog.length} ${cookLog.length === 1 ? 'time' : 'times'}`}
+        </p>
       )}
 
       <section className="card" aria-labelledby="servings-heading">
@@ -136,6 +189,14 @@ export default function RecipeView() {
         </fieldset>
       </section>
 
+      {steps.length > 0 && (
+        <p>
+          <Link className="btn" to={`/recipe/${recipe.id}/cook?servings=${shownServings}&units=${system}`}>
+            Start cooking
+          </Link>
+        </p>
+      )}
+
       <section aria-labelledby="ingredients-heading">
         <h2 id="ingredients-heading">Ingredients</h2>
         <ul style={{ paddingLeft: 'var(--space-4)' }}>
@@ -170,6 +231,78 @@ export default function RecipeView() {
           <p className="hint">
             Times and pan sizes don't scale with amounts. For baked dishes, a smaller pan may be needed.
           </p>
+        )}
+      </section>
+
+      <section aria-labelledby="log-heading">
+        <h2 id="log-heading" ref={logHeadingRef} tabIndex={-1}>
+          {finishedSession ? 'How was it?' : 'Cook log'}
+        </h2>
+        <form onSubmit={handleLogMeal} className="card">
+          <div className="field">
+            <label htmlFor="cooked-on">{finishedSession ? 'Date' : 'We made this on'}</label>
+            <input
+              id="cooked-on"
+              type="date"
+              value={logDate}
+              max={localDate()}
+              required
+              onChange={(e) => setLogDate(e.target.value)}
+            />
+          </div>
+          <StarPicker legend="Your rating (optional)" value={logStars} onChange={setLogStars} />
+          <p className="hint">Each of you rates on your own phone. The average uses both.</p>
+          <button className="btn" type="submit" disabled={!logDate}>
+            {finishedSession ? 'Log this meal' : 'We made this'}
+          </button>
+          <p role="status" className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
+            {logStatus}
+          </p>
+        </form>
+
+        {cookLog.length === 0 ? (
+          <p className="hint">Not made yet.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {history.map((entry) => {
+              const entryRatings = ratings.filter((r) => r.cook_log_id === entry.id)
+              const mine = entryRatings.find((r) => r.member_id === member.user_id)
+              const others = entryRatings.filter((r) => r.member_id !== member.user_id)
+              const picking = !mine || changingRating === entry.id
+              return (
+                <li key={entry.id} className="card">
+                  <p style={{ fontWeight: 600, margin: 0 }}>{formatDay(entry.cooked_on)}</p>
+                  <p className="hint">Logged by {nameFor(entry.created_by)}</p>
+                  <p style={{ margin: '0 0 var(--space-2)' }}>
+                    You: {mine ? stars(mine.stars) : 'not rated yet'}
+                    {others.map((r) => ` · ${nameFor(r.member_id)}: ${stars(r.stars)}`)}
+                  </p>
+                  {picking ? (
+                    <StarPicker
+                      legend={mine ? 'Change your rating' : 'Add your rating'}
+                      value={mine?.stars ?? null}
+                      onChange={async (n) => {
+                        await rateMeal(entry.id, n, member)
+                        setChangingRating(null)
+                      }}
+                    />
+                  ) : (
+                    <button className="btn btn-secondary" type="button" onClick={() => setChangingRating(entry.id)}>
+                      Change your rating
+                    </button>
+                  )}{' '}
+                  <button className="btn btn-secondary" type="button" onClick={() => handleDeleteLog(entry)}>
+                    Remove<span className="sr-only"> the {formatDay(entry.cooked_on)} entry</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        {cookLog.length > HISTORY_SHOWN && !showAllHistory && (
+          <button className="btn btn-secondary" type="button" onClick={() => setShowAllHistory(true)}>
+            Show all {cookLog.length}
+          </button>
         )}
       </section>
 

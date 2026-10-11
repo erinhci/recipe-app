@@ -1,0 +1,139 @@
+// Kitchen stats, worked out on the phone from the local copy so they
+// show offline too. Pure functions; the Stats screen passes in the tables.
+
+import { keyWords } from './cooking.js'
+
+const HOUR = 3600 * 1000
+// A screen left on overnight shouldn't count as a night of cooking.
+const MAX_SESSION = 4 * HOUR
+
+// Staples that would top the ingredient list for every kitchen.
+const STAPLES = new Set(['salt', 'water', 'pepper', 'black pepper', 'kosher salt', 'ice'])
+
+export const MILESTONES = [
+  { kind: 'meals', thresholds: [1, 5, 10, 25, 50, 100], label: (n) => (n === 1 ? 'First meal logged' : `${n} meals cooked`) },
+  { kind: 'cuisines', thresholds: [3, 5, 10], label: (n) => `${n} cuisines tried` },
+  { kind: 'hours', thresholds: [5, 10, 25, 50], label: (n) => `${n} hours cooking together` },
+]
+
+// Total time spent cooking. When both phones time the same meal, the
+// overlapping time counts once.
+export function hoursTogether(sessions, nowMs = Date.now()) {
+  const spans = sessions
+    .filter((s) => s.started_at)
+    .map((s) => {
+      const start = Date.parse(s.started_at)
+      const end = s.ended_at ? Date.parse(s.ended_at) : null
+      // A session still open (phone closed mid-cook) counts nothing.
+      if (end === null || Number.isNaN(start) || Number.isNaN(end) || end <= start) return null
+      return [start, Math.min(end, start + MAX_SESSION, nowMs)]
+    })
+    .filter(Boolean)
+    .sort((a, b) => a[0] - b[0])
+
+  let total = 0
+  let current = null
+  for (const [start, end] of spans) {
+    if (current && start <= current[1]) {
+      current[1] = Math.max(current[1], end)
+    } else {
+      if (current) total += current[1] - current[0]
+      current = [start, end]
+    }
+  }
+  if (current) total += current[1] - current[0]
+  return total / HOUR
+}
+
+// Each cook's most recent rating of a recipe, averaged across cooks.
+export function recipeRatings(recipeId, cookLog, ratings) {
+  const logs = new Map(cookLog.filter((c) => c.recipe_id === recipeId).map((c) => [c.id, c]))
+  const latest = new Map() // member_id -> { stars, cooked_on, created_at }
+  for (const rating of ratings) {
+    const log = logs.get(rating.cook_log_id)
+    if (!log) continue
+    const previous = latest.get(rating.member_id)
+    const newer =
+      !previous ||
+      log.cooked_on > previous.cooked_on ||
+      (log.cooked_on === previous.cooked_on && (rating.created_at ?? '') > (previous.created_at ?? ''))
+    if (newer) latest.set(rating.member_id, { stars: rating.stars, cooked_on: log.cooked_on, created_at: rating.created_at })
+  }
+  const byMember = Object.fromEntries([...latest].map(([member, r]) => [member, r.stars]))
+  const values = Object.values(byMember)
+  const average = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null
+  return { byMember, average }
+}
+
+function countBy(items, keyFor) {
+  const counts = new Map()
+  for (const item of items) {
+    const key = keyFor(item)
+    if (key) counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+}
+
+export function computeStats({ recipes, ingredients, cookLog, ratings, sessions, nowMs = Date.now() }) {
+  const recipeById = new Map(recipes.map((r) => [r.id, r]))
+  // Meals whose recipe was deleted for good aren't on the phone anymore.
+  const meals = cookLog.filter((c) => recipeById.has(c.recipe_id))
+  const live = (id) => !recipeById.get(id)?.deleted_at
+
+  const mostMade = countBy(meals.filter((c) => live(c.recipe_id)), (c) => c.recipe_id)
+    .slice(0, 5)
+    .map(({ name: id, count }) => ({ id, title: recipeById.get(id).title, count }))
+
+  const topRated = [...new Set(meals.map((c) => c.recipe_id))]
+    .filter(live)
+    .map((id) => ({ id, title: recipeById.get(id).title, ...recipeRatings(id, meals, ratings) }))
+    .filter((r) => r.average !== null)
+    .sort((a, b) => b.average - a.average || a.title.localeCompare(b.title))
+    .slice(0, 5)
+
+  const cuisines = countBy(meals, (c) => recipeById.get(c.recipe_id).cuisine || 'Other')
+  const mealTypes = countBy(meals, (c) => recipeById.get(c.recipe_id).meal_type || 'other')
+
+  // Count each ingredient once per meal it was in.
+  // "Onions" and "large onion" group together; the list shows the first
+  // way it was written.
+  const ingredientsByRecipe = new Map()
+  const labels = new Map()
+  for (const ing of ingredients) {
+    const name = keyWords(ing.item).join(' ')
+    if (!name || STAPLES.has(name)) continue
+    if (!labels.has(name)) labels.set(name, String(ing.item).trim().toLowerCase())
+    if (!ingredientsByRecipe.has(ing.recipe_id)) ingredientsByRecipe.set(ing.recipe_id, new Set())
+    ingredientsByRecipe.get(ing.recipe_id).add(name)
+  }
+  const ingredientUses = meals.flatMap((c) => [...(ingredientsByRecipe.get(c.recipe_id) ?? [])])
+  const topIngredients = countBy(ingredientUses, (name) => name)
+    .slice(0, 8)
+    .map((item) => ({ ...item, name: labels.get(item.name) }))
+
+  const hours = hoursTogether(sessions, nowMs)
+  const cuisinesTried = cuisines.filter((c) => c.name !== 'Other').length
+  const totals = { meals: meals.length, cuisines: cuisinesTried, hours }
+
+  const milestones = MILESTONES.flatMap(({ kind, thresholds, label }) =>
+    thresholds.map((n) => ({ kind, threshold: n, label: label(n), reached: totals[kind] >= n })),
+  )
+  const next = MILESTONES.map(({ kind, thresholds, label }) => {
+    const n = thresholds.find((t) => totals[kind] < t)
+    return n ? { kind, threshold: n, label: label(n), current: totals[kind] } : null
+  }).filter(Boolean)
+
+  return {
+    mealsLogged: meals.length,
+    recipesCooked: new Set(meals.map((c) => c.recipe_id)).size,
+    hours,
+    cuisinesTried,
+    mostMade,
+    topRated,
+    cuisines,
+    mealTypes,
+    topIngredients,
+    milestones,
+    next,
+  }
+}
