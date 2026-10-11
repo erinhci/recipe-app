@@ -49,7 +49,6 @@ export default function RecipeView() {
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
-  const [showOriginal, setShowOriginal] = useState(false)
   const [system, setSystem] = useState(member.unit_pref ?? 'us')
   const [noteText, setNoteText] = useState('')
   const online = useOnline()
@@ -99,7 +98,7 @@ export default function RecipeView() {
     const change = version.snapshot?.next_change
     if (change?.note_id && !changesFromNote.has(change.note_id)) changesFromNote.set(change.note_id, { ...change, version })
   }
-  const shownServings = showOriginal ? recipe.base_servings : servings
+  const shownServings = servings
   const factor = scaleFactor(recipe.base_servings, shownServings)
   const nameFor = (userId) => members.find((m) => m.user_id === userId)?.display_name ?? 'A former cook'
 
@@ -141,6 +140,13 @@ export default function RecipeView() {
     setRatingStatus(`Your rating is ${n}★.`)
   }
 
+  // Re-saving the same stars marks the rating as current for this
+  // version of the recipe, so the "rate it again?" question goes away.
+  async function handleKeepRating() {
+    await rateRecipe(recipe.id, myStars, member)
+    setRatingStatus(`Kept your ${myStars}★.`)
+  }
+
   const summary = recipeRatings(recipe.id, cookLog, ratings)
   // You first, then the other cook.
   const ratedMembers = Object.keys(summary.byMember).sort((a, b) => (b === member.user_id) - (a === member.user_id))
@@ -173,69 +179,73 @@ export default function RecipeView() {
         <p className="hint">{[recipe.cuisine, recipe.meal_type].filter(Boolean).join(' · ')}</p>
       )}
 
-      {ratedMembers.length > 0 && (
+      {(ratedMembers.length > 0 || meals.length > 0) && (
         <p>
-          <strong>{stars(Math.round(summary.average * 10) / 10)}</strong> average (
-          {ratedMembers.map((m) => `${nameFor(m)} ${stars(summary.byMember[m])}`).join(', ')})
-          {meals.length > 0 && ` · made ${meals.length} ${meals.length === 1 ? 'time' : 'times'}`}
+          {ratedMembers.length > 0 && (
+            <>
+              <strong>{stars(Math.round(summary.average * 10) / 10)}</strong> average (
+              {ratedMembers.map((m) => `${nameFor(m)} ${stars(summary.byMember[m])}`).join(', ')})
+            </>
+          )}
+          {ratedMembers.length > 0 && meals.length > 0 && ' · '}
+          {meals.length > 0 && `made ${meals.length} ${meals.length === 1 ? 'time' : 'times'}`}
         </p>
       )}
 
-      <section className="card" aria-labelledby="servings-heading">
+      <section aria-labelledby="servings-heading">
         <h2 id="servings-heading" className="sr-only">
           Servings and units
         </h2>
-        <div className="stepper">
-          <button
-            className="btn btn-secondary"
-            type="button"
-            onClick={() => setServings((s) => Math.max(1, s - 1))}
-            disabled={showOriginal || servings <= 1}
-            aria-label="One fewer serving"
-          >
-            −
-          </button>
-          <p style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
-            {shownServings} {Number(shownServings) === 1 ? 'serving' : 'servings'}
-          </p>
-          <button
-            className="btn btn-secondary"
-            type="button"
-            onClick={() => setServings((s) => s + 1)}
-            disabled={showOriginal}
-            aria-label="One more serving"
-          >
-            +
-          </button>
+        <div className="row-between">
+          <div className="stepper">
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => setServings((s) => Math.max(1, s - 1))}
+              disabled={servings <= 1}
+              aria-label="One fewer serving"
+            >
+              −
+            </button>
+            <p style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
+              {servings} {Number(servings) === 1 ? 'serving' : 'servings'}
+            </p>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => setServings((s) => s + 1)}
+              aria-label="One more serving"
+            >
+              +
+            </button>
+          </div>
+          <fieldset className="choices">
+            <legend className="sr-only">Units</legend>
+            {[
+              ['us', 'US'],
+              ['metric', 'Metric'],
+            ].map(([value, label]) => (
+              <label key={value} className="choice">
+                <input
+                  type="radio"
+                  name="units"
+                  value={value}
+                  checked={system === value}
+                  onChange={() => setSystem(value)}
+                />
+                {label}
+              </label>
+            ))}
+          </fieldset>
         </div>
-        <label className="choice">
-          <input
-            type="checkbox"
-            checked={showOriginal}
-            onChange={(e) => setShowOriginal(e.target.checked)}
-           
-          />
-          Show original (serves {recipe.base_servings})
-        </label>
-        <fieldset className="choices">
-          <legend className="sr-only">Units</legend>
-          {[
-            ['us', 'US'],
-            ['metric', 'Metric'],
-          ].map(([value, label]) => (
-            <label key={value} className="choice">
-              <input
-                type="radio"
-                name="units"
-                value={value}
-                checked={system === value}
-                onChange={() => setSystem(value)}
-               
-              />
-              {label}
-            </label>
-          ))}
-        </fieldset>
+        {recipe.base_servings && Number(recipe.base_servings) !== servings && (
+          <p className="hint" style={{ margin: 0 }}>
+            The recipe as written makes {recipe.base_servings}.{' '}
+            <button className="link-btn" type="button" onClick={() => setServings(Number(recipe.base_servings))}>
+              Make {recipe.base_servings}
+            </button>
+          </p>
+        )}
       </section>
 
       {steps.length > 0 && (
@@ -287,76 +297,84 @@ export default function RecipeView() {
 
       <section aria-labelledby="log-heading">
         <h2 id="log-heading" ref={logHeadingRef} tabIndex={-1}>
-          {finishedSession ? 'How was it?' : 'Ratings'}
+          {finishedSession ? 'How was it?' : 'Your rating'}
         </h2>
         {meals.length === 0 ? (
           <p className="hint">Rate it after the first time you make it. Log that below.</p>
-        ) : (
-          <div className="card">
-            {ratedMembers.length === 0 ? (
-              <p>No ratings yet.</p>
-            ) : (
-              <ul>
-                {ratedMembers.map((m) => (
-                  <li key={m}>
-                    {m === member.user_id ? 'You' : nameFor(m)}: {stars(summary.byMember[m])}
-                    {ratingIsStale(summary.ratedAt[m], lastChangedAt) && (
-                      <span className="hint"> (rated before the latest edit)</span>
-                    )}
-                  </li>
-                ))}
-                {ratedMembers.length > 1 && <li>Average: {stars(Math.round(summary.average * 10) / 10)}</li>}
-              </ul>
-            )}
-            {myStars === undefined || myStale || changingRating ? (
-              <StarPicker
-                legend={
-                  myStars === undefined
-                    ? 'Your rating'
-                    : myStale && !changingRating
-                      ? 'The recipe changed since you rated it. Rate it again?'
-                      : 'Change your rating'
-                }
-                value={myStars ?? null}
-                onChange={handleRate}
-              />
-            ) : (
-              <button className="btn btn-secondary" type="button" onClick={() => setChangingRating(true)}>
-                Change your rating
+        ) : myStars === undefined || changingRating ? (
+          <>
+            <StarPicker
+              legend={myStars === undefined ? 'Your rating' : 'New rating'}
+              hideLegend
+              value={myStars ?? null}
+              onChange={handleRate}
+            />
+            {changingRating ? (
+              <button className="link-btn" type="button" onClick={() => setChangingRating(false)}>
+                Cancel
               </button>
+            ) : (
+              <p className="hint" style={{ margin: 0 }}>
+                It carries over each time you make it.
+              </p>
             )}
-            <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-              Your rating stays the same each time you make it, until you change it.
+          </>
+        ) : myStale ? (
+          <div className="flagged">
+            <p style={{ margin: 0 }}>
+              You gave it <strong>{stars(myStars)}</strong> before the recipe changed.
             </p>
-            <p role="status" className="hint" style={{ margin: 0 }}>
-              {ratingStatus}
+            <div className="comment-actions">
+              <button className="link-btn" type="button" onClick={handleKeepRating}>
+                Keep {stars(myStars)}
+              </button>
+              <button className="link-btn" type="button" onClick={() => setChangingRating(true)}>
+                Change rating
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="row-between">
+            <p style={{ margin: 0 }}>
+              You gave it <strong>{stars(myStars)}</strong>
             </p>
+            <button className="link-btn" type="button" onClick={() => setChangingRating(true)}>
+              Change rating
+            </button>
           </div>
         )}
+        <p role="status" className="hint" style={{ margin: 0 }}>
+          {ratingStatus}
+        </p>
 
-        <h3>Cook log</h3>
-        <form onSubmit={handleLogMeal} className="card">
-          <div className="field">
-            <label htmlFor="cooked-on">We made this on</label>
-            <input
-              id="cooked-on"
-              type="date"
-              value={logDate}
-              max={localDate()}
-              required
-              onChange={(e) => setLogDate(e.target.value)}
-            />
-          </div>
+        <h3 className="subheading">Cook log</h3>
+        <form onSubmit={handleLogMeal}>
           {meals.length === 0 && <StarPicker legend="Your rating (optional)" value={logStars} onChange={setLogStars} />}
-          {sameDay && (
-            <p className="hint">
+          <div className="inline-form">
+            <div className="field">
+              <label htmlFor="cooked-on">Date made</label>
+              <input
+                id="cooked-on"
+                type="date"
+                value={logDate}
+                max={localDate()}
+                required
+                onChange={(e) => {
+                  setLogDate(e.target.value)
+                  setLogStatus('')
+                }}
+              />
+            </div>
+            <button className="btn" type="submit" disabled={!logDate || Boolean(sameDay)}>
+              Add to log
+            </button>
+          </div>
+          {sameDay && !logStatus && (
+            <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
               {loggedByNames(sameDay)} already logged {formatDay(logDate)}.
             </p>
           )}
-          <button className="btn" type="submit" disabled={!logDate || Boolean(sameDay)}>
-            {finishedSession ? 'Log this meal' : 'We made this'}
-          </button>
-          <p role="status" className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
+          <p role="status" className="hint" style={{ margin: logStatus ? 'var(--space-2) 0 0' : 0 }}>
             {logStatus}
           </p>
         </form>
@@ -364,19 +382,13 @@ export default function RecipeView() {
         {meals.length === 0 ? (
           <p className="hint">Not made yet.</p>
         ) : (
-          <ul className="plain-list">
+          <ul className="plain-list divided">
             {history.map((meal) => (
-              <li
-                key={meal.key}
-                className="card row-between"
-              >
-                <div>
-                  <p style={{ fontWeight: 600, margin: 0 }}>{formatDay(meal.cooked_on)}</p>
-                  <p className="hint" style={{ margin: 0 }}>
-                    Logged by {loggedByNames(meal)}
-                  </p>
-                </div>
-                <button className="btn btn-secondary" type="button" onClick={() => handleDeleteLog(meal)}>
+              <li key={meal.key}>
+                <span>
+                  {formatDay(meal.cooked_on)} <span className="hint">· logged by {loggedByNames(meal)}</span>
+                </span>
+                <button className="link-btn" type="button" onClick={() => handleDeleteLog(meal)}>
                   Remove<span className="sr-only"> {formatDay(meal.cooked_on)}</span>
                 </button>
               </li>

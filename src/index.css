@@ -603,3 +603,26 @@ tr.total td { border-top: 2px solid var(--color-text); font-weight: 600; }
 .card + h3,
 ul + h3,
 .plain-list + h3 { margin-top: var(--space-6); }
+
+/* A field and its button on one line (wraps on narrow screens) */
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+.inline-form .field { flex: 1; min-width: 10rem; margin: 0; }
+/* Compact rows separated by a thin line */
+.divided > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--color-divider);
+}
+.divided > li > :first-child { flex: 1; min-width: 0; }
+.divided > li > button { flex: none; }
+.subheading { margin-top: var(--space-8); }
+.flagged:has(.comment-actions) { padding: var(--space-3) var(--space-4); }
+.divided { margin-top: var(--space-3); }
+.flagged .comment-actions { margin-top: var(--space-1); }

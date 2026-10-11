@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | No way to keep a rating after a recipe edit; ratings and cook log too large; "Show original" did nothing useful | Keep-rating option, compact ratings and log, breakdown shown once, servings reset link (0.14.0) | See entry |
 | 2026-10-11 | Before deeper user testing, the look should be plain and the app should meet WCAG 2.2 AA | Black-and-white theme, spacing cleanup, accessibility audit and fixes (0.13.0) | See entry |
 | 2026-10-11 | Keeping earlier versions of every recipe isn't needed; the note already says what changed | Earlier versions removed; only a short note-to-change record is kept | See entry |
 | 2026-10-11 | The version in Settings (a commit code) said nothing useful | Version numbers with plain-language notes; what's new after updating | See entry |
@@ -26,6 +27,33 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Rating prompt, cook log, and servings
+
+**Finding.** Using 0.13.0 on her phone, Erin found:
+
+- After the recipe was edited, the "Rate it again?" prompt had no way to
+  dismiss it. She didn't want to change her rating, so it stayed on screen.
+- The Ratings card repeated the breakdown (each cook's stars and the
+  average) that already shows under the recipe title, and took most of a
+  screen.
+- The cook log said "We made this on" above a "We made this" button, and
+  each logged date was its own large card.
+- "Show original" did nothing when the recipe was already written for two,
+  and adjusting servings covers what it was for.
+
+**Change (version 0.14.0).**
+
+- The prompt now reads "You gave it 4★ before the recipe changed" with
+  "Keep 4★" and "Change rating". Keeping re-saves the same stars, so the
+  prompt clears on both phones.
+- The breakdown shows once, under the title. The rating section is one
+  line: "You gave it 4★" with "Change rating", which opens the stars and a
+  Cancel.
+- The cook log is a "Date made" field and an "Add to log" button on one
+  line. Past dates are a compact list with a divider between them.
+- "Show original" is removed. When servings differ from what the recipe
+  makes, a line says "The recipe as written makes 4" with a "Make 4" link.
 
 ## 2026-10-11: Plain theme and accessibility pass
 

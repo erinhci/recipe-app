@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.14.0",
+    "date": "2026-10-11",
+    "notes": [
+      "After a recipe changes, you can keep your rating instead of rating again",
+      "Ratings and the cook log take less space, and the ratings breakdown shows once, at the top",
+      "Servings: \"Show original\" is gone; when you change servings, a link sets it back to what the recipe makes"
+    ]
+  },
+  {
     "version": "0.13.0",
     "date": "2026-10-11",
     "notes": [
