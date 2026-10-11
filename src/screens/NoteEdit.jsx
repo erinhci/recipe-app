@@ -126,10 +126,10 @@ export default function NoteEdit() {
       return
     }
     try {
-      // The note and summary are kept with the saved version, so the note
-      // shows what it led to and Earlier versions shows why it changed.
+      // A short record of the note and summary is saved, so the note shows
+      // what it changed and can't be used twice.
       await saveRecipe({ recipe: result.base.recipe, ingredients: result.ingredients, steps: result.steps }, member, changeInfo())
-      navigate(`/recipe/${id}`, { replace: true, state: { message: 'Recipe updated. The previous version is under Earlier versions.' } })
+      navigate(`/recipe/${id}`, { replace: true, state: { message: 'Recipe updated. The note now shows what it changed.' } })
     } catch (error) {
       setSaving(false)
       setSaveError(`Couldn't save: ${error.message}`)

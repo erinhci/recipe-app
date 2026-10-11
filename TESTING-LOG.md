@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Keeping earlier versions of every recipe isn't needed; the note already says what changed | Earlier versions removed; only a short note-to-change record is kept | See entry |
 | 2026-10-11 | The version in Settings (a commit code) said nothing useful | Version numbers with plain-language notes; what's new after updating | See entry |
 | 2026-10-11 | Keeping imported screenshots and PDFs is clutter once the recipe is checked | Originals no longer saved; the recipe's credit is kept instead | See entry |
 | 2026-10-11 | Want photos of finished dishes, to see how it turned out and for stats later | Planned (Later), synced between phones | Not built |
@@ -24,6 +25,27 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Drop earlier versions of recipes
+
+**Finding.** Erin decided storing a full copy of a recipe before every edit
+wasn't worth it. When a change comes from a note, the note itself already
+records what changed and why.
+
+**Change (version 0.12.0).**
+
+- Saving an edit no longer stores a copy of the old recipe, and the Earlier
+  versions section (with Restore) is gone.
+- When a change comes from a note, only a short record is kept: which note
+  and its summary. That's what lets the note show "Used to change the
+  recipe" and stops it from being applied twice.
+- "Rate it again" after an edit now checks when the ingredients or steps
+  were last saved, instead of looking for a stored version.
+- Migration 0005 removes the recipe copies already stored.
+
+**Trade-off.** An edit can't be undone from the app anymore. A change from
+a note is reviewed before saving, and a manual edit can be fixed with
+another edit.
 
 ## 2026-10-11: Version numbers people can read
 

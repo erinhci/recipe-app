@@ -4,8 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
-import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, rateRecipe, restoreVersion } from '../lib/data'
-import { ingredientToLine } from '../lib/ingredients'
+import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, rateRecipe } from '../lib/data'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 import { useOnline } from '../lib/useOnline'
@@ -16,8 +15,6 @@ import NutritionPanel from '../components/NutritionPanel'
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 // cooked_on is a calendar date; read it as local noon so it never shifts a day.
 const formatDay = (day) => dateFormat.format(new Date(`${day}T12:00:00`))
-const timeFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
-const VERSIONS_SHOWN = 10
 const HISTORY_SHOWN = 10
 // "https://www.justonecookbook.com/..." -> "justonecookbook.com"
 const siteName = (url) => {
@@ -46,8 +43,9 @@ export default function RecipeView() {
     ])
     cookLog.sort((a, b) => b.cooked_on.localeCompare(a.cooked_on) || (b.created_at ?? '').localeCompare(a.created_at ?? ''))
     const ratings = await db.ratings.where('cook_log_id').anyOf(cookLog.map((c) => c.id)).toArray()
-    const allVersions = await db.recipe_versions.where('recipe_id').equals(id).reverse().sortBy('created_at')
-    return { recipe, ingredients, steps, notes, members, cookLog, ratings, versions: allVersions.slice(0, VERSIONS_SHOWN), allVersions }
+    // Short records of which notes changed this recipe (no recipe copies).
+    const changeRecords = await db.recipe_versions.where('recipe_id').equals(id).toArray()
+    return { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords }
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
@@ -57,7 +55,7 @@ export default function RecipeView() {
   const online = useOnline()
   const location = useLocation()
   const finishedSession = location.state?.finishedSession ?? null
-  const [message, setMessage] = useState(location.state?.message ?? '')
+  const [message] = useState(location.state?.message ?? '')
   const [logDate, setLogDate] = useState(localDate())
   const [logStars, setLogStars] = useState(null)
   const [logStatus, setLogStatus] = useState('')
@@ -94,10 +92,10 @@ export default function RecipeView() {
     )
   }
 
-  const { recipe, ingredients, steps, notes, members, cookLog, ratings, versions, allVersions } = data
+  const { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords } = data
   // Which notes led to a recipe change (kept with the version saved then).
   const changesFromNote = new Map()
-  for (const version of allVersions) {
+  for (const version of changeRecords) {
     const change = version.snapshot?.next_change
     if (change?.note_id && !changesFromNote.has(change.note_id)) changesFromNote.set(change.note_id, { ...change, version })
   }
@@ -126,18 +124,6 @@ export default function RecipeView() {
     if (finishedSession) navigate(location.pathname, { replace: true, state: null })
   }
 
-  async function handleRestore(version) {
-    const when = timeFormat.format(new Date(version.created_at))
-    if (!window.confirm(`Put back the recipe as it was before ${when}? The current version is kept, so you can switch back.`)) return
-    try {
-      await restoreVersion(version.id, member)
-      setMessage(`Restored the version from before ${when}.`)
-      window.scrollTo(0, 0)
-    } catch (error) {
-      setMessage(`Couldn't restore: ${error.message}`)
-    }
-  }
-
   async function handleDeleteLog(meal) {
     const othersHere = [
       ...new Set(ratings.filter((r) => meal.ids.includes(r.cook_log_id) && r.member_id !== member.user_id).map((r) => nameFor(r.member_id))),
@@ -164,7 +150,8 @@ export default function RecipeView() {
   const sameDay = meals.find((m) => m.cooked_on === logDate)
   // Ratings belong to the recipe. One goes stale only if the recipe was
   // edited after it was given.
-  const lastChangedAt = versions[0]?.created_at ?? null
+  // When the ingredients or steps were last saved (every save stamps them).
+  const lastChangedAt = [...ingredients, ...steps].reduce((latest, row) => (row.updated_at > latest ? row.updated_at : latest), '') || null
   const myStars = summary.byMember[member.user_id]
   const myStale = ratingIsStale(summary.ratedAt[member.user_id], lastChangedAt)
   const loggedByNames = (meal) => [...new Set(meal.entries.map((e) => nameFor(e.created_by)))].join(' and ')
@@ -492,41 +479,6 @@ export default function RecipeView() {
           </button>
         </form>
       </section>
-
-      {versions.length > 0 && (
-        <section aria-labelledby="versions-heading">
-          <h2 id="versions-heading">Earlier versions</h2>
-          <p className="hint">Each time the recipe is edited, the version before is kept here.</p>
-          {versions.map((version) => {
-            const snap = version.snapshot ?? {}
-            return (
-              <details key={version.id} className="card">
-                <summary style={{ minHeight: 'var(--target)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  Before {nameFor(version.created_by)}'s {snap.next_change ? 'change from a note' : 'edit'},{' '}
-                  {timeFormat.format(new Date(version.created_at))}
-                </summary>
-                {snap.next_change?.summary && <p className="hint">The change: {snap.next_change.summary}</p>}
-                <p style={{ fontWeight: 600 }}>
-                  {snap.recipe?.title} (serves {snap.recipe?.base_servings})
-                </p>
-                <ul style={{ paddingLeft: 'var(--space-6)' }}>
-                  {(snap.ingredients ?? []).map((ing) => (
-                    <li key={ing.id}>{ingredientToLine(ing)}</li>
-                  ))}
-                </ul>
-                <ol style={{ paddingLeft: 'var(--space-6)' }}>
-                  {(snap.steps ?? []).map((step) => (
-                    <li key={step.id}>{step.text}</li>
-                  ))}
-                </ol>
-                <button className="btn btn-secondary" type="button" onClick={() => handleRestore(version)}>
-                  Restore this version
-                </button>
-              </details>
-            )
-          })}
-        </section>
-      )}
 
       {(recipe.source_name || recipe.source_url) && (
         <p>

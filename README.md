@@ -14,8 +14,7 @@ Findings from using the app and the changes they led to are in
 Done: sign-in and shared kitchens; recipes with scaling, units, notes, and
 offline sync; import from screenshots, PDFs, links, and pasted text;
 cooking mode with step questions; cook log with a rating from each cook;
-kitchen stats and milestones; recipe changes drafted from notes, with
-earlier versions that can be restored; nutrition estimates.
+kitchen stats and milestones; recipe changes drafted from notes; nutrition estimates.
 Next: the Next features in the build spec.
 
 ## One-time setup
@@ -25,7 +24,8 @@ Next: the Next features in the build spec.
 1. Create a project on the free plan.
 2. Open the SQL editor and run each file in `supabase/migrations/` once,
    in order: `0001_init.sql`, `0002_remove_members.sql`,
-   `0003_nutrition.sql`, then `0004_source_credit.sql`. (Run
+   `0003_nutrition.sql`, `0004_source_credit.sql`, then
+   `0005_drop_recipe_copies.sql`. (Run
    `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and

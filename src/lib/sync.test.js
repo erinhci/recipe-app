@@ -109,9 +109,17 @@ test('editing keeps the previous version and removes deleted ingredients', async
   assert.equal(server.table('recipes').get(id).title, 'Better soup')
   assert.equal(server.table('ingredients').size, 1, 'onion removed on the server')
   assert.equal(await db.ingredients.count(), 1, 'onion removed on the phone')
-  const versions = [...server.table('recipe_versions').values()]
-  assert.equal(versions.length, 1)
-  assert.equal(versions[0].snapshot.recipe.title, 'Soup', 'old version kept')
+  assert.equal(server.table('recipe_versions').size, 0, 'earlier versions are not kept')
+})
+
+test('a change from a note keeps only a short record of which note it was', async () => {
+  const id = await saveRecipe(structuredClone(sample), member)
+  const saved = await loadRecipe(id)
+  await saveRecipe({ ...saved, recipe: { ...saved.recipe, title: 'Less salty soup' } }, member, { note_id: 'note-1', summary: 'Halves the salt.' })
+  await syncNow()
+  const records = [...server.table('recipe_versions').values()]
+  assert.equal(records.length, 1)
+  assert.deepEqual(records[0].snapshot, { next_change: { note_id: 'note-1', summary: 'Halves the salt.' } })
 })
 
 test("the other phone's changes arrive on the next pull", async () => {

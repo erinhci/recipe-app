@@ -42,11 +42,12 @@ export async function loadRecipe(id) {
   return recipe ? { recipe, ingredients, steps } : null
 }
 
-// Create or update a recipe with its ingredients and steps.
-// On update, the previous version is kept in recipe_versions.
-// change (optional) describes why, e.g. { note_id, summary } when the edit
-// came from a note; it's kept with that version so the app can show which
-// note led to which change.
+// Create or update a recipe with its ingredients and steps. Earlier
+// versions aren't kept.
+// change (optional) is { note_id, summary } when the edit came from a note.
+// Only that short record is saved (in the recipe_versions table, without a
+// copy of the recipe), so the note can show what it changed and can't be
+// used twice.
 export async function saveRecipe({ recipe, ingredients, steps }, member, change = null) {
   const stamp = now()
   const isNew = !recipe.id || !(await db.recipes.get(recipe.id))
@@ -72,21 +73,16 @@ export async function saveRecipe({ recipe, ingredients, steps }, member, change 
     pick({ ...step, id: step.id ?? newId(), recipe_id: id, position, updated_at: stamp }, STEP_FIELDS),
   )
 
-  let version = null
+  const changeRecord = change
+    ? { id: newId(), recipe_id: id, snapshot: { next_change: change }, created_by: member.user_id, created_at: stamp }
+    : null
   let removedIngredientIds = []
   let removedStepIds = []
 
   await db.transaction('rw', [db.recipes, db.ingredients, db.steps, db.recipe_versions, db.outbox], async () => {
+    if (changeRecord) await db.recipe_versions.put(changeRecord)
     if (!isNew) {
       const previous = await loadRecipe(id)
-      version = {
-        id: newId(),
-        recipe_id: id,
-        snapshot: change ? { ...previous, next_change: change } : previous,
-        created_by: member.user_id,
-        created_at: stamp,
-      }
-      await db.recipe_versions.put(version)
 
       const keepIngredients = new Set(fullIngredients.map((i) => i.id))
       const keepSteps = new Set(fullSteps.map((s) => s.id))
@@ -102,7 +98,7 @@ export async function saveRecipe({ recipe, ingredients, steps }, member, change 
 
     // Queue in dependency order: the recipe before its children.
     await enqueue('recipes', 'upsert', fullRecipe)
-    if (version) await enqueue('recipe_versions', 'upsert', version)
+    if (changeRecord) await enqueue('recipe_versions', 'upsert', changeRecord)
     for (const removed of removedIngredientIds) await enqueue('ingredients', 'delete', { id: removed })
     for (const removed of removedStepIds) await enqueue('steps', 'delete', { id: removed })
     for (const ing of fullIngredients) await enqueue('ingredients', 'upsert', ing)
@@ -297,15 +293,3 @@ export async function deleteMealLog(cookLogIds, member) {
   afterWrite()
 }
 
-// Puts an earlier version back. The current version is kept as a version
-// too (saveRecipe does that), so a restore can itself be undone.
-export async function restoreVersion(versionId, member) {
-  const version = await db.recipe_versions.get(versionId)
-  const current = version && (await db.recipes.get(version.recipe_id))
-  if (!version?.snapshot?.recipe || !current) throw new Error('That version is not on this phone.')
-  const { recipe, ingredients = [], steps = [] } = version.snapshot
-  const restoredFields = ['title', 'base_servings', 'cuisine', 'meal_type', 'tags', 'total_time_minutes', 'source_url', 'source_name']
-  const merged = { ...current }
-  for (const field of restoredFields) if (recipe[field] !== undefined) merged[field] = recipe[field]
-  return saveRecipe({ recipe: merged, ingredients, steps }, member)
-}
