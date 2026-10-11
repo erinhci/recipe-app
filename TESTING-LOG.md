@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | The update banner never appeared; updates showed up later on their own | Banner pinned to the top of the screen; checks for updates more often | See entry |
 | 2026-10-11 | Notes looked like big cards, the app's own note offered "Turn into a recipe change", and a note could be applied again | Notes look like a comments thread; a used note can't be applied twice | See entry |
 | 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | `1a7579d` |
 | 2026-10-11 | Phones kept showing an older version after updates shipped | App offers updates and shows its version | `e8b0626` |
@@ -20,6 +21,29 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Update banner not seen
+
+**Finding.** After two updates shipped, Erin never saw "A new version of
+the app is ready." Each update appeared later by itself.
+
+**Cause.** The update worked as designed underneath: the new version
+downloaded in the background and took over when the app next fully
+restarted. The banner sat at the very top of the page, so it was out of
+sight while scrolled down a recipe, and the app only looked for updates
+when it came back to the front or every 30 minutes.
+
+**Change.**
+
+- The banner is pinned to the top of the screen wherever the page is
+  scrolled, with Update now and Later.
+- The app also looks for updates when moving between screens (at most once
+  a minute), when the phone reconnects, and every 10 minutes.
+- Tested with two builds in a browser: the banner appeared, and Update now
+  switched to the new version.
+
+**Also added.** Each recipe card in the Library shows the average rating
+and how many times it was made, like "★ 3.5 · made 1 time · Japanese".
 
 ## 2026-10-11: Notes as a comments thread
 

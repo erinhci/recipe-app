@@ -427,3 +427,29 @@ textarea {
   background: var(--color-surface);
   resize: vertical;
 }
+
+/* Update offer: pinned to the top so it's seen wherever the page is scrolled */
+.update-banner {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + var(--space-2));
+  left: var(--space-3);
+  right: var(--space-3);
+  z-index: 20;
+  max-width: 40rem;
+  margin: 0 auto;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  font-weight: 600;
+}
+.card-rating {
+  color: var(--color-text);
+  font-weight: 600;
+}
