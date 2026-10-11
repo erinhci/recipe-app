@@ -20,12 +20,13 @@ const RECIPE_FIELDS = [
   'id', 'kitchen_id', 'title', 'base_servings', 'cuisine', 'meal_type', 'tags',
   'total_time_minutes', 'source_type', 'source_url', 'original_file',
   'created_by', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'nutrition', 'source_name',
+  'chef_tracks',
 ]
 const INGREDIENT_FIELDS = [
   'id', 'recipe_id', 'position', 'quantity', 'unit', 'item', 'prep_note',
   'raw_text', 'needs_review', 'updated_at',
 ]
-const STEP_FIELDS = ['id', 'recipe_id', 'position', 'text', 'updated_at']
+const STEP_FIELDS = ['id', 'recipe_id', 'position', 'text', 'track', 'updated_at']
 
 function pick(obj, fields) {
   const out = {}
@@ -80,6 +81,10 @@ export async function saveRecipe({ recipe, ingredients, steps }, member, change 
       db.ingredients.where('recipe_id').equals(id).toArray(),
       db.steps.where('recipe_id').equals(id).toArray(),
     ])
+    // Steps keep their two-chef track through an edit. New steps have
+    // none, which tells two-chef mode the split needs redoing.
+    const oldTrack = new Map(oldSteps.map((st) => [st.id, st.track]))
+    fullSteps = fullSteps.map((st) => (st.track === undefined && oldTrack.get(st.id) ? { ...st, track: oldTrack.get(st.id) } : st))
     const same = (rows, oldRows, fields) => {
       if (rows.length !== oldRows.length) return false
       const byId = new Map(oldRows.map((r) => [r.id, r]))
@@ -164,6 +169,26 @@ export async function deleteRecipe(recipeId, member) {
 
 export async function restoreRecipe(recipeId) {
   await setDeleted(recipeId, { deleted_at: null, deleted_by: null })
+}
+
+// Saves a two-chef split: track names on the recipe and a track on each
+// step (in step order). Step edit times stay as they were, so this
+// doesn't count as a recipe change for ratings.
+export async function saveChefSplit(recipeId, names, tracks) {
+  await db.transaction('rw', [db.recipes, db.steps, db.outbox], async () => {
+    const recipe = await db.recipes.get(recipeId)
+    if (!recipe) return
+    const steps = await db.steps.where('recipe_id').equals(recipeId).sortBy('position')
+    const updated = pick({ ...recipe, chef_tracks: { a: names.a, b: names.b } }, RECIPE_FIELDS)
+    await db.recipes.put(updated)
+    await enqueue('recipes', 'upsert', updated)
+    for (const [index, step] of steps.entries()) {
+      const row = pick({ ...step, track: tracks[index] ?? 'both' }, STEP_FIELDS)
+      await db.steps.put(row)
+      await enqueue('steps', 'upsert', row)
+    }
+  })
+  afterWrite()
 }
 
 export async function updateRecipeFields(recipeId, fields) {

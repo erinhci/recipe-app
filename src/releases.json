@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.18.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Two-chef mode: split a recipe between two cooks and cook at the same time, each on your own phone",
+      "Pick who makes what, and the other phone gets the other part; check-offs show on both phones",
+      "Shared steps wait until both parts are ready, and you can hand a step to the other cook or swap parts",
+      "Works on one phone too, and keeps going offline"
+    ]
+  },
+  {
     "version": "0.17.0",
     "date": "2026-10-11",
     "notes": [

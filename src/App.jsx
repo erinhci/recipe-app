@@ -17,6 +17,7 @@ import Import from './screens/Import'
 import RecipeView from './screens/RecipeView'
 import RecipeEdit from './screens/RecipeEdit'
 import CookingMode from './screens/CookingMode'
+import TwoChef from './screens/TwoChef'
 import Stats from './screens/Stats'
 import NoteEdit from './screens/NoteEdit'
 import { startSync } from './lib/sync'
@@ -37,7 +38,7 @@ function Shell() {
   const online = useOnline()
   const { pathname } = useLocation()
   // Cooking mode uses the bottom of the screen for its step buttons.
-  const cooking = pathname.endsWith('/cook')
+  const cooking = pathname.endsWith('/cook') || pathname.endsWith('/two-chef')
   const kitchenId = member?.kitchen_id
 
   // Keep this phone in sync with the kitchen while signed in.
@@ -92,6 +93,7 @@ function Shell() {
         <Route path="/recipe/:id" element={<RecipeView />} />
         <Route path="/recipe/:id/edit" element={<RecipeEdit />} />
         <Route path="/recipe/:id/cook" element={<CookingMode />} />
+        <Route path="/recipe/:id/two-chef" element={<TwoChef />} />
         <Route path="/recipe/:id/note/:noteId" element={<NoteEdit />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/settings" element={<Settings />} />

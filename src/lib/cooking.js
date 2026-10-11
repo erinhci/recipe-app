@@ -1,3 +1,5 @@
+import { displayIngredient } from './units.js'
+
 // Which ingredients a step mentions, so cooking mode can show their
 // scaled amounts right under that step.
 
@@ -51,4 +53,10 @@ export function ingredientsForStep(stepText, ingredients) {
     if (main) mainWordCounts.set(main, (mainWordCounts.get(main) ?? 0) + 1)
   }
   return ingredients.filter((ing) => mentions(stepWords, normalizedStep, ing, mainWordCounts))
+}
+
+// One ingredient as a line of text, scaled and in the chosen units.
+export function ingredientLine(ing, factor, system) {
+  const shown = displayIngredient(ing, factor, system)
+  return [shown.text, ing.item].filter(Boolean).join(' ') + (ing.prep_note ? `, ${ing.prep_note}` : '')
 }

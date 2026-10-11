@@ -637,3 +637,16 @@ ul + h3,
 .flagged:has(.comment-actions) { padding: var(--space-3) var(--space-4); }
 .divided { margin-top: var(--space-3); }
 .flagged .comment-actions { margin-top: var(--space-1); }
+
+/* Two-chef mode */
+.two-chef-next { margin-top: var(--space-6); }
+.btn-large { width: 100%; min-height: 56px; font-size: 1.125rem; margin-top: var(--space-4); }
+.pick-list { display: flex; flex-direction: column; gap: var(--space-3); margin: var(--space-4) 0; }
+.pick { width: 100%; justify-content: flex-start; text-align: left; }
+.two-chef-steps { padding-left: var(--space-6); }
+.two-chef-steps > li { padding: var(--space-3) 0; border-bottom: 1px solid var(--color-divider); }
+.two-chef-steps .step-owner { margin: 0; font-size: var(--text-sm); font-weight: 600; }
+.two-chef-steps .step-text { margin: var(--space-1) 0 var(--space-2); font-size: 1.125rem; }
+.two-chef-steps .theirs .step-text,
+.two-chef-steps .theirs .step-owner { color: var(--color-text-muted); }
+.two-chef-steps .is-done .step-text { text-decoration: line-through; color: var(--color-text-muted); }

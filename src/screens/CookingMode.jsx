@@ -6,8 +6,9 @@ import Working from '../components/Working'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal } from '../lib/data'
-import { displayIngredient, scaleFactor } from '../lib/units'
-import { ingredientsForStep } from '../lib/cooking'
+import { scaleFactor } from '../lib/units'
+import { ingredientLine, ingredientsForStep } from '../lib/cooking'
+import { useWakeLock } from '../lib/useWakeLock'
 import { askStep } from '../lib/askStep'
 import { useOnline } from '../lib/useOnline'
 import { DEFAULT_SERVINGS } from '../lib/constants'
@@ -32,43 +33,6 @@ function writeSaved(recipeId, value) {
   } catch {
     // Storage unavailable; nothing to keep.
   }
-}
-
-function ingredientLine(ing, factor, system) {
-  const shown = displayIngredient(ing, factor, system)
-  return [shown.text, ing.item].filter(Boolean).join(' ') + (ing.prep_note ? `, ${ing.prep_note}` : '')
-}
-
-// Keeps the screen on while cooking, where the phone supports it.
-function useWakeLock() {
-  const supported = typeof navigator !== 'undefined' && 'wakeLock' in navigator
-  const [status, setStatus] = useState(supported ? 'checking' : 'unsupported')
-  useEffect(() => {
-    if (!supported) return undefined
-    let lock = null
-    let active = true
-    async function request() {
-      try {
-        lock = await navigator.wakeLock.request('screen')
-        if (active) setStatus('on')
-        else lock.release()
-      } catch {
-        if (active) setStatus('failed')
-      }
-    }
-    // The lock drops when the phone locks or the app is hidden; ask again on return.
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') request()
-    }
-    request()
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      active = false
-      document.removeEventListener('visibilitychange', onVisible)
-      lock?.release().catch(() => {})
-    }
-  }, [supported])
-  return status
 }
 
 export default function CookingMode() {

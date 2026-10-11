@@ -257,10 +257,15 @@ export default function RecipeView() {
       </section>
 
       {steps.length > 0 && (
-        <p>
+        <p className="actions">
           <Link className="btn" to={`/recipe/${recipe.id}/cook?servings=${shownServings}&units=${system}`}>
             Start cooking
-          </Link>
+          </Link>{' '}
+          {steps.length > 1 && (
+            <Link className="btn btn-secondary" to={`/recipe/${recipe.id}/two-chef?servings=${shownServings}&units=${system}`}>
+              Cook with two chefs
+            </Link>
+          )}
         </p>
       )}
 

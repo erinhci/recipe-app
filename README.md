@@ -26,8 +26,8 @@ Next: the Next features in the build spec.
 2. Open the SQL editor and run each file in `supabase/migrations/` once,
    in order: `0001_init.sql`, `0002_remove_members.sql`,
    `0003_nutrition.sql`, `0004_source_credit.sql`,
-   `0005_drop_recipe_copies.sql`, then `0006_drop_cooking_sessions.sql`
-   (after both phones are on 0.16.0). (Run
+   `0005_drop_recipe_copies.sql`, `0006_drop_cooking_sessions.sql`
+   (after both phones are on 0.16.0), then `0007_two_chef.sql`. (Run
    `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and
@@ -52,6 +52,9 @@ Next: the Next features in the build spec.
 9. Do the same for `estimate-nutrition`, pasting in
    `supabase/functions/estimate-nutrition/index.ts`. It estimates calories
    and macros. Run `0003_nutrition.sql` first so estimates can be saved.
+10. Do the same for `split-steps`, pasting in
+    `supabase/functions/split-steps/index.ts`. It splits a recipe's steps
+    between two cooks for two-chef mode. Run `0007_two_chef.sql` first.
 
 ### 2. Vercel
 

@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Two-chef mode from the plan wasn't built yet | Built: Gemini split, pick a part, live check-offs on both phones, shared steps, hand-offs (0.18.0) | See entry |
 | 2026-10-11 | Cooking mode hid every step but the current one, which is hard when hands are busy or messy | Upcoming steps listed under the current one; finished steps under Done (0.17.0) | See entry |
 | 2026-10-11 | Typing minutes for each meal was tedious, and the time is an estimate anyway | Each recipe's total time is added once per logged meal; cooking mode's Finish logs the meal; manual minutes and timed sessions removed (0.16.0) | See entry |
 | 2026-10-11 | Cooking time could only come from cooking mode, and couldn't be seen or removed | Minutes can be added in the cook log; each day shows its time with Remove time (0.15.0), replaced in 0.16.0 | See entry |
@@ -30,6 +31,38 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Two-chef mode
+
+**Context.** Two-chef mode was in the original plan (Next phase) for the
+problem "the other person has to ask what they can help with." Erin asked
+to build it after the cooking mode changes.
+
+**Change (version 0.18.0).**
+
+- "Cook with two chefs" on the recipe page. The first time, Gemini splits
+  the steps into two named parts (like "Pasta" and "Sauce") and shared
+  steps where they come together. The split is saved with the recipe, so
+  it works offline after that. If a recipe is one sequence that two
+  people can't share, it says so and offers regular cooking mode.
+- One cook picks a part and the other phone gets the other part. If both
+  tap the same part at once, the first wins and the second gets the other.
+- Each phone shows its next step in large text with a big "Done" button,
+  and every step below it, with the other cook's steps dimmed and
+  labeled with their name. Check-offs show on both phones within seconds.
+- A shared step waits until both parts reach it, and says who it's
+  waiting on. Steps can be handed to the other cook, and parts swapped.
+- "Both parts, on this phone" runs both on one phone. Offline, each phone
+  keeps its own progress and sends check-offs when it reconnects.
+- Finish logs the meal once for both cooks.
+
+**How it was tested.** The database functions were run against a real
+Postgres, including two cooks claiming the same part and someone outside
+the kitchen trying to join. Two browser sessions stood in for two phones
+against a fake server for the full cook, plus an offline run.
+
+**Still to test.** Two real phones in the same kitchen: whether live
+updates arrive fast enough, and whether the split makes sense to cook by.
 
 ## 2026-10-11: Reading ahead in cooking mode
 
