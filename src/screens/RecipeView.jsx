@@ -10,6 +10,7 @@ import { DEFAULT_SERVINGS } from '../lib/constants'
 import { useOnline } from '../lib/useOnline'
 import { formatMinutes, groupMeals, ratingIsStale, recipeRatings } from '../lib/stats'
 import StarPicker from '../components/StarPicker'
+import StepText from '../components/StepText'
 import NutritionPanel from '../components/NutritionPanel'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -296,14 +297,14 @@ export default function RecipeView() {
           <ol>
             {steps.map((step) => (
               <li key={step.id} style={{ marginBottom: 'var(--space-3)' }}>
-                {step.text}
+                <StepText text={step.text} ingredients={ingredients} factor={factor} system={system} />
               </li>
             ))}
           </ol>
         )}
         {factor !== 1 && (
           <p className="hint">
-            Times and pan sizes don't scale with amounts. For baked dishes, a smaller pan may be needed.
+            Amounts in bold in the steps are scaled to match the ingredients. Times and pan sizes don't scale. For baked dishes, a smaller pan may be needed.
           </p>
         )}
       </section>

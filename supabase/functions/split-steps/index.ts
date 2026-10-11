@@ -10,8 +10,11 @@
 // verification stays on when it's deployed).
 //
 // Request body (JSON): { title, ingredients: string[], steps: string[] }
-// Response: { splittable, reason, names: { a, b }, tracks: ("a" | "b" | "both")[] }
-//   tracks has one entry per step, in order.
+// Response: { splittable, reason, names: { a, b }, tracks: ("a" | "b" | "both")[],
+//   timing: [{ minutes, heads_up }], while_waiting: { a: string[], b: string[] } }
+//   tracks and timing have one entry per step, in order. heads_up is set for
+//   steps that need a head start (preheating, boiling water). while_waiting
+//   is cleanup each cook can do after finishing their part.
 
 const DEFAULT_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
 const FUNCTION_NAME = 'split-steps'
@@ -55,6 +58,9 @@ export function buildPrompt(input: Input) {
     '- Balance the tracks so they take about the same time.',
     '- name_a and name_b: one to three words for what each track makes, like "Sauce" and "Pasta".',
     '- If two people can\'t share the work (each step needs the one before it), set splittable to false and give a one-sentence reason. Still return a track for every step.',
+    '- minutes: about how long each step takes, including waiting in it (preheating, baking, simmering). Whole minutes.',
+    '- heads_up: only for a step that has to start before it is needed, like preheating an oven, boiling water, or softening butter. One short sentence saying why to start it now, like "The oven takes about 10 minutes to heat, so start it now and it will be ready when the cups are filled." Otherwise null.',
+    '- while_waiting_a and while_waiting_b: up to 3 short cleanup or tidy-up tasks the cook of that track can do once their part is done, based on what they used, like "Toss the egg shells" or "Put away the spices". Plain, a few words each.',
     '- Return one entry for every step, using the step numbers below.',
     '',
     `Recipe: ${input.title}`,
@@ -79,10 +85,14 @@ const SCHEMA = {
         properties: {
           number: { type: 'INTEGER' },
           track: { type: 'STRING', enum: TRACKS },
+          minutes: { type: 'INTEGER', nullable: true },
+          heads_up: { type: 'STRING', nullable: true },
         },
         required: ['number', 'track'],
       },
     },
+    while_waiting_a: { type: 'ARRAY', items: { type: 'STRING' } },
+    while_waiting_b: { type: 'ARRAY', items: { type: 'STRING' } },
   },
   required: ['splittable', 'name_a', 'name_b', 'steps'],
 }
@@ -97,6 +107,10 @@ const shortName = (value: unknown, fallback: string) => {
 // split.
 export function cleanSplit(raw: any, stepCount: number) {
   const tracks: Track[] = Array(stepCount).fill('both')
+  const timing: { minutes: number | null; heads_up: string | null }[] = Array.from({ length: stepCount }, () => ({
+    minutes: null,
+    heads_up: null,
+  }))
   const seen = new Set<number>()
   for (const r of Array.isArray(raw?.steps) ? raw.steps : []) {
     const number = Number(r?.number)
@@ -104,7 +118,19 @@ export function cleanSplit(raw: any, stepCount: number) {
     if (!TRACKS.includes(r?.track)) continue
     seen.add(number)
     tracks[number - 1] = r.track
+    const minutes = Number(r?.minutes)
+    timing[number - 1] = {
+      minutes: Number.isInteger(minutes) && minutes > 0 && minutes <= 600 ? minutes : null,
+      heads_up: typeof r?.heads_up === 'string' && r.heads_up.trim() ? r.heads_up.trim().slice(0, 200) : null,
+    }
   }
+  const tasks = (list: unknown) =>
+    (Array.isArray(list) ? list : [])
+      .map((t) => (typeof t === 'string' ? t.trim().replace(/\.$/, '') : ''))
+      .filter(Boolean)
+      .slice(0, 3)
+      .map((t) => t.slice(0, 80))
+  const while_waiting = { a: tasks(raw?.while_waiting_a), b: tasks(raw?.while_waiting_b) }
   const names = { a: shortName(raw?.name_a, 'Track 1'), b: shortName(raw?.name_b, 'Track 2') }
   if (names.a.toLowerCase() === names.b.toLowerCase()) names.b = `${names.b} 2`
   const reason = typeof raw?.reason === 'string' && raw.reason.trim() ? raw.reason.trim() : null
@@ -115,9 +141,11 @@ export function cleanSplit(raw: any, stepCount: number) {
       reason: reason ?? 'Each step needs the one before it, so there is nothing for a second cook to do at the same time.',
       names,
       tracks,
+      timing,
+      while_waiting,
     }
   }
-  return { splittable: true, reason: null, names, tracks }
+  return { splittable: true, reason: null, names, tracks, timing, while_waiting }
 }
 
 // How much the model "thinks" before answering. Less thinking answers

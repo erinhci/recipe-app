@@ -174,12 +174,17 @@ export async function restoreRecipe(recipeId) {
 // Saves a two-chef split: track names on the recipe and a track on each
 // step (in step order). Step edit times stay as they were, so this
 // doesn't count as a recipe change for ratings.
-export async function saveChefSplit(recipeId, names, tracks) {
+// extra: { timing: [{ minutes, heads_up }], while_waiting: { a, b } }, kept
+// with the track names on the recipe.
+export async function saveChefSplit(recipeId, names, tracks, extra = {}) {
   await db.transaction('rw', [db.recipes, db.steps, db.outbox], async () => {
     const recipe = await db.recipes.get(recipeId)
     if (!recipe) return
     const steps = await db.steps.where('recipe_id').equals(recipeId).sortBy('position')
-    const updated = pick({ ...recipe, chef_tracks: { a: names.a, b: names.b } }, RECIPE_FIELDS)
+    const chefTracks = { a: names.a, b: names.b }
+    if (Array.isArray(extra.timing)) chefTracks.timing = extra.timing
+    if (extra.while_waiting) chefTracks.while_waiting = extra.while_waiting
+    const updated = pick({ ...recipe, chef_tracks: chefTracks }, RECIPE_FIELDS)
     await db.recipes.put(updated)
     await enqueue('recipes', 'upsert', updated)
     for (const [index, step] of steps.entries()) {

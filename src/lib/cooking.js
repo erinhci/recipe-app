@@ -1,4 +1,4 @@
-import { displayIngredient } from './units.js'
+import { displayIngredient, normalizeUnit, parseQuantity } from './units.js'
 
 // Which ingredients a step mentions, so cooking mode can show their
 // scaled amounts right under that step.
@@ -59,4 +59,77 @@ export function ingredientsForStep(stepText, ingredients) {
 export function ingredientLine(ing, factor, system) {
   const shown = displayIngredient(ing, factor, system)
   return [shown.text, ing.item].filter(Boolean).join(' ') + (ing.prep_note ? `, ${ing.prep_note}` : '')
+}
+
+// ---------------------------------------------------------------------------
+// Amounts inside step text
+// ---------------------------------------------------------------------------
+
+// An amount like "4", "1/4", "1 1/2", or "½", optionally a range ("2-3"),
+// then the next word, which may be its unit.
+const AMOUNT = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+|[¼½¾⅓⅔⅛])(\s*(?:-|–|to)\s*(?:\d+\/\d+|\d*\.?\d+))?(\s+(fl\.?\s?oz\.?|[A-Za-z]+\.?))?/g
+
+// Steps often repeat the ingredient amounts ("whisk 4 large eggs, 2 tbsp
+// water"). This rewrites those amounts to match the scaled ingredient
+// list, so the step and "You'll need" never disagree. An amount is only
+// changed when it equals an ingredient's original amount and unit and is
+// followed by that ingredient's name; anything else ("6 muffin cups",
+// "18-20 minutes") is left alone.
+// Returns parts: [{ text, scaled }], where scaled marks a changed amount.
+export function scaleStepText(text, ingredients, factor = 1, system = 'us') {
+  const source = String(text ?? '')
+  const parts = []
+  let last = 0
+  for (const match of source.matchAll(AMOUNT)) {
+    const [whole, number, range, , word] = match
+    const start = match.index
+    // Part of a longer number or word ("x2", "1/4-inch" is fine).
+    if (start > 0 && /[\w/.]/.test(source[start - 1])) continue
+    if (range) continue
+    const value = parseQuantity(number)
+    if (value == null) continue
+
+    const wordUnit = word ? normalizeUnit(word) : null
+    const best = bestIngredient(source, start + number.length, start + whole.length, value, word, wordUnit, ingredients)
+    if (!best) continue
+
+    const consumesUnit = Boolean(best.unit)
+    const original = consumesUnit ? whole.trim() : number
+    const shown = displayIngredient(best, factor, system).text
+    if (!shown) continue
+    if (start > last) parts.push({ text: source.slice(last, start), scaled: false })
+    const changed = shown.replace(/\s+/g, ' ') !== original.replace(/\s+/g, ' ')
+    parts.push({ text: changed ? shown : original, scaled: changed })
+    last = start + original.length
+  }
+  if (last < source.length) parts.push({ text: source.slice(last), scaled: false })
+  return parts
+}
+
+// The ingredient an amount in a step refers to, or null.
+function bestIngredient(source, afterNumber, afterUnit, value, word, wordUnit, ingredients) {
+  let best = null
+  let bestScore = 0
+  for (const ing of ingredients) {
+    if (ing.quantity == null || Math.abs(Number(ing.quantity) - value) > 0.01) continue
+    const ingUnit = ing.unit ? normalizeUnit(ing.unit) : null
+    if (ingUnit && wordUnit !== ingUnit) continue
+    if (!ingUnit && word && ['tsp', 'tbsp', 'cup', 'oz', 'lb', 'g', 'kg', 'ml', 'l'].includes(wordUnit)) continue
+    // The words right after the amount (and unit), up to the next comma.
+    const rest = source.slice(ingUnit ? afterUnit : afterNumber)
+    const following = new Set(words(rest.split(/[,.;:(]/)[0]).slice(0, 7).map(singular))
+    const keys = keyWords(ing.item)
+    if (keys.length === 0 || !following.has(keys[keys.length - 1])) continue
+    const score = keys.filter((k) => following.has(k)).length / keys.length
+    if (score > bestScore) {
+      best = ing
+      bestScore = score
+    }
+  }
+  return best
+}
+
+// Step text as plain text, with amounts scaled.
+export function scaledStepString(text, ingredients, factor, system) {
+  return scaleStepText(text, ingredients, factor, system).map((p) => p.text).join('')
 }

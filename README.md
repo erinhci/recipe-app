@@ -27,7 +27,8 @@ Next: the Next features in the build spec.
    in order: `0001_init.sql`, `0002_remove_members.sql`,
    `0003_nutrition.sql`, `0004_source_credit.sql`,
    `0005_drop_recipe_copies.sql`, `0006_drop_cooking_sessions.sql`
-   (after both phones are on 0.16.0), then `0007_two_chef.sql`. (Run
+   (after both phones are on 0.16.0), `0007_two_chef.sql`, then
+   `0008_shared_servings_half_stars.sql`. (Run
    `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and

@@ -3,17 +3,22 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import Working from '../components/Working'
+import StepText from '../components/StepText'
+import ServingsBar from '../components/ServingsBar'
+import AskStep from '../components/AskStep'
+import QuickNote from '../components/QuickNote'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal, saveChefSplit } from '../lib/data'
+import { formatMinutes } from '../lib/stats'
 import { scaleFactor } from '../lib/units'
 import { ingredientLine, ingredientsForStep } from '../lib/cooking'
 import { invokeFunction } from '../lib/functions'
 import { useOnline } from '../lib/useOnline'
 import { useWakeLock } from '../lib/useWakeLock'
 import { DEFAULT_SERVINGS } from '../lib/constants'
-import { currentOn, nextFor, otherSide, sideOf, splitIsCurrent, stepStates } from '../lib/twoChef'
-import { claimChef, endCook, fetchCook, moveStep, setStepDone, startCook, swapChefs, watchCook } from '../lib/twoChefLive'
+import { currentOn, meetAt, minutesLeft, nextFor, otherSide, sideOf, splitIsCurrent, stepStates } from '../lib/twoChef'
+import { claimChef, endCook, fetchCook, moveStep, setServings, setStepDone, startCook, swapChefs, watchCook } from '../lib/twoChefLive'
 
 // How often to re-read the shared cook as a backup to live updates.
 const POLL_MS = 5000
@@ -44,7 +49,7 @@ export default function TwoChef() {
   const { member } = useAuth()
   const online = useOnline()
   const wakeLock = useWakeLock()
-  const servings = Number(params.get('servings')) || DEFAULT_SERVINGS
+  const urlServings = Number(params.get('servings')) || DEFAULT_SERVINGS
   const system = params.get('units') === 'metric' ? 'metric' : 'us'
 
   const data = useLiveQuery(async () => {
@@ -72,7 +77,7 @@ export default function TwoChef() {
     if (!ready || cook) return
     let cancelled = false
     ;(async () => {
-      const result = online ? await startCook(id) : { ok: false, offline: true }
+      const result = online ? await startCook(id, urlServings) : { ok: false, offline: true }
       if (cancelled) return
       if (result.ok && result.cook) {
         setCook(result.cook)
@@ -86,7 +91,7 @@ export default function TwoChef() {
     return () => {
       cancelled = true
     }
-  }, [ready, cook, online, id, local.cook])
+  }, [ready, cook, online, id, local.cook, urlServings])
 
   // Live updates from the other phone, with a slow re-read as a backup.
   const cookId = live ? cook?.id : null
@@ -167,7 +172,7 @@ export default function TwoChef() {
 
   const { recipe, ingredients, steps, members } = data
   const backToRecipe = `/recipe/${id}`
-  const soloLink = `/recipe/${id}/cook?servings=${servings}&units=${system}`
+  const soloLink = `/recipe/${id}/cook?servings=${urlServings}&units=${system}`
   const me = member.user_id
   const partner = members.find((m) => m.user_id !== me && !m.removed_at)
   const nameFor = (userId) => (userId === me ? 'You' : members.find((m) => m.user_id === userId)?.display_name ?? 'The other cook')
@@ -181,7 +186,10 @@ export default function TwoChef() {
     })
     if (!result.ok) return setSplit({ state: 'error', message: result.message })
     if (!result.data.splittable) return setSplit({ state: 'unsplittable', reason: result.data.reason })
-    await saveChefSplit(recipe.id, result.data.names, result.data.tracks)
+    await saveChefSplit(recipe.id, result.data.names, result.data.tracks, {
+      timing: result.data.timing,
+      while_waiting: result.data.while_waiting,
+    })
     setSplit({ state: 'idle' })
   }
 
@@ -194,7 +202,7 @@ export default function TwoChef() {
   if (!ready) {
     const redo = Boolean(recipe.chef_tracks)
     return (
-      <Page title={`${recipe.title}: two chefs`}>
+      <Page title={`${recipe.title}: two chefs`} close={{ label: 'Leave two-chef mode', onClick: () => navigate(backToRecipe) }}>
         <p>
           {redo
             ? 'The steps changed since this recipe was split, so it needs splitting again.'
@@ -242,7 +250,10 @@ export default function TwoChef() {
   }
 
   const names = recipe.chef_tracks
+  const timing = names.timing
   const states = stepStates(steps, cook)
+  // Both phones share the servings of the cook, so their amounts match.
+  const servings = Number(cook.servings) || urlServings
   const liveSide = live ? sideOf(cook, me) : null
   // The server's assignment wins; this phone's own pick covers offline.
   const side = local.side === 'all' ? 'all' : liveSide ?? local.side ?? null
@@ -287,6 +298,13 @@ export default function TwoChef() {
     setStatus(`Step ${state.number} moved to ${whoHas(track)}.`)
   }
 
+  function changeServings(n) {
+    change(
+      (c) => ({ ...c, servings: n }),
+      (cid) => setServings(cid, n),
+    )
+  }
+
   function swap() {
     change(
       (c) => ({ ...c, chef_a: c.chef_b, chef_b: c.chef_a }),
@@ -312,7 +330,7 @@ export default function TwoChef() {
   // --- Pick who makes what ----------------------------------------------
   if (!side) {
     return (
-      <Page title={`${recipe.title}: two chefs`}>
+      <Page title={`${recipe.title}: two chefs`} close={{ label: 'Leave two-chef mode', onClick: () => navigate(backToRecipe) }}>
         {problem && (
           <p className="error" role="alert">
             {problem}
@@ -345,9 +363,6 @@ export default function TwoChef() {
             </button>
           </div>
         </section>
-        <p>
-          <Link to={backToRecipe}>Back to the recipe</Link>
-        </p>
       </Page>
     )
   }
@@ -356,14 +371,55 @@ export default function TwoChef() {
   const next = nextFor(states, side)
   const otherOn = side !== 'all' ? currentOn(states, otherSide(side)) : null
   const otherName = live ? nameFor(side === 'a' ? cook.chef_b : cook.chef_a) : 'The other cook'
+  const meet = meetAt(states)
+  const left = minutesLeft(states, timing)
+  const minutesOf = (state) => timing?.[state.number - 1]?.minutes ?? null
+  const headsUp = (state) => timing?.[state.number - 1]?.heads_up ?? null
+  const cleanup = side !== 'all' ? names.while_waiting?.[side] ?? [] : []
+  const isNext = (state) => (next.kind === 'step' || next.kind === 'waiting') && next.state.step.id === state.step.id
+  const askIndex = next.kind === 'step' || next.kind === 'waiting' ? next.state.number - 1 : null
+
+  // Shown while waiting on the other cook: where you meet, and what to tidy.
+  const whileWaiting = (
+    <>
+      {meet && (
+        <p style={{ margin: 'var(--space-2) 0 0' }}>
+          You'll work together at step {meet.number}: <StepText text={meet.step.text} ingredients={ingredients} factor={factor} system={system} />
+        </p>
+      )}
+      <h3>While you wait</h3>
+      {cleanup.length > 0 ? (
+        <ul className="cook-needs">
+          {cleanup.map((task) => (
+            <li key={task}>{task}</li>
+          ))}
+        </ul>
+      ) : (
+        <p style={{ margin: 0 }}>Put away what you're done with and rinse your bowls and tools.</p>
+      )}
+    </>
+  )
 
   return (
-    <Page title={`${recipe.title}: two chefs`}>
-      <p className="hint">
-        {servings} {servings === 1 ? 'serving' : 'servings'} · {system === 'metric' ? 'Metric' : 'US'} units
-        {wakeLock === 'on' ? ' · Screen stays on' : ''}
-        {!live && ' · Not connected, so progress stays on this phone'}
+    <Page title={`${recipe.title}: two chefs`} close={{ label: 'Leave two-chef mode', onClick: leave }}>
+      <p className="hint" style={{ marginBottom: 0 }}>
+        {[
+          left != null
+            ? `About ${formatMinutes(left)} left`
+            : recipe.total_time_minutes > 0 && `About ${formatMinutes(recipe.total_time_minutes)} in all`,
+          system === 'metric' ? 'Metric units' : 'US units',
+          wakeLock === 'on' && 'Screen stays on',
+          !live && 'Not connected, so progress stays on this phone',
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
+      <ServingsBar
+        servings={servings}
+        base={recipe.base_servings}
+        onChange={changeServings}
+        note={live ? 'Both phones use these servings.' : null}
+      />
       <div className="row-between">
         <p style={{ margin: 0 }}>
           {side === 'all' ? (
@@ -404,7 +460,11 @@ export default function TwoChef() {
                 Step {next.state.number} of {steps.length}
                 {next.state.track === 'both' ? ' · together' : side === 'all' ? ` · ${names[next.state.track]}` : ''}
               </h2>
-              <p className="cook-step">{next.state.step.text}</p>
+              {headsUp(next.state) && <p className="heads-up">Start now: {headsUp(next.state)}</p>}
+              <p className="cook-step">
+                <StepText text={next.state.step.text} ingredients={ingredients} factor={factor} system={system} />
+              </p>
+              {minutesOf(next.state) && <p className="hint">About {formatMinutes(minutesOf(next.state))}</p>}
             </>
           )}
           {next.kind === 'waiting' && (
@@ -417,6 +477,7 @@ export default function TwoChef() {
                 {next.on.map((w) => w.number).join(', ')} {next.on.length === 1 ? 'is' : 'are'} done.
                 {otherOn && live ? ` ${otherName} is on step ${otherOn.number}.` : ''}
               </p>
+              {whileWaiting}
             </>
           )}
           {next.kind === 'mine-done' && (
@@ -427,6 +488,7 @@ export default function TwoChef() {
               <p className="cook-step">
                 {otherOn ? `${otherName} is on step ${otherOn.number}.` : 'Waiting on the other part.'}
               </p>
+              {whileWaiting}
             </>
           )}
           {next.kind === 'all-done' && (
@@ -453,6 +515,13 @@ export default function TwoChef() {
             <button className="btn btn-large" type="button" onClick={() => toggleDone(next.state)}>
               Done with step {next.state.number}
             </button>
+            {side !== 'all' && next.state.track !== 'both' && (
+              <p style={{ margin: 'var(--space-2) 0 0', textAlign: 'center' }}>
+                <button className="link-btn" type="button" onClick={() => move(next.state, otherSide(next.state.track))}>
+                  Give this step to {live ? otherName : 'the other cook'}
+                </button>
+              </p>
+            )}
           </>
         )}
         {next.kind === 'all-done' && (
@@ -471,9 +540,21 @@ export default function TwoChef() {
           {states.map((state) => {
             const yours = side === 'all' || state.track === side || state.track === 'both'
             return (
-              <li key={state.step.id} className={[yours ? '' : 'theirs', state.done ? 'is-done' : ''].join(' ').trim()}>
-                <p className="step-owner">{whoHas(state.track)}</p>
-                <p className="step-text">{state.step.text}</p>
+              <li
+                key={state.step.id}
+                className={[yours ? '' : 'theirs', state.done ? 'is-done' : '', isNext(state) ? 'is-next' : ''].join(' ').trim()}
+                aria-current={isNext(state) ? 'step' : undefined}
+              >
+                <p className="step-owner">
+                  {isNext(state) && 'Your next step · '}
+                  {!yours && otherOn && otherOn.step.id === state.step.id && `${otherName} is here · `}
+                  {whoHas(state.track)}
+                  {minutesOf(state) && ` · about ${formatMinutes(minutesOf(state))}`}
+                </p>
+                {headsUp(state) && !state.done && <p className="heads-up">Start now: {headsUp(state)}</p>}
+                <p className="step-text">
+                  <StepText text={state.step.text} ingredients={ingredients} factor={factor} system={system} />
+                </p>
                 <div className="comment-actions">
                   <label className="choice">
                     <input type="checkbox" checked={state.done} onChange={() => toggleDone(state)} />
@@ -503,10 +584,22 @@ export default function TwoChef() {
         </ul>
       </details>
 
+      {askIndex != null && (
+        <AskStep
+          recipe={recipe}
+          steps={steps}
+          ingredients={ingredients}
+          factor={factor}
+          system={system}
+          servings={servings}
+          stepIndex={askIndex}
+          online={online}
+        />
+      )}
+
+      <QuickNote recipeId={recipe.id} member={member} />
+
       <p className="actions">
-        <button className="btn btn-secondary" type="button" onClick={leave}>
-          Back to the recipe
-        </button>
         {online && (
           <button className="link-btn" type="button" onClick={runSplitAgain} disabled={split.state === 'working'}>
             Split again

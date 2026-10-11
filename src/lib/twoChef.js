@@ -58,3 +58,20 @@ export function nextFor(states, side) {
 export function currentOn(states, side) {
   return states.find((s) => !s.done && (s.track === side || s.track === 'both')) ?? null
 }
+
+// The next shared step not yet done, where the two parts meet.
+export function meetAt(states) {
+  return states.find((s) => !s.done && s.track === 'both') ?? null
+}
+
+// About how many minutes are left, from the split's step times: the
+// longer of the two parts still to do, plus the shared steps (the two
+// parts run at the same time). Null when the split has no step times.
+export function minutesLeft(states, timing) {
+  if (!Array.isArray(timing) || timing.every((t) => !t?.minutes)) return null
+  const left = { a: 0, b: 0, both: 0 }
+  for (const s of states) {
+    if (!s.done) left[s.track] += timing[s.number - 1]?.minutes ?? 0
+  }
+  return Math.max(left.a, left.b) + left.both
+}

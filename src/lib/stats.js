@@ -64,7 +64,7 @@ export function recipeRatings(recipeId, cookLog, ratings) {
       !previous ||
       log.cooked_on > previous.cooked_on ||
       (log.cooked_on === previous.cooked_on && (rating.created_at ?? '') > (previous.created_at ?? ''))
-    if (newer) latest.set(rating.member_id, { stars: rating.stars, cooked_on: log.cooked_on, created_at: rating.created_at })
+    if (newer) latest.set(rating.member_id, { stars: Number(rating.stars), cooked_on: log.cooked_on, created_at: rating.created_at })
   }
   const byMember = Object.fromEntries([...latest].map(([member, r]) => [member, r.stars]))
   const ratedAt = Object.fromEntries([...latest].map(([member, r]) => [member, r.created_at ?? null]))

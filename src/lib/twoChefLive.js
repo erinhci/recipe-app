@@ -11,7 +11,7 @@ function failure(error) {
     return { ok: false, offline: true, message: "Couldn't reach the server. Your check-offs are kept on this phone." }
   }
   if (error?.code === 'PGRST202' || /could not find the function|does not exist/i.test(text)) {
-    return { ok: false, message: 'Two-chef mode isn\'t set up yet. Run migration 0007_two_chef.sql in Supabase.' }
+    return { ok: false, message: 'Two-chef mode isn\'t set up yet. Run the newest migrations in Supabase (0007 and 0008).' }
   }
   return { ok: false, message: text || 'Something went wrong. Try again.' }
 }
@@ -26,7 +26,14 @@ async function call(fn, args) {
   }
 }
 
-export const startCook = (recipeId) => call('start_two_chef', { p_recipe: recipeId })
+// Opens or joins the recipe's cook. The first phone's servings are shared.
+// Before migration 0008, the function takes only the recipe.
+export async function startCook(recipeId, servings) {
+  const result = await call('start_two_chef', { p_recipe: recipeId, p_servings: servings })
+  if (!result.ok && /set up yet/.test(result.message)) return call('start_two_chef', { p_recipe: recipeId })
+  return result
+}
+export const setServings = (cookId, servings) => call('set_servings', { p_cook: cookId, p_servings: servings })
 export const claimChef = (cookId, side) => call('claim_chef', { p_cook: cookId, p_side: side })
 export const swapChefs = (cookId) => call('swap_chefs', { p_cook: cookId })
 export const setStepDone = (cookId, stepId, done) => call('set_step_done', { p_cook: cookId, p_step: stepId, p_done: done })

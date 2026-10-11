@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.19.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Amounts in the steps now match the servings you picked, in bold, so they never disagree with the ingredient list",
+      "Cooking modes show servings with a stepper, and in two-chef mode both phones share the same servings",
+      "Two-chef mode: time left, \"start now\" for steps like preheating, your next step marked in the list, give a step away right under Done, and what to tidy while you wait",
+      "Ask about a step and add a note for next time from either cooking mode, and leave with the X at the top",
+      "Half-star ratings: tap or drag across the stars"
+    ]
+  },
+  {
     "version": "0.18.1",
     "date": "2026-10-11",
     "notes": [

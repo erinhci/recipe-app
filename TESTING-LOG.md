@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | First two-chef cook (egg bites): mismatched amounts in steps, a skipped preheat, idle waiting, missed hand-off, no way to note a change mid-cook, and more | Fixes and additions in 0.19.0; ounces for weighing and Partner's preference for the step list are open | See entry |
 | 2026-10-11 | Partner's PDF import was refused for being over 8 MB, and a recipe link failed with a vague error | Large PDFs read on the phone and sent as text or page images; links fetched like a browser with a backup reader; specific error messages (0.18.1) | See entry |
 | 2026-10-11 | Two-chef mode from the plan wasn't built yet | Built: Gemini split, pick a part, live check-offs on both phones, shared steps, hand-offs (0.18.0) | See entry |
 | 2026-10-11 | Cooking mode hid every step but the current one, which is hard when hands are busy or messy | Upcoming steps listed under the current one; finished steps under Done (0.17.0) | See entry |
@@ -32,6 +33,45 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: First two-chef cook (egg bites)
+
+**Session.** Erin and Partner made egg bites (6 servings) in two-chef mode
+on two phones. Gemini split the recipe into "Egg Mixture" (Erin) and "Pan
+and Fillings" (Partner), with pouring and baking as a shared step. Erin
+took notes and screenshots and recorded a 15-minute voice memo (transcript
+to follow).
+
+**Findings and changes (version 0.19.0).**
+
+| # | Finding | Change |
+| --- | --- | --- |
+| 1 | The app opens at 2 servings and Erin forgot to change it. "You'll need" showed 2-serving amounts (1 1/3 eggs) while the step text still said "4 large eggs", so they used the wrong amounts before noticing | Amounts in step text are rewritten to match the scaled ingredient list and shown in bold. An amount only changes when it matches an ingredient's original amount and the ingredient's name follows it, so counts like "6 muffin cups" and times stay as written |
+| 2 | Same session: the servings weren't visible enough in cooking mode to catch the mistake | Both cooking modes show a servings stepper and "The recipe makes 6, so amounts are scaled. Make 6". In two-chef mode the servings live on the shared cook, so both phones always show the same amounts |
+| 3 | Partner skipped step 1 (preheat the oven) because he didn't want to preheat too early | The split now includes about how long each step takes and a "Start now" note for steps that need a head start, like "The oven takes about 10 minutes to heat…" |
+| 4 | Partner asked "How long does it take to cook?" | Two-chef mode shows "About N min left" at the top, from the step times; regular cooking mode shows the recipe's total time |
+| 5 | Erin finished her part early (the new oven took Partner longer to set up) and stood waiting | The waiting screen says who is on which step, where the two parts meet again ("You'll work together at step 5…"), and a few tidy-up tasks for that part from the split, like "Toss the egg shells" and "Put away the seasonings" |
+| 6 | Partner didn't see the option to give a step to the other cook; with one step each it's easy to miss | "Give this step to Erin" sits right under the Done button |
+| 7 | Partner didn't use the large next-step card; he scrolled the list of all steps instead | The list marks "Your next step" with a border and shows where the other cook is ("Erin is here"). Whether the large card is needed at all stays open |
+| 8 | Two-chef mode had no step questions | "Ask about step N" works in two-chef mode, and answers use the scaled amounts |
+| 9 | They added a teaspoon of chicken bouillon mid-cook and had nowhere to record it | "Note for next time" in both cooking modes saves to the recipe's notes, where it can become a recipe change |
+| 10 | The only way out of cooking mode was a button at the bottom | An X at the top right of both cooking modes |
+| 11 | Ratings only allowed whole stars | Half stars, set by tapping or dragging across the stars (as in Letterboxd). It's a standard slider underneath, so it works with a screen reader and arrow keys |
+
+**Open.**
+
+- Partner measures chicken in ounces, not cups, because he tracks protein.
+  Showing weights for ingredients written by volume needs a weight for
+  each ingredient (a density table or Gemini), so it's left for later.
+- Whether the large next-step card earns its space in two-chef mode, given
+  Partner preferred the list. Worth watching in the next session.
+
+**What it means for the case study.** The core promise held: neither
+cook asked the other what to do next. The problems were at the edges of
+the split: timing (when to start the oven, how long it all takes), what
+to do while waiting, and amounts that didn't match. The scaling bug only
+surfaced because two people were reading two different parts of the
+screen.
 
 ## 2026-10-11: Partner's imports failed
 

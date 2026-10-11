@@ -2,14 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
-import Working from '../components/Working'
+import StepText from '../components/StepText'
+import ServingsBar from '../components/ServingsBar'
+import AskStep from '../components/AskStep'
+import QuickNote from '../components/QuickNote'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal } from '../lib/data'
+import { formatMinutes } from '../lib/stats'
 import { scaleFactor } from '../lib/units'
 import { ingredientLine, ingredientsForStep } from '../lib/cooking'
 import { useWakeLock } from '../lib/useWakeLock'
-import { askStep } from '../lib/askStep'
 import { useOnline } from '../lib/useOnline'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 
@@ -37,7 +40,7 @@ function writeSaved(recipeId, value) {
 
 export default function CookingMode() {
   const { id } = useParams()
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const { member } = useAuth()
   const online = useOnline()
@@ -58,9 +61,6 @@ export default function CookingMode() {
 
   const saved = useMemo(() => readSaved(id), [id])
   const [stepIndex, setStepIndex] = useState(saved?.step ?? 0)
-  const [answers, setAnswers] = useState({}) // step index -> [{ question, answer, error }]
-  const [question, setQuestion] = useState('')
-  const [asking, setAsking] = useState(false)
 
   // Remember the step, so coming back to cooking mode picks up there.
   useEffect(() => {
@@ -105,7 +105,6 @@ export default function CookingMode() {
   const current = Math.min(stepIndex, lastIndex)
   const step = steps[current]
   const needed = step ? ingredientsForStep(step.text, ingredients) : []
-  const stepAnswers = answers[current] ?? []
 
   // Finish logs today's meal (its time comes from the recipe's total
   // time) and goes to "How was it?". Stop cooking logs nothing.
@@ -117,37 +116,22 @@ export default function CookingMode() {
     navigate(`/recipe/${id}`, { replace: true, state: { finishedCooking: { day: today, alreadyLogged } } })
   }
 
-  async function handleAsk(event) {
-    event.preventDefault()
-    const text = question.trim()
-    if (!text || asking) return
-    setAsking(true)
-    const result = await askStep({
-      recipe,
-      servings,
-      ingredientLines: ingredients.map((ing) => ingredientLine(ing, factor, system)),
-      steps,
-      stepNumber: current + 1,
-      question: text,
-    })
-    setAnswers((all) => ({
-      ...all,
-      [current]: [...(all[current] ?? []), { question: text, answer: result.answer, error: result.ok ? null : result.message }],
-    }))
-    if (result.ok) setQuestion('')
-    setAsking(false)
+  function changeServings(n) {
+    setParams({ servings: String(n), units: system }, { replace: true })
   }
 
   return (
-    <Page title={recipe.title}>
-      <p className="hint">
-        {servings} {servings === 1 ? 'serving' : 'servings'} · {system === 'metric' ? 'Metric' : 'US'} units ·{' '}
-        {wakeLock === 'on'
-          ? 'Screen stays on'
-          : wakeLock === 'checking'
-            ? ''
-            : "This phone can't keep the screen on; tap it now and then"}
+    <Page title={recipe.title} close={{ label: 'Exit cooking mode', onClick: () => finish(false) }}>
+      <p className="hint" style={{ marginBottom: 0 }}>
+        {[
+          recipe.total_time_minutes > 0 && `About ${formatMinutes(recipe.total_time_minutes)} in all`,
+          system === 'metric' ? 'Metric units' : 'US units',
+          wakeLock === 'on' ? 'Screen stays on' : wakeLock === 'checking' ? '' : "This phone can't keep the screen on; tap it now and then",
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
+      <ServingsBar servings={servings} base={recipe.base_servings} onChange={changeServings} />
 
       {steps.length === 0 ? (
         <>
@@ -163,7 +147,9 @@ export default function CookingMode() {
               <h2 id="step-heading" className="cook-count">
                 Step {current + 1} of {steps.length}
               </h2>
-              <p className="cook-step">{step.text}</p>
+              <p className="cook-step">
+                <StepText text={step.text} ingredients={ingredients} factor={factor} system={system} />
+              </p>
             </div>
 
             {needed.length > 0 && (
@@ -185,7 +171,9 @@ export default function CookingMode() {
               <h2 id="coming-heading">Coming up</h2>
               <ol className="cook-upcoming" start={current + 2}>
                 {steps.slice(current + 1).map((upcoming) => (
-                  <li key={upcoming.id}>{upcoming.text}</li>
+                  <li key={upcoming.id}>
+                    <StepText text={upcoming.text} ingredients={ingredients} factor={factor} system={system} />
+                  </li>
                 ))}
               </ol>
             </section>
@@ -197,7 +185,9 @@ export default function CookingMode() {
               </summary>
               <ol className="cook-done">
                 {steps.slice(0, current).map((done) => (
-                  <li key={done.id}>{done.text}</li>
+                  <li key={done.id}>
+                    <StepText text={done.text} ingredients={ingredients} factor={factor} system={system} />
+                  </li>
                 ))}
               </ol>
             </details>
@@ -216,37 +206,18 @@ export default function CookingMode() {
             </ul>
           </details>
 
-          <section aria-labelledby="ask-heading">
-            <h2 id="ask-heading">Ask about this step</h2>
-            <div aria-live="polite">
-              {stepAnswers.map((item, index) => (
-                <div key={index} className="answer">
-                  <p style={{ fontWeight: 600 }}>{item.question}</p>
-                  {item.error ? <p className="error">{item.error}</p> : <p style={{ margin: 0 }}>{item.answer}</p>}
-                </div>
-              ))}
-            </div>
-            <form onSubmit={handleAsk} className="field">
-              <label htmlFor="question">Your question</label>
-              <input
-                id="question"
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="What does fold in mean?"
-                maxLength={500}
-                disabled={!online}
-                aria-describedby="ask-hint"
-              />
-              <p id="ask-hint" className="hint" style={{ margin: 0 }}>
-                {online ? 'Gemini answers for this recipe at these amounts.' : 'Questions need the internet. The steps still work offline.'}
-              </p>
-              <button className="btn btn-secondary" type="submit" disabled={!online || asking || !question.trim()} style={{ alignSelf: 'flex-start' }}>
-                {asking ? 'Asking…' : 'Ask'}
-              </button>
-              {asking && <Working label="Getting an answer…" typical="a few seconds" />}
-            </form>
-          </section>
+          <AskStep
+            recipe={recipe}
+            steps={steps}
+            ingredients={ingredients}
+            factor={factor}
+            system={system}
+            servings={servings}
+            stepIndex={current}
+            online={online}
+          />
+
+          <QuickNote recipeId={recipe.id} member={member} />
 
           <p>
             <button className="btn btn-secondary" type="button" onClick={() => finish(false)}>
