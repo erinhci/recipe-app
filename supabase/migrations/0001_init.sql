@@ -354,6 +354,26 @@ create view public.stats_hours with (security_invoker = true) as
   where s.ended_at is not null;
 
 -- ---------------------------------------------------------------------------
+-- Table access for signed-in users. The project doesn't expose new tables
+-- automatically, so each grant is listed here. Row Level Security still
+-- decides which rows each person can see or change.
+-- ---------------------------------------------------------------------------
+
+grant usage on schema public to anon, authenticated;
+
+grant select, update on public.kitchens, public.members to authenticated;
+grant select on public.invites to authenticated;
+grant select, insert, update, delete on
+  public.recipes, public.ingredients, public.steps, public.recipe_versions,
+  public.cooking_sessions, public.cook_log, public.ratings
+  to authenticated;
+grant select, insert, delete on public.notes to authenticated;
+grant select on
+  public.stats_most_made, public.stats_latest_ratings, public.stats_cuisines,
+  public.stats_meal_types, public.stats_ingredients, public.stats_hours
+  to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Storage for original screenshots and PDFs: one folder per kitchen
 -- ---------------------------------------------------------------------------
 
