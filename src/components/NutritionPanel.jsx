@@ -16,15 +16,15 @@ const servingText = (n) => `${n} ${n === 1 ? 'serving' : 'servings'}`
 
 function NutrientTable({ caption, values }) {
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 'var(--space-3)' }}>
-      <caption style={{ textAlign: 'left', fontWeight: 600, marginBottom: 'var(--space-1)' }}>{caption}</caption>
+    <table className="nutrients">
+      <caption>{caption}</caption>
       <tbody>
         {NUTRIENTS.map((n) => (
-          <tr key={n.key} style={{ borderTop: '1px solid var(--color-border)' }}>
-            <th scope="row" style={{ textAlign: 'left', fontWeight: 400, padding: 'var(--space-1) 0' }}>
+          <tr key={n.key}>
+            <th scope="row" style={{ fontWeight: 400 }}>
               {n.label}
             </th>
-            <td style={{ textAlign: 'right', fontWeight: n.key === 'calories' || n.key === 'protein_g' ? 600 : 400 }}>
+            <td className="num" style={{ fontWeight: n.key === 'calories' || n.key === 'protein_g' ? 600 : 400 }}>
               {formatNutrient(n.key, values[n.key])}
             </td>
           </tr>
@@ -92,7 +92,7 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
       <h2 id="nutrition-heading">Nutrition (estimate)</h2>
 
       {stale && (
-        <div className="card" style={{ background: 'var(--color-flag-bg)' }}>
+        <div className="card notice">
           <p style={{ margin: '0 0 var(--space-2)' }}>
             The ingredients or servings changed since this was estimated. These numbers may be off.
           </p>
@@ -105,7 +105,7 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
           <span id="eaten-label" style={{ fontWeight: 600 }}>
             How much you ate
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }} role="group" aria-labelledby="eaten-label">
+          <div className="stepper" role="group" aria-labelledby="eaten-label">
             <button
               className="btn btn-secondary"
               type="button"
@@ -132,7 +132,7 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
       </div>
 
       <details className="card">
-        <summary style={{ minHeight: 'var(--target)', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 600 }}>
+        <summary>
           How this was estimated
         </summary>
         <p className="hint">
@@ -140,17 +140,17 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
           Estimated {dateFormat.format(new Date(nutrition.estimated_at))}.
         </p>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+          <table style={{ fontSize: 'var(--text-sm)' }}>
             <caption className="sr-only">Estimate for each ingredient, whole recipe</caption>
             <thead>
               <tr>
-                <th scope="col" style={{ textAlign: 'left' }}>
+                <th scope="col">
                   Ingredient
                 </th>
-                <th scope="col" style={{ textAlign: 'right', paddingLeft: 'var(--space-3)' }}>
+                <th scope="col" className="num">
                   Calories
                 </th>
-                <th scope="col" style={{ textAlign: 'right', paddingLeft: 'var(--space-3)' }}>
+                <th scope="col" className="num">
                   Protein
                 </th>
               </tr>
@@ -159,21 +159,21 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
               {basis.lines.map((line, i) => {
                 const item = byNumber.get(i + 1)
                 return (
-                  <tr key={i} style={{ borderTop: '1px solid var(--color-border)', verticalAlign: 'top' }}>
-                    <td style={{ padding: 'var(--space-1) var(--space-2) var(--space-1) 0' }}>
+                  <tr key={i}>
+                    <td>
                       {line}
                       {item?.assumption && <div className="hint">Assumed: {item.assumption}</div>}
                       {!item && <div className="hint">Not estimated</div>}
                     </td>
-                    <td style={{ textAlign: 'right' }}>{item ? item.calories : '–'}</td>
-                    <td style={{ textAlign: 'right' }}>{item ? `${item.protein_g} g` : '–'}</td>
+                    <td className="num">{item ? item.calories : '–'}</td>
+                    <td className="num">{item ? `${item.protein_g} g` : '–'}</td>
                   </tr>
                 )
               })}
-              <tr style={{ borderTop: '2px solid var(--color-border)', fontWeight: 600 }}>
+              <tr className="total">
                 <td>Whole recipe</td>
-                <td style={{ textAlign: 'right' }}>{Math.round(total.calories)}</td>
-                <td style={{ textAlign: 'right' }}>{Math.round(total.protein_g)} g</td>
+                <td className="num">{Math.round(total.calories)}</td>
+                <td className="num">{Math.round(total.protein_g)} g</td>
               </tr>
             </tbody>
           </table>

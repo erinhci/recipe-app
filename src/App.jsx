@@ -49,6 +49,7 @@ function Shell() {
   if (loading) {
     return (
       <main id="main" className="page">
+        <h1 className="sr-only">Our Kitchen</h1>
         <p role="status">Opening your kitchen…</p>
       </main>
     )

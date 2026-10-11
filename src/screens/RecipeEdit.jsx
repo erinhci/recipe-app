@@ -214,11 +214,11 @@ export default function RecipeEdit() {
                 {flagged === 1 ? 'it' : 'them'} before saving.
               </p>
             )}
-            <ul style={{ paddingLeft: 'var(--space-4)', margin: 0 }}>
+            <ul>
               {parsed.map((ing, i) => (
                 <li
                   key={i}
-                  style={ing.needs_review ? { background: 'var(--color-flag-bg)' } : undefined}
+                  className={ing.needs_review ? 'flagged' : undefined}
                 >
                   {ing.quantity != null ? <strong>{ingredientToLine({ ...ing, item: '', prep_note: null }).trim()}</strong> : <em>no amount</em>}
                   {' · '}

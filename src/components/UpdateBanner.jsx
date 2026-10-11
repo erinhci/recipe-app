@@ -74,7 +74,7 @@ export default function UpdateBanner() {
         {next ? `Version ${next.version} is ready` : 'A new version of the app is ready'}
         {next?.notes?.[0] && <span style={{ display: 'block', fontWeight: 400 }}>{next.notes[0]}</span>}
       </span>
-      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+      <div className="actions" style={{ margin: 0 }}>
         <button className="btn" type="button" onClick={() => updateServiceWorker(true)}>
           Update now
         </button>

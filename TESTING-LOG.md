@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Before deeper user testing, the look should be plain and the app should meet WCAG 2.2 AA | Black-and-white theme, spacing cleanup, accessibility audit and fixes (0.13.0) | See entry |
 | 2026-10-11 | Keeping earlier versions of every recipe isn't needed; the note already says what changed | Earlier versions removed; only a short note-to-change record is kept | See entry |
 | 2026-10-11 | The version in Settings (a commit code) said nothing useful | Version numbers with plain-language notes; what's new after updating | See entry |
 | 2026-10-11 | Keeping imported screenshots and PDFs is clutter once the recipe is checked | Originals no longer saved; the recipe's credit is kept instead | See entry |
@@ -25,6 +26,33 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Plain theme and accessibility pass
+
+**Decision.** Before running more in-depth user testing, Erin wanted the app
+to look like a plain MVP: black and white, consistent spacing, and up to
+WCAG 2.2 AA. A styled look at this stage would pull attention away from
+whether the features work, and plain tokens make a good starting template
+for the visual design later in Figma.
+
+**Change (version 0.13.0).**
+
+- Black, white, and grays in light and dark mode. Red only for errors,
+  always with words.
+- Spacing comes from shared layout classes instead of one-off settings, with
+  even gaps between sections and room above the bottom menu.
+- Accessibility audit and fixes; the full report is in
+  [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
+
+**What the audit showed.** Automated checks (axe-core) found nothing before
+or after the pass. Tabbing through the screens by hand found two real
+failures it missed: the note box ended up behind the bottom menu
+(2.4.11 Focus Not Obscured) and the date field showed no focus ring (2.4.7).
+Raw sync errors like "TypeError: Failed to fetch" were also caught by
+reading the screens, not by the tool.
+
+**Still to test.** VoiceOver on an iPhone in the installed app, the largest
+iOS text size, and Voice Control.
 
 ## 2026-10-11: Drop earlier versions of recipes
 

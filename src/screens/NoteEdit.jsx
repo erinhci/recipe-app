@@ -167,7 +167,7 @@ export default function NoteEdit() {
       {!online && result.status !== 'ready' && (
         <>
           <p>Gemini needs the internet to draft a change. You can still edit the recipe yourself.</p>
-          <p style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <p className="actions">
             <Link className="btn" to={`/recipe/${id}/edit`}>
               Edit the recipe
             </Link>
@@ -185,7 +185,7 @@ export default function NoteEdit() {
           <p className="error" role="alert">
             {result.message}
           </p>
-          <p style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <p className="actions">
             <button className="btn" type="button" onClick={ask} disabled={!online}>
               Try again
             </button>
@@ -197,7 +197,7 @@ export default function NoteEdit() {
       {result.status === 'none' && (
         <>
           <p role="status">No change found. {result.reason}</p>
-          <p style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <p className="actions">
             <Link className="btn" to={`/recipe/${id}/edit`}>
               Edit the recipe yourself
             </Link>
@@ -213,7 +213,7 @@ export default function NoteEdit() {
           <h2 id="proposal-heading">Suggested change</h2>
           <p role="status">{result.summary}</p>
           {result.skipped > 0 && (
-            <p className="card" style={{ background: 'var(--color-flag-bg)' }}>
+            <p className="card notice">
               Gemini suggested {result.skipped} more {result.skipped === 1 ? 'change' : 'changes'} that couldn't be applied, so
               this may not cover the whole note. Compare it with the note, then use Edit before saving to add anything missing.
             </p>
@@ -222,7 +222,7 @@ export default function NoteEdit() {
             Check each change. Amounts are as the recipe is written, for {result.base.recipe.base_servings} servings.
             Nothing is saved until you approve.
           </p>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="plain-list">
             {result.items.map((item) => (
               <li key={`${item.target}-${item.action}-${item.number}-${item.after}`} className="card">
                 <h3 style={{ fontSize: '1rem', margin: '0 0 var(--space-2)' }}>{itemHeading(item)}</h3>
@@ -252,7 +252,7 @@ export default function NoteEdit() {
               {saveError}
             </p>
           )}
-          <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <div className="actions">
             <button className="btn" type="button" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving…' : 'Save this change'}
             </button>

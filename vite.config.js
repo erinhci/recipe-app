@@ -34,8 +34,8 @@ export default defineConfig({
         name: 'Our Kitchen',
         short_name: 'Our Kitchen',
         description: 'A shared recipe app for two people who cook together.',
-        theme_color: '#7a2e1f',
-        background_color: '#fbf7f2',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
         icons: [

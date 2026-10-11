@@ -42,7 +42,7 @@ export default function Library() {
           </p>
         </div>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <ul className="plain-list">
           {recipes.map((recipe) => (
             <li key={recipe.id} className="card">
               <Link to={`/recipe/${recipe.id}`}>

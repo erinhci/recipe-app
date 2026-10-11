@@ -75,7 +75,7 @@ export default function SignIn() {
               type="checkbox"
               checked={showPassword}
               onChange={(e) => setShowPassword(e.target.checked)}
-              style={{ width: 22, height: 22 }}
+             
             />
             Show password
           </label>

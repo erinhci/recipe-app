@@ -15,13 +15,15 @@ function SyncStatus() {
     idle: lastSyncedAt ? `Up to date as of ${timeFormat.format(new Date(lastSyncedAt))}.` : 'Not synced yet.',
     syncing: 'Syncing…',
     offline: "Offline. Changes are saved on this phone and sync when you're back online.",
-    error: `Sync problem: ${error}`,
+    error: /fetch|network|load failed/i.test(String(error))
+      ? "Couldn't reach the server. Changes are saved on this phone and will sync when the connection is back."
+      : "Some changes didn't sync. Try Sync now; if it keeps happening, the details are below.",
   }[state]
   return (
     <section className="card" aria-labelledby="sync-heading">
       <h2 id="sync-heading">Sync</h2>
       <p role="status">{text}</p>
-      {state === 'idle' && error && <p className="hint">{error}</p>}
+      {error && !/fetch|network|load failed/i.test(String(error)) && <p className="hint">Details: {String(error)}</p>}
       <button className="btn btn-secondary" type="button" onClick={() => syncNow()} disabled={state === 'syncing'}>
         Sync now
       </button>
@@ -201,13 +203,13 @@ export default function Settings() {
           Released {releaseDate(current)} · build {__BUILD_COMMIT__}
         </p>
         <h3 style={{ fontSize: '1rem' }}>What's new</h3>
-        <ul style={{ paddingLeft: 'var(--space-6)' }}>
+        <ul>
           {current.notes.map((note) => (
             <li key={note}>{note}</li>
           ))}
         </ul>
         <details>
-          <summary style={{ minHeight: 'var(--target)', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 600 }}>
+          <summary>
             Earlier versions
           </summary>
           {releases.slice(1).map((release) => (

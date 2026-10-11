@@ -19,7 +19,7 @@ export default function RecentlyDeleted() {
       {!deleted || deleted.length === 0 ? (
         <p className="hint">Nothing here. Deleted recipes stay for 30 days.</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <ul className="plain-list">
           {deleted.map((recipe) => {
             const daysLeft = Math.max(0, 30 - Math.floor((Date.now() - new Date(recipe.deleted_at)) / DAY))
             return (

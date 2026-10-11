@@ -7,7 +7,8 @@ and Vercel.
 
 The product plan and build spec live in the project doc (Build spec tab).
 Findings from using the app and the changes they led to are in
-[TESTING-LOG.md](TESTING-LOG.md).
+[TESTING-LOG.md](TESTING-LOG.md). The accessibility audit is in
+[docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
 
 ## Status
 

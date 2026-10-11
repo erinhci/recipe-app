@@ -1,20 +1,32 @@
 /*
-  Design tokens. The MVP keeps styling plain; the visual design pass
-  later changes these values instead of rewriting components.
-  Text colors are checked against their backgrounds for WCAG 2.2 AA
-  (4.5:1 for body text, 3:1 for large text and UI borders).
+  Design tokens. The MVP is deliberately plain (black, white, and grays) so
+  testing is about how the app works, not how it looks. The visual design
+  pass later changes these values instead of rewriting components.
+
+  Contrast, calculated for WCAG 2.2 AA (4.5:1 text, 3:1 control borders
+  and focus rings). Worst case for each, light / dark:
+    text 16.9 / 13.5 · muted text 7.0 / 7.0 · control borders 4.1 / 4.9
+    error text 5.8 / 7.5 · button text 11.4 / 12.2 (on hover)
+  Dividers between items (#d4d4d4 / #3d3d3d) are decorative and carry no
+  meaning, so they're exempt.
+  Red is used only for errors, always with words, never as the only signal.
 */
 :root {
-  --color-bg: #fbf7f2;
+  color-scheme: light dark;
+
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-text: #1f1a17;        /* 16.2:1 on bg */
-  --color-text-muted: #5c524b;  /* 7.1:1 on bg */
-  --color-accent: #7a2e1f;      /* 8.8:1 on bg; 9.4:1 white on accent */
+  --color-subtle: #f2f2f2;       /* notices and hover fills */
+  --color-text: #111111;
+  --color-text-muted: #525252;
+  --color-accent: #111111;       /* primary buttons, links, selected states */
+  --color-accent-hover: #3a3a3a;
   --color-accent-text: #ffffff;
-  --color-border: #8a7f77;      /* 3.7:1 on bg for input borders */
-  --color-focus: #1d5fbf;
-  --color-error: #a8261b;       /* 6.7:1 on bg */
-  --color-flag-bg: #fff1c2;
+  --color-border: #767676;       /* inputs and controls */
+  --color-divider: #d4d4d4;      /* decorative lines between items */
+  --color-focus: #111111;
+  --color-error: #b3261e;
+  --color-flag-bg: var(--color-subtle);
 
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --text-sm: 0.9375rem;
@@ -27,26 +39,32 @@
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
+  --space-10: 2.5rem;
 
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --target: 44px;                /* minimum touch target */
   --nav-height: 64px;
+  --cook-nav-height: 80px;
+  --page-width: 40rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #171311;
-    --color-surface: #221c19;
-    --color-text: #f3ede8;
-    --color-text-muted: #c4b8af;
-    --color-accent: #f0a38f;
-    --color-accent-text: #1f1a17;
-    --color-border: #8f837a;
-    --color-focus: #8ab4ff;
-    --color-error: #ff8f84;
-    --color-flag-bg: #4a3b10;
+    --color-bg: #121212;
+    --color-surface: #1c1c1c;
+    --color-subtle: #262626;
+    --color-text: #f2f2f2;
+    --color-text-muted: #b0b0b0;
+    --color-accent: #f2f2f2;
+    --color-accent-hover: #d0d0d0;
+    --color-accent-text: #111111;
+    --color-border: #8a8a8a;
+    --color-divider: #3d3d3d;
+    --color-focus: #f2f2f2;
+    --color-error: #ff8a80;
   }
 }
 
@@ -58,6 +76,14 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgb(0 0 0 / 0.08);
+  touch-action: manipulation;
+  /* Keep a focused or scrolled-to item clear of the sticky bars (WCAG 2.4.11) */
+  scroll-padding-top: var(--space-4);
+  scroll-padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + var(--space-4));
+}
+html:has(.cook-nav) {
+  scroll-padding-bottom: calc(var(--cook-nav-height) + env(safe-area-inset-bottom) + var(--space-4));
 }
 
 body {
@@ -67,23 +93,57 @@ body {
   font-family: var(--font-body);
   font-size: var(--text-md);
   line-height: 1.5;
+  overflow-wrap: break-word;
 }
 
 h1, h2, h3 {
   line-height: 1.25;
   margin: 0 0 var(--space-3);
+  text-wrap: balance;
 }
 h1 { font-size: var(--text-xl); }
 h2 { font-size: var(--text-lg); }
+h3 { font-size: 1.0625rem; }
 
 p { margin: 0 0 var(--space-3); }
+ul, ol { margin: 0 0 var(--space-3); padding-left: var(--space-6); }
+li + li { margin-top: var(--space-2); }
 
-a { color: var(--color-accent); }
+a {
+  color: var(--color-accent);
+  text-underline-offset: 3px;
+}
+a:hover { text-decoration-thickness: 2px; }
 
 :focus-visible {
   outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
+/* Headings get focus when a screen opens, so screen readers start there.
+   They aren't controls, so they don't need the ring. */
+[tabindex='-1']:focus { outline: none; }
+
+summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--target);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+th, td {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-divider);
+  vertical-align: top;
+}
+th { text-align: left; }
+td.num, th.num { text-align: right; padding-left: var(--space-3); }
+caption { text-align: left; font-weight: 600; margin-bottom: var(--space-1); }
 
 button,
 input,
@@ -109,13 +169,45 @@ textarea {
   cursor: pointer;
   text-decoration: none;
 }
+.btn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
 .btn-secondary {
   background: transparent;
   color: var(--color-accent);
 }
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-subtle);
+  border-color: var(--color-accent);
+}
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* Layout helpers, so spacing comes from one place */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+.plain-list { list-style: none; padding: 0; margin: 0 0 var(--space-3); }
+.plain-list > li + li { margin-top: 0; }
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target);
+}
+.choice input { width: 22px; height: 22px; accent-color: var(--color-accent); margin: 0; }
+.choices { display: flex; flex-wrap: wrap; gap: var(--space-4); border: 0; padding: 0; margin: 0; }
+.meta { color: var(--color-text-muted); font-size: var(--text-sm); margin: 0 0 var(--space-3); }
+.notice {
+  background: var(--color-subtle);
+  border: 1px solid var(--color-border);
 }
 
 .field {
@@ -136,6 +228,18 @@ textarea {
   border-radius: var(--radius);
   background: var(--color-surface);
 }
+.field input:focus,
+.field input:focus-within,
+.field textarea:focus,
+.field select:focus,
+.comment-form textarea:focus {
+  /* Form fields always show the ring, including the parts inside a date field */
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.field input:hover,
+.field textarea:hover,
+.field select:hover { border-color: var(--color-text); }
 .hint {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
@@ -146,18 +250,30 @@ textarea {
 }
 
 .page {
-  max-width: 40rem;
+  max-width: var(--page-width);
   margin: 0 auto;
-  padding: var(--space-6) var(--space-4) calc(var(--nav-height) + var(--space-8));
+  padding: var(--space-6) var(--space-5) calc(var(--nav-height) + env(safe-area-inset-bottom) + var(--space-10));
 }
+.page:has(.cook-nav) {
+  padding-bottom: calc(var(--cook-nav-height) + env(safe-area-inset-bottom) + var(--space-10));
+}
+/* Space between a page's sections */
+.page > section,
+.page > details {
+  margin-top: var(--space-8);
+}
+.page > h1 + section,
+.page > h1 + .meta + section,
+.page > .card + section.card { margin-top: var(--space-4); }
 
 .card {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-divider);
   border-radius: var(--radius);
-  padding: var(--space-4);
-  margin-bottom: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  margin: 0 0 var(--space-3);
 }
+.card > :last-child { margin-bottom: 0; }
 
 .sr-only {
   position: absolute;
@@ -182,7 +298,8 @@ textarea {
 }
 
 .offline-banner {
-  background: var(--color-flag-bg);
+  background: var(--color-subtle);
+  border-bottom: 1px solid var(--color-border);
   padding: var(--space-2) var(--space-4);
   text-align: center;
   font-size: var(--text-sm);
@@ -198,6 +315,7 @@ textarea {
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+  z-index: 10;
 }
 .bottom-nav ul {
   display: flex;
@@ -219,8 +337,9 @@ textarea {
   text-decoration: none;
   font-weight: 600;
 }
+.bottom-nav a:hover { color: var(--color-text); }
 .bottom-nav a[aria-current='page'] {
-  color: var(--color-accent);
+  color: var(--color-text);
   text-decoration: underline;
   text-underline-offset: 6px;
   text-decoration-thickness: 3px;
@@ -261,6 +380,7 @@ textarea {
   padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+  z-index: 10;
 }
 .cook-nav .btn {
   flex: 1;
@@ -268,7 +388,7 @@ textarea {
   font-size: 1.125rem;
 }
 .answer {
-  background: var(--color-surface);
+  background: var(--color-subtle);
   border-left: 4px solid var(--color-accent);
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-3);
@@ -281,6 +401,7 @@ textarea {
   padding: 0;
   margin: 0 0 var(--space-3);
 }
+.stars label:hover { border-color: var(--color-text); }
 .stars label {
   display: inline-flex;
   align-items: center;
@@ -325,8 +446,8 @@ textarea {
   padding: var(--space-3) var(--space-4);
   margin: var(--space-3) 0;
   border-radius: var(--radius);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-subtle);
+  border: 1px solid var(--color-divider);
 }
 .spinner {
   flex: none;
@@ -360,8 +481,8 @@ textarea {
 .comment {
   display: flex;
   gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-divider);
 }
 .comment:first-child {
   border-top: 0;
@@ -409,6 +530,7 @@ textarea {
   text-underline-offset: 3px;
   cursor: pointer;
 }
+.link-btn:hover:not(:disabled) { text-decoration-thickness: 2px; }
 .link-btn:disabled {
   color: var(--color-text-muted);
   cursor: not-allowed;
@@ -418,8 +540,10 @@ textarea {
   gap: var(--space-2);
   align-items: flex-end;
 }
+.comment-form { margin-top: var(--space-2); }
 .comment-form textarea {
   flex: 1;
+  min-width: 0;
   min-height: var(--target);
   padding: var(--space-2) var(--space-3);
   border: 2px solid var(--color-border);
@@ -444,7 +568,7 @@ textarea {
   flex-wrap: wrap;
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
-  border: 2px solid var(--color-accent);
+  border: 2px solid var(--color-text);
   border-radius: var(--radius);
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
   font-weight: 600;
@@ -453,3 +577,29 @@ textarea {
   color: var(--color-text);
   font-weight: 600;
 }
+
+/* More layout helpers */
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.row-between {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.flagged {
+  background: var(--color-subtle);
+  border-left: 3px solid var(--color-text);
+  padding-left: var(--space-2);
+}
+.nutrients { margin-bottom: var(--space-3); }
+tr.total td { border-top: 2px solid var(--color-text); font-weight: 600; }
+/* A subheading after a card or list gets room above it */
+.card + h3,
+ul + h3,
+.plain-list + h3 { margin-top: var(--space-6); }

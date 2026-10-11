@@ -1,11 +1,21 @@
 [
   {
+    "version": "0.13.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Plain black-and-white look, in light and dark mode, so testing is about how the app works",
+      "More even spacing between sections, and hover states on buttons and links",
+      "Accessibility fixes: fields you tab to stay clear of the bottom menu, every field shows a focus ring, and sync errors are in plain words"
+    ]
+  },
+  {
     "version": "0.12.0",
     "date": "2026-10-11",
     "notes": [
       "Earlier versions of recipes are no longer kept, and the Earlier versions section is gone",
       "Notes still show what they changed, and \"rate it again\" still appears after the recipe is edited"
-    ]
+    ],
+    "commit": "9b5ab03"
   },
   {
     "version": "0.11.0",

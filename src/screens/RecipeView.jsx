@@ -185,7 +185,7 @@ export default function RecipeView() {
         <h2 id="servings-heading" className="sr-only">
           Servings and units
         </h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+        <div className="stepper">
           <button
             className="btn btn-secondary"
             type="button"
@@ -208,29 +208,29 @@ export default function RecipeView() {
             +
           </button>
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minHeight: 'var(--target)' }}>
+        <label className="choice">
           <input
             type="checkbox"
             checked={showOriginal}
             onChange={(e) => setShowOriginal(e.target.checked)}
-            style={{ width: 22, height: 22 }}
+           
           />
           Show original (serves {recipe.base_servings})
         </label>
-        <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'flex', gap: 'var(--space-4)' }}>
+        <fieldset className="choices">
           <legend className="sr-only">Units</legend>
           {[
             ['us', 'US'],
             ['metric', 'Metric'],
           ].map(([value, label]) => (
-            <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minHeight: 'var(--target)' }}>
+            <label key={value} className="choice">
               <input
                 type="radio"
                 name="units"
                 value={value}
                 checked={system === value}
                 onChange={() => setSystem(value)}
-                style={{ width: 22, height: 22 }}
+               
               />
               {label}
             </label>
@@ -270,7 +270,7 @@ export default function RecipeView() {
         {steps.length === 0 ? (
           <p className="hint">No steps yet.</p>
         ) : (
-          <ol style={{ paddingLeft: 'var(--space-6)' }}>
+          <ol>
             {steps.map((step) => (
               <li key={step.id} style={{ marginBottom: 'var(--space-3)' }}>
                 {step.text}
@@ -296,7 +296,7 @@ export default function RecipeView() {
             {ratedMembers.length === 0 ? (
               <p>No ratings yet.</p>
             ) : (
-              <ul style={{ paddingLeft: 'var(--space-6)' }}>
+              <ul>
                 {ratedMembers.map((m) => (
                   <li key={m}>
                     {m === member.user_id ? 'You' : nameFor(m)}: {stars(summary.byMember[m])}
@@ -364,12 +364,11 @@ export default function RecipeView() {
         {meals.length === 0 ? (
           <p className="hint">Not made yet.</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="plain-list">
             {history.map((meal) => (
               <li
                 key={meal.key}
-                className="card"
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}
+                className="card row-between"
               >
                 <div>
                   <p style={{ fontWeight: 600, margin: 0 }}>{formatDay(meal.cooked_on)}</p>
@@ -470,7 +469,7 @@ export default function RecipeView() {
           <textarea
             id="note"
             rows={2}
-            placeholder="Add a note"
+            placeholder="Add a note…"
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
           />
@@ -494,7 +493,7 @@ export default function RecipeView() {
         </p>
       )}
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-6)' }}>
+      <div className="actions">
         <Link className="btn btn-secondary" to={`/recipe/${recipe.id}/edit`}>
           Edit
         </Link>

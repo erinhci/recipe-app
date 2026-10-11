@@ -233,10 +233,10 @@ export default function CookingMode() {
           </section>
 
           <details className="card">
-            <summary style={{ minHeight: 'var(--target)', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 600 }}>
+            <summary>
               All ingredients
             </summary>
-            <ul style={{ paddingLeft: 'var(--space-6)' }}>
+            <ul>
               {ingredients.map((ing) => (
                 <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
                   {ingredientLine(ing, factor, system)}

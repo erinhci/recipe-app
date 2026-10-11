@@ -15,10 +15,10 @@ const hoursText = (hours) => {
 function CountList({ items, label }) {
   const top = items[0]?.count ?? 1
   return (
-    <ul style={{ listStyle: 'none', padding: 0 }}>
+    <ul className="plain-list">
       {items.map((item) => (
         <li key={item.name} style={{ marginBottom: 'var(--space-3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+          <div className="row-between">
             <span>{label ? label(item) : item.name}</span>
             <span>{item.count}</span>
           </div>
@@ -118,7 +118,7 @@ export default function Stats() {
         <section aria-labelledby="top-rated-heading">
           <h2 id="top-rated-heading">Top rated</h2>
           <p className="hint">Each of your latest ratings, averaged.</p>
-          <ol style={{ paddingLeft: 'var(--space-6)' }}>
+          <ol>
             {stats.topRated.map((r) => (
               <li key={r.id} style={{ marginBottom: 'var(--space-2)' }}>
                 <Link to={`/recipe/${r.id}`}>{r.title}</Link>, {Math.round(r.average * 10) / 10}★
