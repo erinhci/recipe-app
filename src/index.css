@@ -370,6 +370,16 @@ textarea {
 .cook-needs li {
   margin-bottom: var(--space-2);
 }
+/* Upcoming steps: large enough to read from the counter */
+.cook-upcoming {
+  font-size: 1.25rem;
+  line-height: 1.45;
+  padding-left: var(--space-6);
+  margin: 0;
+}
+.cook-upcoming li { margin-bottom: var(--space-4); }
+.cook-done { color: var(--color-text-muted); padding-left: var(--space-6); }
+.cook-done li { margin-bottom: var(--space-2); }
 .cook-nav {
   position: fixed;
   left: 0;

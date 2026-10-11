@@ -214,6 +214,31 @@ export default function CookingMode() {
             )}
           </section>
 
+          {/* The rest of the recipe stays readable without tapping, for
+              when hands are busy or messy. */}
+          {current < lastIndex && (
+            <section aria-labelledby="coming-heading">
+              <h2 id="coming-heading">Coming up</h2>
+              <ol className="cook-upcoming" start={current + 2}>
+                {steps.slice(current + 1).map((upcoming) => (
+                  <li key={upcoming.id}>{upcoming.text}</li>
+                ))}
+              </ol>
+            </section>
+          )}
+          {current > 0 && (
+            <details className="card">
+              <summary>
+                Done ({current} {current === 1 ? 'step' : 'steps'})
+              </summary>
+              <ol className="cook-done">
+                {steps.slice(0, current).map((done) => (
+                  <li key={done.id}>{done.text}</li>
+                ))}
+              </ol>
+            </details>
+          )}
+
           <details className="card">
             <summary>
               All ingredients

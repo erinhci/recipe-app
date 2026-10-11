@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.17.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Cooking mode lists the steps coming up under the current one, so you can read ahead without tapping",
+      "Finished steps are tucked under Done"
+    ]
+  },
+  {
     "version": "0.16.0",
     "date": "2026-10-11",
     "notes": [

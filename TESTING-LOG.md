@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Cooking mode hid every step but the current one, which is hard when hands are busy or messy | Upcoming steps listed under the current one; finished steps under Done (0.17.0) | See entry |
 | 2026-10-11 | Typing minutes for each meal was tedious, and the time is an estimate anyway | Each recipe's total time is added once per logged meal; cooking mode's Finish logs the meal; manual minutes and timed sessions removed (0.16.0) | See entry |
 | 2026-10-11 | Cooking time could only come from cooking mode, and couldn't be seen or removed | Minutes can be added in the cook log; each day shows its time with Remove time (0.15.0), replaced in 0.16.0 | See entry |
 | 2026-10-11 | No way to keep a rating after a recipe edit; ratings and cook log too large; "Show original" did nothing useful | Keep-rating option, compact ratings and log, breakdown shown once, servings reset link (0.14.0) | See entry |
@@ -29,6 +30,21 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Reading ahead in cooking mode
+
+**Finding.** Erin pointed out that cooking mode shows only one step at a
+time. Someone whose hands are busy or messy can't tap to the next step,
+so they can't see what's coming.
+
+**Change (version 0.17.0).** The current step stays large at the top.
+Below it, "Coming up" lists every remaining step, numbered, in text large
+enough to read from the counter. Finished steps are tucked under "Done".
+Previous and Next still work as before.
+
+**Still open.** Moving between steps without touching the screen. iOS
+Voice Control can already press the buttons by name ("Tap Next step");
+a built-in "say next" option is a possible follow-up.
 
 ## 2026-10-11: Time from the recipe instead of by hand
 
