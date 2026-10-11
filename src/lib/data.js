@@ -192,6 +192,36 @@ export async function endCookingSession(sessionId) {
   await putAndQueue('cooking_sessions', { ...session, ended_at: now() }, SESSION_FIELDS)
 }
 
+// Records cooking time without cooking mode. It's placed at 6 PM on that
+// day, so if both cooks add time for the same meal it overlaps and counts
+// once in stats, the same as two phones in cooking mode.
+// Time added for today before 6 PM ends now instead, so it never sits
+// in the future.
+export async function addCookingTime({ recipeId, cookedOn, minutes }, member) {
+  const length = minutes * 60 * 1000
+  let start = new Date(`${cookedOn}T18:00:00`)
+  let end = new Date(start.getTime() + length)
+  if (end.getTime() > Date.now()) {
+    end = new Date()
+    start = new Date(end.getTime() - length)
+  }
+  return putAndQueue(
+    'cooking_sessions',
+    { id: newId(), recipe_id: recipeId, started_by: member.user_id, started_at: start.toISOString(), ended_at: end.toISOString() },
+    SESSION_FIELDS,
+  )
+}
+
+// Removes cooking time (sessions from cooking mode or added by hand).
+export async function deleteCookingSessions(ids) {
+  if (!ids.length) return
+  await db.transaction('rw', [db.cooking_sessions, db.outbox], async () => {
+    await db.cooking_sessions.bulkDelete(ids)
+    for (const id of ids) await enqueue('cooking_sessions', 'delete', { id })
+  })
+  afterWrite()
+}
+
 // Today's date on this phone, as YYYY-MM-DD.
 export function localDate(date = new Date()) {
   const pad = (n) => String(n).padStart(2, '0')

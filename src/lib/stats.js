@@ -26,7 +26,9 @@ export function hoursTogether(sessions, nowMs = Date.now()) {
       const end = s.ended_at ? Date.parse(s.ended_at) : null
       // A session still open (phone closed mid-cook) counts nothing.
       if (end === null || Number.isNaN(start) || Number.isNaN(end) || end <= start) return null
-      return [start, Math.min(end, start + MAX_SESSION, nowMs)]
+      const capped = Math.min(end, start + MAX_SESSION, nowMs)
+      // Time set in the future counts nothing yet.
+      return capped > start ? [start, capped] : null
     })
     .filter(Boolean)
     .sort((a, b) => a[0] - b[0])
@@ -43,6 +45,40 @@ export function hoursTogether(sessions, nowMs = Date.now()) {
   }
   if (current) total += current[1] - current[0]
   return total / HOUR
+}
+
+// A session's calendar day on this phone, as YYYY-MM-DD.
+const dayOf = (iso) => {
+  const d = new Date(iso)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// Cooking sessions grouped by the day they started, with minutes counted
+// the same way as in Stats (overlaps once, capped at 4 hours each).
+// Returns Map(day -> { ids, minutes }).
+export function sessionsByDay(sessions, nowMs = Date.now()) {
+  const days = new Map()
+  for (const s of sessions) {
+    if (!s.started_at) continue
+    const day = dayOf(s.started_at)
+    if (!days.has(day)) days.set(day, [])
+    days.get(day).push(s)
+  }
+  const result = new Map()
+  for (const [day, list] of days) {
+    result.set(day, { ids: list.map((s) => s.id), minutes: Math.round(hoursTogether(list, nowMs) * 60) })
+  }
+  return result
+}
+
+// 25 -> "25 min", 75 -> "1 hr 15 min", 120 -> "2 hr"
+export function formatMinutes(minutes) {
+  if (minutes < 1) return 'under a minute'
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (!h) return `${m} min`
+  return m ? `${h} hr ${m} min` : `${h} hr`
 }
 
 // One meal = one recipe on one date. When both cooks log the same dinner

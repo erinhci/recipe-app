@@ -618,10 +618,13 @@ ul + h3,
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--color-divider);
 }
 .divided > li > :first-child { flex: 1; min-width: 0; }
-.divided > li > button { flex: none; }
+.divided > li > button,
+.divided > li > .row-actions { flex: none; }
+.row-actions { display: flex; gap: var(--space-4); }
 .subheading { margin-top: var(--space-8); }
 .flagged:has(.comment-actions) { padding: var(--space-3) var(--space-4); }
 .divided { margin-top: var(--space-3); }

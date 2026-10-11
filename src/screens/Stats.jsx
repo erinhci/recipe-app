@@ -79,7 +79,7 @@ export default function Stats() {
           </li>
         </ul>
         <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-          Time counts while cooking mode is open, up to 4 hours a session. When you both have it open, the time counts once.
+          Time comes from cooking mode, or from minutes added in a recipe's cook log, up to 4 hours a session. When you both record the same cook, it counts once.
         </p>
       </section>
 

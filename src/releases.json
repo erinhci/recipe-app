@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.15.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Add cooking time from a recipe's cook log, for when you didn't use cooking mode",
+      "The cook log shows each day's cooking time, and you can remove it",
+      "Time from cooking mode on a day that wasn't logged now shows in the cook log too"
+    ]
+  },
+  {
     "version": "0.14.0",
     "date": "2026-10-11",
     "notes": [

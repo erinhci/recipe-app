@@ -103,3 +103,26 @@ test('a rating carries over until the recipe is edited after it', () => {
   assert.equal(ratingIsStale(ratedAt.erin, '2026-10-01T00:00:00Z'), false)
   assert.equal(ratingIsStale(ratedAt.erin, '2026-10-20T00:00:00Z'), true)
 })
+
+test('sessionsByDay groups by start day and counts overlaps once', async () => {
+  const { sessionsByDay, formatMinutes } = await import('./stats.js')
+  const at = (d, h, m = 0) => new Date(`${d}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`).toISOString()
+  const days = sessionsByDay([
+    { id: 'a', started_at: at('2026-10-10', 18), ended_at: at('2026-10-10', 18, 30) },
+    { id: 'b', started_at: at('2026-10-10', 18), ended_at: at('2026-10-10', 18, 30) },
+    { id: 'c', started_at: at('2026-10-09', 12), ended_at: at('2026-10-09', 13, 15) },
+    { id: 'd', started_at: at('2026-10-08', 12), ended_at: null },
+  ])
+  assert.deepEqual(days.get('2026-10-10'), { ids: ['a', 'b'], minutes: 30 })
+  assert.deepEqual(days.get('2026-10-09'), { ids: ['c'], minutes: 75 })
+  assert.deepEqual(days.get('2026-10-08'), { ids: ['d'], minutes: 0 })
+  assert.equal(formatMinutes(25), '25 min')
+  assert.equal(formatMinutes(75), '1 hr 15 min')
+  assert.equal(formatMinutes(120), '2 hr')
+  assert.equal(formatMinutes(0), 'under a minute')
+})
+
+test('hoursTogether ignores time that is still in the future', () => {
+  const nowMs = Date.parse('2026-10-11T12:00:00Z')
+  assert.equal(hoursTogether([{ started_at: '2026-10-11T18:00:00Z', ended_at: '2026-10-11T19:00:00Z' }], nowMs), 0)
+})

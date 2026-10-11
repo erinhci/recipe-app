@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Cooking time could only come from cooking mode, and couldn't be seen or removed | Minutes can be added in the cook log; each day shows its time with Remove time (0.15.0) | See entry |
 | 2026-10-11 | No way to keep a rating after a recipe edit; ratings and cook log too large; "Show original" did nothing useful | Keep-rating option, compact ratings and log, breakdown shown once, servings reset link (0.14.0) | See entry |
 | 2026-10-11 | Before deeper user testing, the look should be plain and the app should meet WCAG 2.2 AA | Black-and-white theme, spacing cleanup, accessibility audit and fixes (0.13.0) | See entry |
 | 2026-10-11 | Keeping earlier versions of every recipe isn't needed; the note already says what changed | Earlier versions removed; only a short note-to-change record is kept | See entry |
@@ -27,6 +28,30 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Adding and removing cooking time
+
+**Finding.** Erin asked whether cooking sessions could be added or deleted.
+They couldn't. The only way to record time was to keep cooking mode open,
+and we won't always use it. There was also no way to see or remove a
+session, which matters for clearing test data.
+
+**Change (version 0.15.0).**
+
+- The cook log form has an optional "Minutes cooking" field. It works for
+  a new date, or for a date that's already logged (the button reads
+  "Add time" and no second meal is added).
+- Each cook log row shows that day's time, such as "55 min · logged by
+  Brian and Erin", with "Remove time". Removing a logged day removes its
+  time too.
+- Time from cooking mode on a day nobody logged now gets its own row
+  ("cooking mode, not logged"), so everything counted in Stats is visible.
+
+**Bug found while testing.** Added time is placed at 6 PM on that day, so
+two cooks adding time for the same dinner overlap and count once. For
+today before 6 PM, that put the time in the future, and Stats showed
+negative minutes. Time added for today now ends at the current time, and
+Stats ignores any time still in the future.
 
 ## 2026-10-11: Rating prompt, cook log, and servings
 
