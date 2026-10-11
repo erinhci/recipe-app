@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { computeStats, hoursTogether, recipeRatings } from './stats.js'
+import { computeStats, groupMeals, hoursTogether, mealRatings, recipeRatings } from './stats.js'
 
 const at = (time) => `2026-10-01T${time}:00.000Z`
 
@@ -63,4 +63,30 @@ test('kitchen stats from the cook log', () => {
   assert.ok(stats.milestones.find((m) => m.kind === 'meals' && m.threshold === 1).reached)
   assert.ok(stats.milestones.find((m) => m.kind === 'cuisines' && m.threshold === 3).reached)
   assert.deepEqual(stats.next.find((n) => n.kind === 'meals'), { kind: 'meals', threshold: 5, label: '5 meals cooked', current: 4 })
+})
+
+test('both cooks logging the same dinner count as one meal with both ratings', () => {
+  const cookLog = [
+    { id: 'erin-log', recipe_id: 'r1', cooked_on: '2026-10-10', created_by: 'erin', created_at: '2026-10-11T08:10:00Z' },
+    { id: 'brian-log', recipe_id: 'r1', cooked_on: '2026-10-10', created_by: 'brian', created_at: '2026-10-11T08:05:00Z' },
+    { id: 'older', recipe_id: 'r1', cooked_on: '2026-09-01', created_by: 'erin', created_at: '2026-09-01T20:00:00Z' },
+  ]
+  const ratings = [
+    { cook_log_id: 'erin-log', member_id: 'erin', stars: 4 },
+    { cook_log_id: 'brian-log', member_id: 'brian', stars: 3 },
+  ]
+  const meals = groupMeals(cookLog)
+  assert.deepEqual(meals.map((m) => m.ids), [['brian-log', 'erin-log'], ['older']])
+  const both = mealRatings(meals[0], ratings)
+  assert.deepEqual([...both].map(([m, r]) => [m, r.stars]), [['erin', 4], ['brian', 3]])
+  const stats = computeStats({
+    recipes: [{ id: 'r1', title: 'Isobe mochi', cuisine: 'Japanese', meal_type: 'snack' }],
+    ingredients: [],
+    cookLog,
+    ratings,
+    sessions: [],
+  })
+  assert.equal(stats.mealsLogged, 2)
+  assert.equal(stats.mostMade[0].count, 2)
+  assert.equal(stats.topRated[0].average, 3.5)
 })

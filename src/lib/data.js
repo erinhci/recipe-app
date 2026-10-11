@@ -190,51 +190,67 @@ export function localDate(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-// Adds a meal to the cook log, with this cook's rating if given.
+// Adds a meal to the cook log, with this cook's rating if given. If this
+// recipe is already logged for that date (the other cook logged it on
+// their phone), it's the same meal: this cook's rating is added to it
+// instead of making a second entry. Returns { id, alreadyLogged, loggedBy }.
 export async function logMeal({ recipeId, cookedOn, sessionId = null, stars = null }, member) {
+  const day = cookedOn || localDate()
+  const existing = await db.cook_log
+    .where('recipe_id')
+    .equals(recipeId)
+    .filter((c) => c.cooked_on === day)
+    .sortBy('created_at')
+  if (existing.length > 0) {
+    if (stars) await rateMeal(existing.map((e) => e.id), stars, member)
+    return { id: existing[0].id, alreadyLogged: true, loggedBy: existing[0].created_by }
+  }
+
   const entry = await putAndQueue(
     'cook_log',
     {
       id: newId(),
       recipe_id: recipeId,
-      cooked_on: cookedOn || localDate(),
+      cooked_on: day,
       session_id: sessionId,
       created_by: member.user_id,
       created_at: now(),
     },
     LOG_FIELDS,
   )
-  if (stars) await rateMeal(entry.id, stars, member)
-  return entry.id
+  if (stars) await rateMeal([entry.id], stars, member)
+  return { id: entry.id, alreadyLogged: false }
 }
 
 // Each cook rates for themselves; rating again changes their rating.
-export async function rateMeal(cookLogId, stars, member) {
-  const existing = await db.ratings
+// cookLogIds are the entries for one meal (usually one; two when both
+// cooks logged it before their phones synced).
+export async function rateMeal(cookLogIds, stars, member) {
+  const ids = Array.isArray(cookLogIds) ? cookLogIds : [cookLogIds]
+  const mine = await db.ratings
     .where('cook_log_id')
-    .equals(cookLogId)
+    .anyOf(ids)
     .filter((r) => r.member_id === member.user_id)
-    .first()
-  await putAndQueue(
-    'ratings',
-    {
-      id: existing?.id ?? newId(),
-      cook_log_id: cookLogId,
-      member_id: member.user_id,
-      stars,
-      created_at: existing?.created_at ?? now(),
-    },
-    RATING_FIELDS,
-  )
+    .toArray()
+  const targets = mine.length ? mine : [{ id: newId(), cook_log_id: ids[0], created_at: now() }]
+  for (const rating of targets) {
+    await putAndQueue(
+      'ratings',
+      { id: rating.id, cook_log_id: rating.cook_log_id, member_id: member.user_id, stars, created_at: rating.created_at ?? now() },
+      RATING_FIELDS,
+    )
+  }
 }
 
-export async function deleteMealLog(cookLogId) {
-  const ratingIds = await db.ratings.where('cook_log_id').equals(cookLogId).primaryKeys()
+// Removes a meal: every entry logged for it, with their ratings.
+export async function deleteMealLog(cookLogIds) {
+  const ids = Array.isArray(cookLogIds) ? cookLogIds : [cookLogIds]
+  const ratingIds = await db.ratings.where('cook_log_id').anyOf(ids).primaryKeys()
   await db.transaction('rw', [db.cook_log, db.ratings, db.outbox], async () => {
     await db.ratings.bulkDelete(ratingIds)
-    await db.cook_log.delete(cookLogId)
+    await db.cook_log.bulkDelete(ids)
     // Ratings go with the log entry on the server (on delete cascade).
-    await enqueue('cook_log', 'delete', { id: cookLogId })
+    for (const id of ids) await enqueue('cook_log', 'delete', { id })
   })
   afterWrite()
 }

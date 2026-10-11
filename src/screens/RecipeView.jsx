@@ -10,7 +10,7 @@ import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 import { originalLinks } from '../lib/importRecipe'
 import { useOnline } from '../lib/useOnline'
-import { recipeRatings } from '../lib/stats'
+import { groupMeals, mealRatings, recipeRatings } from '../lib/stats'
 import StarPicker from '../components/StarPicker'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -98,10 +98,14 @@ export default function RecipeView() {
 
   async function handleLogMeal(event) {
     event.preventDefault()
-    await logMeal({ recipeId: recipe.id, cookedOn: logDate, sessionId: finishedSession, stars: logStars }, member)
+    const result = await logMeal({ recipeId: recipe.id, cookedOn: logDate, sessionId: finishedSession, stars: logStars }, member)
     setLogStars(null)
     setLogDate(localDate())
-    setLogStatus(`Logged for ${formatDay(logDate)}.`)
+    setLogStatus(
+      result.alreadyLogged
+        ? `${formatDay(logDate)} was already logged${logStars ? ', so your rating was added to it' : ''}.`
+        : `Logged for ${formatDay(logDate)}.`,
+    )
     // Clear the "just finished" state so a refresh doesn't ask again.
     if (finishedSession) navigate(location.pathname, { replace: true, state: null })
   }
@@ -118,14 +122,18 @@ export default function RecipeView() {
     }
   }
 
-  async function handleDeleteLog(entry) {
-    if (!window.confirm(`Remove the ${formatDay(entry.cooked_on)} entry and its ratings?`)) return
-    await deleteMealLog(entry.id)
+  async function handleDeleteLog(meal) {
+    if (!window.confirm(`Remove the ${formatDay(meal.cooked_on)} meal and both ratings?`)) return
+    await deleteMealLog(meal.ids)
   }
 
   const summary = recipeRatings(recipe.id, cookLog, ratings)
   const ratedMembers = Object.keys(summary.byMember)
-  const history = showAllHistory ? cookLog : cookLog.slice(0, HISTORY_SHOWN)
+  // Both cooks logging the same dinner is one meal.
+  const meals = groupMeals(cookLog)
+  const history = showAllHistory ? meals : meals.slice(0, HISTORY_SHOWN)
+  const sameDay = meals.find((m) => m.cooked_on === logDate)
+  const loggedByNames = (meal) => [...new Set(meal.entries.map((e) => nameFor(e.created_by)))].join(' and ')
   const stars = (n) => `${n}★`
 
   async function handleAddNote(event) {
@@ -148,7 +156,7 @@ export default function RecipeView() {
         <p>
           <strong>{stars(Math.round(summary.average * 10) / 10)}</strong> average (
           {ratedMembers.map((m) => `${nameFor(m)} ${stars(summary.byMember[m])}`).join(', ')})
-          {cookLog.length > 0 && ` · made ${cookLog.length} ${cookLog.length === 1 ? 'time' : 'times'}`}
+          {meals.length > 0 && ` · made ${meals.length} ${meals.length === 1 ? 'time' : 'times'}`}
         </p>
       )}
 
@@ -271,28 +279,32 @@ export default function RecipeView() {
             />
           </div>
           <StarPicker legend="Your rating (optional)" value={logStars} onChange={setLogStars} />
-          <p className="hint">Each of you rates on your own phone. The average uses both.</p>
-          <button className="btn" type="submit" disabled={!logDate}>
-            {finishedSession ? 'Log this meal' : 'We made this'}
+          <p className="hint">
+            {sameDay
+              ? `${loggedByNames(sameDay)} already logged ${formatDay(logDate)}. Saving adds your rating to that meal.`
+              : 'Each of you rates on your own phone. The average uses both.'}
+          </p>
+          <button className="btn" type="submit" disabled={!logDate || (sameDay && !logStars)}>
+            {sameDay ? 'Add my rating' : finishedSession ? 'Log this meal' : 'We made this'}
           </button>
           <p role="status" className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
             {logStatus}
           </p>
         </form>
 
-        {cookLog.length === 0 ? (
+        {meals.length === 0 ? (
           <p className="hint">Not made yet.</p>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {history.map((entry) => {
-              const entryRatings = ratings.filter((r) => r.cook_log_id === entry.id)
-              const mine = entryRatings.find((r) => r.member_id === member.user_id)
-              const others = entryRatings.filter((r) => r.member_id !== member.user_id)
-              const picking = !mine || changingRating === entry.id
+            {history.map((meal) => {
+              const byMember = mealRatings(meal, ratings)
+              const mine = byMember.get(member.user_id)
+              const others = [...byMember.values()].filter((r) => r.member_id !== member.user_id)
+              const picking = !mine || changingRating === meal.key
               return (
-                <li key={entry.id} className="card">
-                  <p style={{ fontWeight: 600, margin: 0 }}>{formatDay(entry.cooked_on)}</p>
-                  <p className="hint">Logged by {nameFor(entry.created_by)}</p>
+                <li key={meal.key} className="card">
+                  <p style={{ fontWeight: 600, margin: 0 }}>{formatDay(meal.cooked_on)}</p>
+                  <p className="hint">Logged by {loggedByNames(meal)}</p>
                   <p style={{ margin: '0 0 var(--space-2)' }}>
                     You: {mine ? stars(mine.stars) : 'not rated yet'}
                     {others.map((r) => ` · ${nameFor(r.member_id)}: ${stars(r.stars)}`)}
@@ -302,26 +314,26 @@ export default function RecipeView() {
                       legend={mine ? 'Change your rating' : 'Add your rating'}
                       value={mine?.stars ?? null}
                       onChange={async (n) => {
-                        await rateMeal(entry.id, n, member)
+                        await rateMeal(meal.ids, n, member)
                         setChangingRating(null)
                       }}
                     />
                   ) : (
-                    <button className="btn btn-secondary" type="button" onClick={() => setChangingRating(entry.id)}>
+                    <button className="btn btn-secondary" type="button" onClick={() => setChangingRating(meal.key)}>
                       Change your rating
                     </button>
                   )}{' '}
-                  <button className="btn btn-secondary" type="button" onClick={() => handleDeleteLog(entry)}>
-                    Remove<span className="sr-only"> the {formatDay(entry.cooked_on)} entry</span>
+                  <button className="btn btn-secondary" type="button" onClick={() => handleDeleteLog(meal)}>
+                    Remove<span className="sr-only"> the {formatDay(meal.cooked_on)} meal</span>
                   </button>
                 </li>
               )
             })}
           </ul>
         )}
-        {cookLog.length > HISTORY_SHOWN && !showAllHistory && (
+        {meals.length > HISTORY_SHOWN && !showAllHistory && (
           <button className="btn btn-secondary" type="button" onClick={() => setShowAllHistory(true)}>
-            Show all {cookLog.length}
+            Show all {meals.length}
           </button>
         )}
       </section>
