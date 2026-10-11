@@ -11,10 +11,10 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
-| 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | See entry |
-| 2026-10-11 | Phones kept showing an older version after updates shipped | App offers updates and shows its version | See entry |
-| 2026-10-11 | A note asking for two changes only got one, and saving added a duplicate note | Every part of a note is covered or flagged; no duplicate note | See entry |
-| 2026-10-11 | Partner wants calorie and protein estimates for recipes | Nutrition estimates added to the MVP | See entry |
+| 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | `1a7579d` |
+| 2026-10-11 | Phones kept showing an older version after updates shipped | App offers updates and shows its version | `e8b0626` |
+| 2026-10-11 | A note asking for two changes only got one, and saving added a duplicate note | Every part of a note is covered or flagged; no duplicate note | `f39d1d0` |
+| 2026-10-11 | Partner wants calorie and protein estimates for recipes | Nutrition estimates added to the MVP | `622fb5c` |
 | 2026-10-11 | Logging after midnight defaults to the wrong day | Open | Not built |
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
