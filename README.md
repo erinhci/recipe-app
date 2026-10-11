@@ -17,8 +17,9 @@ shared kitchen. Import, recipes, cooking mode, and stats come next.
 ### 1. Supabase
 
 1. Create a project on the free plan.
-2. Open the SQL editor, paste all of `supabase/migrations/0001_init.sql`,
-   and run it.
+2. Open the SQL editor and run each file in `supabase/migrations/` once,
+   in order: `0001_init.sql`, then `0002_remove_members.sql`. (Run
+   `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and
    password, so no email is ever sent. This avoids needing a custom email

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
-import { getMeta, setMeta } from './db'
+import { clearLocalKitchen, getMeta, setMeta } from './db'
 
 const AuthContext = createContext(null)
 
@@ -19,8 +19,15 @@ export function AuthProvider({ children }) {
         .from('members')
         .select('user_id, kitchen_id, display_name, unit_pref')
         .eq('user_id', userId)
+        .is('removed_at', null)
         .maybeSingle()
       if (!error) {
+        const previous = await getMeta('member')
+        // Removed from the kitchen, or moved to a different one: clear the
+        // old kitchen's recipes from this phone.
+        if (previous && previous.kitchen_id !== data?.kitchen_id) {
+          await clearLocalKitchen()
+        }
         setMember(data)
         await setMeta('member', data)
         return
@@ -56,6 +63,7 @@ export function AuthProvider({ children }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
+    await clearLocalKitchen()
     await setMeta('member', null)
     setMember(null)
   }, [])

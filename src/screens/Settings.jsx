@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Page from '../components/Page'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
@@ -12,13 +12,40 @@ export default function Settings() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (!online) return
-    supabase
+  const loadCooks = useCallback(async () => {
+    const { data } = await supabase
       .from('members')
       .select('user_id, display_name')
-      .then(({ data }) => setCooks(data ?? []))
-  }, [online])
+      .is('removed_at', null)
+    setCooks(data ?? [])
+  }, [])
+
+  useEffect(() => {
+    if (online) loadCooks()
+  }, [online, loadCooks])
+
+  async function removeCook(cook) {
+    const isMe = cook.user_id === member.user_id
+    const question = isMe
+      ? 'Leave this kitchen? You lose access to its recipes right away. Your past notes and ratings stay.'
+      : `Remove ${cook.display_name} from the kitchen? They lose access right away. Their past notes and ratings stay.`
+    if (!window.confirm(question)) return
+    setError('')
+    setMessage('')
+    const { error: rpcError } = await supabase.rpc('remove_member', { member_user_id: cook.user_id })
+    if (rpcError) {
+      setError(rpcError.message)
+      return
+    }
+    if (isMe) {
+      // Back to setup, with this phone's copy of the kitchen cleared.
+      await refreshMember()
+      return
+    }
+    setInviteLink('')
+    setMessage(`${cook.display_name} was removed. You can invite someone with a new link.`)
+    await loadCooks()
+  }
 
   async function changeUnits(event) {
     const unit_pref = event.target.value
@@ -79,10 +106,35 @@ export default function Settings() {
       <section className="card" aria-labelledby="kitchen-heading">
         <h2 id="kitchen-heading">Your kitchen</h2>
         {cooks.length > 0 && (
-          <ul>
-            {cooks.map((cook) => (
-              <li key={cook.user_id}>{cook.display_name}</li>
-            ))}
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-4)' }}>
+            {cooks.map((cook) => {
+              const isMe = cook.user_id === member.user_id
+              return (
+                <li
+                  key={cook.user_id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 'var(--space-3)',
+                    padding: 'var(--space-2) 0',
+                  }}
+                >
+                  <span>
+                    {cook.display_name}
+                    {isMe && <span className="hint"> (you)</span>}
+                  </span>
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={() => removeCook(cook)}
+                    disabled={!online}
+                  >
+                    {isMe ? 'Leave kitchen' : <>Remove<span className="sr-only"> {cook.display_name}</span></>}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         )}
         {!kitchenFull && (

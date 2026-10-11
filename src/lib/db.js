@@ -29,3 +29,11 @@ export async function getMeta(key) {
 export async function setMeta(key, value) {
   await db.meta.put({ key, value })
 }
+
+// Remove every kitchen table's local copy, e.g. after signing out or being
+// removed from a kitchen. Keeps nothing that belonged to the old kitchen.
+export async function clearLocalKitchen() {
+  await db.transaction('rw', db.tables, async () => {
+    await Promise.all(db.tables.map((table) => table.clear()))
+  })
+}
