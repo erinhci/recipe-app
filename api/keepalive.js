@@ -17,7 +17,10 @@ export default async function handler(request, response) {
 
   const result = await fetch(`${url}/rest/v1/rpc/keepalive`, {
     method: 'POST',
-    headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    // Only the apikey header: it accepts both Supabase's newer publishable
+    // keys (sb_publishable_…) and legacy anon keys. Publishable keys aren't
+    // JWTs, so they must not be sent as a Bearer token.
+    headers: { apikey: key, 'Content-Type': 'application/json' },
     body: '{}',
   })
 
