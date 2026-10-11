@@ -5,6 +5,7 @@ import { isConfigured } from './lib/supabase'
 import { useOnline } from './lib/useOnline'
 import BottomNav from './components/BottomNav'
 import UpdateBanner from './components/UpdateBanner'
+import WhatsNew from './components/WhatsNew'
 import Page from './components/Page'
 import SignIn from './screens/SignIn'
 import Setup from './screens/Setup'
@@ -76,6 +77,7 @@ function Shell() {
 
   return (
     <>
+      <WhatsNew />
       {!online && (
         <p className="offline-banner" role="status">
           You're offline. Recipes still work; changes sync when you reconnect.

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useOnline } from '../lib/useOnline'
 import { syncNow, useSyncStatus } from '../lib/sync'
+import { current, releaseDate, releases } from '../lib/releases'
 import RecentlyDeleted from '../components/RecentlyDeleted'
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
@@ -194,12 +195,35 @@ export default function Settings() {
         Sign out
       </button>
 
-      <p className="hint" style={{ marginTop: 'var(--space-6)' }}>
-        App version {__APP_VERSION__}, built{' '}
-        {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(
-          new Date(__BUILD_TIME__),
-        )}
-      </p>
+      <section aria-labelledby="version-heading" className="card" style={{ marginTop: 'var(--space-6)' }}>
+        <h2 id="version-heading">Version {current.version}</h2>
+        <p className="hint">
+          Released {releaseDate(current)} · build {__BUILD_COMMIT__}
+        </p>
+        <h3 style={{ fontSize: '1rem' }}>What's new</h3>
+        <ul style={{ paddingLeft: 'var(--space-6)' }}>
+          {current.notes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+        <details>
+          <summary style={{ minHeight: 'var(--target)', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 600 }}>
+            Earlier versions
+          </summary>
+          {releases.slice(1).map((release) => (
+            <div key={release.version} style={{ marginBottom: 'var(--space-3)' }}>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                {release.version} <span className="hint">· {releaseDate(release)}</span>
+              </p>
+              <ul style={{ paddingLeft: 'var(--space-6)', margin: 'var(--space-1) 0 0' }}>
+                {release.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </details>
+      </section>
     </Page>
   )
 }

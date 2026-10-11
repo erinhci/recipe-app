@@ -77,6 +77,14 @@ npm install
 npm run dev
 ```
 
+## Releasing
+
+Every push to `main` that changes the app gets a new entry at the top of
+`src/releases.json`: a version number and a few plain-language notes on
+what changed. Bump the last number for fixes (0.9.1 to 0.9.2) and the
+middle number for new features (0.9.2 to 0.10.0). The app shows these
+notes in Settings, in the update banner, and once after updating.
+
 ## Project layout
 
 | Path | What it holds |
@@ -87,6 +95,7 @@ npm run dev
 | `src/lib/db.js` | Local IndexedDB database (Dexie) for offline use |
 | `src/lib/auth.jsx` | Sign-in state and the current cook's kitchen |
 | `src/index.css` | Design tokens and base styles |
+| `src/releases.json` | Version history shown in the app |
 | `supabase/migrations/` | Database schema, security rules, and stats views |
 | `api/keepalive.js` | Daily route that keeps the free Supabase project awake |
 | `vercel.json` | Daily cron schedule and app routing |

@@ -1,17 +1,28 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
 
-// Shown in Settings so testers can tell which version a phone is running.
-const version = (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7)
+// The exact build, shown small in Settings next to the version number.
+const commit = (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7)
+
+// Publishes the version history as /releases.json, so a phone running an
+// older version can read what the new one changes. (It isn't part of the
+// offline copy, so it's always fetched fresh.)
+const releasesFile = {
+  name: 'releases-json',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'releases.json', source: readFileSync('src/releases.json', 'utf8') })
+  },
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(version),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __BUILD_COMMIT__: JSON.stringify(commit),
   },
   plugins: [
+    releasesFile,
     react(),
     VitePWA({
       // The app asks before switching to a new version (UpdateBanner), so an

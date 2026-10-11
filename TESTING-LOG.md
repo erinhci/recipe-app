@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | The version in Settings (a commit code) said nothing useful | Version numbers with plain-language notes; what's new after updating | See entry |
 | 2026-10-11 | Keeping imported screenshots and PDFs is clutter once the recipe is checked | Originals no longer saved; the recipe's credit is kept instead | See entry |
 | 2026-10-11 | Want photos of finished dishes, to see how it turned out and for stats later | Planned (Later), synced between phones | Not built |
 | 2026-10-11 | The update banner never appeared; updates showed up later on their own | Banner pinned to the top of the screen; checks for updates more often | See entry |
@@ -23,6 +24,25 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Version numbers people can read
+
+**Finding.** Settings showed "App version a947736", a commit code that
+means nothing to the people using the app.
+
+**Change.**
+
+- Versions are numbered (0.11.0) with a short list of what's new in plain
+  words. Settings shows the current version, its notes, and every earlier
+  version.
+- The update banner names the waiting version and its main change, like
+  "Version 0.11.1 is ready".
+- After an update, the app shows what changed since the version that phone
+  last ran, once.
+- The history was filled in back to 0.1.0, so versions line up with this
+  log: 0.6.1 is the same-day meal fix, 0.7.0 the recipe-level ratings,
+  0.8.0 nutrition, and so on. The commit code stays, in small print, for
+  matching a screenshot to an exact build.
 
 ## 2026-10-11: Don't keep imported originals
 

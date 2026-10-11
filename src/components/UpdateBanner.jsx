@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import { compareVersions, current } from '../lib/releases'
 
 const CHECK_EVERY = 10 * 60 * 1000
 const MIN_GAP = 60 * 1000
@@ -15,6 +16,7 @@ export default function UpdateBanner() {
   const registration = useRef(null)
   const lastCheck = useRef(0)
   const [dismissed, setDismissed] = useState(false)
+  const [next, setNext] = useState(null) // the waiting version's release entry
   const { pathname } = useLocation()
   const {
     needRefresh: [needRefresh],
@@ -53,10 +55,25 @@ export default function UpdateBanner() {
     check()
   }, [pathname])
 
+  // Read what the waiting version changes, straight from the server.
+  useEffect(() => {
+    if (!needRefresh) return
+    fetch('/releases.json', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((list) => {
+        const newest = Array.isArray(list) ? list[0] : null
+        if (newest && compareVersions(newest.version, current.version) > 0) setNext(newest)
+      })
+      .catch(() => {})
+  }, [needRefresh])
+
   if (!needRefresh || dismissed) return null
   return (
     <div className="update-banner" role="status">
-      <span>A new version of the app is ready.</span>
+      <span>
+        {next ? `Version ${next.version} is ready` : 'A new version of the app is ready'}
+        {next?.notes?.[0] && <span style={{ display: 'block', fontWeight: 400 }}>{next.notes[0]}</span>}
+      </span>
       <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
         <button className="btn" type="button" onClick={() => updateServiceWorker(true)}>
           Update now

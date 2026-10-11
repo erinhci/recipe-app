@@ -1,0 +1,128 @@
+[
+  {
+    "version": "0.11.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Settings shows a version number and what's new in it, with earlier versions underneath",
+      "The update banner says which version is ready and what it changes",
+      "After an update, the app shows what's new once"
+    ]
+  },
+  {
+    "version": "0.10.0",
+    "date": "2026-10-11",
+    "commit": "a947736",
+    "notes": [
+      "Imported screenshots and PDFs aren't kept after you save; they show only while you check the recipe",
+      "Import picks up who a recipe is credited to, and the recipe shows \"From ...\"",
+      "New Credit field when adding or editing a recipe"
+    ]
+  },
+  {
+    "version": "0.9.2",
+    "date": "2026-10-11",
+    "commit": "ea8e5ef",
+    "notes": [
+      "Recipe cards in the Library show the average rating and how often you've made it",
+      "The update banner stays pinned to the top of the screen, and the app checks for updates more often"
+    ]
+  },
+  {
+    "version": "0.9.1",
+    "date": "2026-10-11",
+    "commit": "77fd99c",
+    "notes": [
+      "Notes look like a comments thread",
+      "A note can be turned into a recipe change only once, and then shows that it was used"
+    ]
+  },
+  {
+    "version": "0.9.0",
+    "date": "2026-10-11",
+    "commit": "1a7579d",
+    "notes": [
+      "A loading indicator with a seconds counter while Gemini works",
+      "Faster Gemini answers for imports, nutrition, and step questions"
+    ]
+  },
+  {
+    "version": "0.8.2",
+    "date": "2026-10-11",
+    "commit": "e8b0626",
+    "notes": ["The app offers updates with a banner instead of quietly keeping an old copy"]
+  },
+  {
+    "version": "0.8.1",
+    "date": "2026-10-11",
+    "commit": "f39d1d0",
+    "notes": [
+      "Changes from a note cover every part of the note, and anything Gemini couldn't apply is flagged",
+      "Saving a change from a note no longer posts a duplicate note",
+      "You can delete notes you wrote"
+    ]
+  },
+  {
+    "version": "0.8.0",
+    "date": "2026-10-11",
+    "commit": "622fb5c",
+    "notes": ["Nutrition estimates: calories, protein, carbs, and fat per serving and for how much you ate"]
+  },
+  {
+    "version": "0.7.0",
+    "date": "2026-10-11",
+    "commit": "b14becf",
+    "notes": [
+      "Ratings belong to the recipe and carry over each time you make it",
+      "The cook log is a diary of the dates you made a recipe"
+    ]
+  },
+  {
+    "version": "0.6.1",
+    "date": "2026-10-11",
+    "commit": "3d71b97",
+    "notes": ["When you both log the same dinner, it counts as one meal"]
+  },
+  {
+    "version": "0.6.0",
+    "date": "2026-10-11",
+    "commit": "e304cc7",
+    "notes": [
+      "Turn a note into a recipe change: Gemini drafts it, you approve it",
+      "Earlier versions of a recipe can be viewed and restored"
+    ]
+  },
+  {
+    "version": "0.5.0",
+    "date": "2026-10-11",
+    "commit": "61583bb",
+    "notes": [
+      "Cooking mode: one step at a time, large text, screen kept on",
+      "Ask Gemini about a step while cooking",
+      "Cook log with a rating from each of you, and a Stats page"
+    ]
+  },
+  {
+    "version": "0.4.0",
+    "date": "2026-10-11",
+    "commit": "06af97d",
+    "notes": ["Import recipes from screenshots, PDFs, links, and pasted text"]
+  },
+  {
+    "version": "0.3.0",
+    "date": "2026-10-11",
+    "commit": "0c5e982",
+    "notes": ["Add and edit recipes, scale servings, switch units, leave notes, and use it offline"]
+  },
+  {
+    "version": "0.2.0",
+    "date": "2026-10-11",
+    "commit": "7cd9031",
+    "notes": ["Remove a cook or leave a kitchen"]
+  },
+  {
+    "version": "0.1.0",
+    "date": "2026-10-10",
+    "commit": "bb1f603",
+    "notes": ["Sign in, create a shared kitchen, and invite each other"]
+  }
+]
