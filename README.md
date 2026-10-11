@@ -19,8 +19,8 @@ shared kitchen. Import, recipes, cooking mode, and stats come next.
 1. Create a project on the free plan.
 2. Open the SQL editor, paste all of `supabase/migrations/0001_init.sql`,
    and run it.
-3. In Authentication, open **Sign In / Providers**, then the Email
-   provider, and turn off **Confirm email**. The app uses email and
+3. In Authentication, open **Sign In / Providers**. Under User Signups,
+   turn off **Confirm email** and save. The app uses email and
    password, so no email is ever sent. This avoids needing a custom email
    sender, and on iPhone it keeps sign-in inside the home-screen app.
 4. After both cooks have created accounts, turn off **Allow new users to
