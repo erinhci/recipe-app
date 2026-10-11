@@ -19,20 +19,12 @@ shared kitchen. Import, recipes, cooking mode, and stats come next.
 1. Create a project on the free plan.
 2. Open the SQL editor, paste all of `supabase/migrations/0001_init.sql`,
    and run it.
-3. In Authentication settings, edit the **Magic Link** email template so it
-   includes the code. Replace the body with:
-
-   ```html
-   <h2>Your Our Kitchen sign-in code</h2>
-   <p>Enter this code in the app: <strong>{{ .Token }}</strong></p>
-   ```
-
-   The app signs in with a typed code instead of a link, because on iPhone
-   a link opens in Safari, which keeps separate storage from the home-screen
-   app.
-
-4. In Authentication URL settings, set the Site URL to the app's Vercel
-   address once it exists.
+3. In Authentication, open **Sign In / Providers**, then the Email
+   provider, and turn off **Confirm email**. The app uses email and
+   password, so no email is ever sent. This avoids needing a custom email
+   sender, and on iPhone it keeps sign-in inside the home-screen app.
+4. After both cooks have created accounts, turn off **Allow new users to
+   sign up** on the same page, so nobody else can make an account.
 
 ### 2. Vercel
 
@@ -49,7 +41,7 @@ shared kitchen. Import, recipes, cooking mode, and stats come next.
 ### 3. Phones
 
 Open the Vercel address on each phone and add it to the home screen. The
-first person signs in, creates the kitchen, and sends an invite link from
+first person creates an account, creates the kitchen, and sends an invite link from
 Settings. The second person opens the link, signs in, and joins.
 
 ## Local development

@@ -3,110 +3,104 @@ import Page from '../components/Page'
 import { supabase } from '../lib/supabase'
 import { readPendingInvite } from '../lib/invite'
 
-// Sign-in with an emailed 6-digit code. A code is typed into the app,
-// which matters on iPhone: an emailed link opens in Safari, which keeps
-// separate storage from the home-screen app, so the session would land
-// in the wrong place.
+// Email and password sign-in. No email is sent, so it works without a
+// custom email sender and stays inside the home-screen app on iPhone.
+// New sign-ups are turned off in Supabase once both cooks have accounts.
 export default function SignIn() {
+  const invited = Boolean(readPendingInvite())
+  // Someone arriving from an invite link most likely needs a new account.
+  const [mode, setMode] = useState(invited ? 'signup' : 'signin') // signin | signup
   const [email, setEmail] = useState('')
-  const [code, setCode] = useState('')
-  const [step, setStep] = useState('email') // email | code
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const invited = Boolean(readPendingInvite())
+  const isSignUp = mode === 'signup'
 
-  async function sendCode(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setBusy(true)
     setError('')
-    const { error: sendError } = await supabase.auth.signInWithOtp({ email: email.trim() })
+    const credentials = { email: email.trim(), password }
+    const { error: authError } = isSignUp
+      ? await supabase.auth.signUp(credentials)
+      : await supabase.auth.signInWithPassword(credentials)
     setBusy(false)
-    if (sendError) setError(sendError.message)
-    else setStep('code')
-  }
-
-  async function verifyCode(event) {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: code.trim(),
-      type: 'email',
-    })
-    setBusy(false)
-    if (verifyError) setError(verifyError.message)
+    if (authError) setError(authError.message)
     // On success, AuthProvider picks up the new session automatically.
   }
 
-  return (
-    <Page title="Sign in">
-      {invited && <p>You've been invited to a shared kitchen. Sign in to join it.</p>}
+  function switchMode() {
+    setMode(isSignUp ? 'signin' : 'signup')
+    setError('')
+  }
 
-      {step === 'email' ? (
-        <form onSubmit={sendCode} noValidate>
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-describedby="email-hint"
-            />
-            <span id="email-hint" className="hint">
-              We'll email you a 6-digit code. No password needed.
+  return (
+    <Page title={isSignUp ? 'Create your account' : 'Sign in'}>
+      {invited && <p>You've been invited to a shared kitchen. Sign in or create an account to join it.</p>}
+
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="field">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete={isSignUp ? 'new-password' : 'current-password'}
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-describedby={isSignUp ? 'password-hint' : undefined}
+          />
+          {isSignUp && (
+            <span id="password-hint" className="hint">
+              At least 8 characters. Your phone can save it for you.
             </span>
-          </div>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
           )}
-          <button className="btn" type="submit" disabled={!email.trim() || busy}>
-            {busy ? 'Sending…' : 'Email me a code'}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={verifyCode} noValidate>
-          <p role="status">We sent a code to {email.trim()}.</p>
-          <div className="field">
-            <label htmlFor="code">6-digit code</label>
+          <label style={{ fontWeight: 400, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minHeight: 'var(--target)' }}>
             <input
-              id="code"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]*"
-              maxLength={6}
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) => setShowPassword(e.target.checked)}
+              style={{ width: 22, height: 22 }}
             />
-          </div>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
-          <button className="btn" type="submit" disabled={code.length < 6 || busy}>
-            {busy ? 'Checking…' : 'Sign in'}
-          </button>{' '}
-          <button
-            className="btn btn-secondary"
-            type="button"
-            onClick={() => {
-              setStep('email')
-              setCode('')
-              setError('')
-            }}
-          >
-            Use a different email
-          </button>
-        </form>
-      )}
+            Show password
+          </label>
+        </div>
+
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <button
+          className="btn"
+          type="submit"
+          disabled={busy || !email.trim() || password.length < (isSignUp ? 8 : 1)}
+        >
+          {busy ? 'One moment…' : isSignUp ? 'Create account' : 'Sign in'}
+        </button>
+      </form>
+
+      <p style={{ marginTop: 'var(--space-6)' }}>
+        <button className="btn btn-secondary" type="button" onClick={switchMode}>
+          {isSignUp ? 'I already have an account' : 'Create an account'}
+        </button>
+      </p>
     </Page>
   )
 }
