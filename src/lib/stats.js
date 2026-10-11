@@ -91,9 +91,17 @@ export function recipeRatings(recipeId, cookLog, ratings) {
     if (newer) latest.set(rating.member_id, { stars: rating.stars, cooked_on: log.cooked_on, created_at: rating.created_at })
   }
   const byMember = Object.fromEntries([...latest].map(([member, r]) => [member, r.stars]))
+  const ratedAt = Object.fromEntries([...latest].map(([member, r]) => [member, r.created_at ?? null]))
   const values = Object.values(byMember)
   const average = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null
-  return { byMember, average }
+  return { byMember, ratedAt, average }
+}
+
+// A rating belongs to the recipe and carries over to every later meal.
+// It only goes stale when the recipe is edited after it was given.
+// lastChangedAt: when the recipe's newest saved version was made (an edit).
+export function ratingIsStale(ratedAt, lastChangedAt) {
+  return Boolean(ratedAt && lastChangedAt && lastChangedAt > ratedAt)
 }
 
 function countBy(items, keyFor) {

@@ -1,5 +1,6 @@
 import { db } from './db.js'
 import { enqueue, syncNow } from './sync.js'
+import { groupMeals } from './stats.js'
 
 // All writes go through here: save on this phone first, queue the change
 // for Supabase, then try to send it. Works the same offline; the queue
@@ -190,10 +191,11 @@ export function localDate(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-// Adds a meal to the cook log, with this cook's rating if given. If this
-// recipe is already logged for that date (the other cook logged it on
-// their phone), it's the same meal: this cook's rating is added to it
-// instead of making a second entry. Returns { id, alreadyLogged, loggedBy }.
+// Adds a meal to the cook log (a dated diary entry). If this recipe is
+// already logged for that date (the other cook logged it on their
+// phone), it's the same meal and nothing new is added.
+// A rating, if given, is this cook's rating of the recipe.
+// Returns { id, alreadyLogged }.
 export async function logMeal({ recipeId, cookedOn, sessionId = null, stars = null }, member) {
   const day = cookedOn || localDate()
   const existing = await db.cook_log
@@ -201,53 +203,82 @@ export async function logMeal({ recipeId, cookedOn, sessionId = null, stars = nu
     .equals(recipeId)
     .filter((c) => c.cooked_on === day)
     .sortBy('created_at')
-  if (existing.length > 0) {
-    if (stars) await rateMeal(existing.map((e) => e.id), stars, member)
-    return { id: existing[0].id, alreadyLogged: true, loggedBy: existing[0].created_by }
+  let id = existing[0]?.id
+  if (!id) {
+    const entry = await putAndQueue(
+      'cook_log',
+      {
+        id: newId(),
+        recipe_id: recipeId,
+        cooked_on: day,
+        session_id: sessionId,
+        created_by: member.user_id,
+        created_at: now(),
+      },
+      LOG_FIELDS,
+    )
+    id = entry.id
   }
-
-  const entry = await putAndQueue(
-    'cook_log',
-    {
-      id: newId(),
-      recipe_id: recipeId,
-      cooked_on: day,
-      session_id: sessionId,
-      created_by: member.user_id,
-      created_at: now(),
-    },
-    LOG_FIELDS,
-  )
-  if (stars) await rateMeal([entry.id], stars, member)
-  return { id: entry.id, alreadyLogged: false }
+  if (stars) await rateRecipe(recipeId, stars, member)
+  return { id, alreadyLogged: existing.length > 0 }
 }
 
-// Each cook rates for themselves; rating again changes their rating.
-// cookLogIds are the entries for one meal (usually one; two when both
-// cooks logged it before their phones synced).
-export async function rateMeal(cookLogIds, stars, member) {
-  const ids = Array.isArray(cookLogIds) ? cookLogIds : [cookLogIds]
+// Sets this cook's rating of a recipe. The rating stays until it's
+// changed; it's stored with the most recent meal, and its time is when
+// it was given (so the app can tell when the recipe changed since).
+export async function rateRecipe(recipeId, stars, member) {
+  const meals = groupMeals(await db.cook_log.where('recipe_id').equals(recipeId).toArray())
+  if (meals.length === 0) throw new Error('Log a meal before rating.')
+  const latest = meals[0]
   const mine = await db.ratings
     .where('cook_log_id')
-    .anyOf(ids)
+    .anyOf(latest.ids)
     .filter((r) => r.member_id === member.user_id)
     .toArray()
-  const targets = mine.length ? mine : [{ id: newId(), cook_log_id: ids[0], created_at: now() }]
+  const targets = mine.length ? mine : [{ id: newId(), cook_log_id: latest.ids[0] }]
+  const stamp = now()
   for (const rating of targets) {
     await putAndQueue(
       'ratings',
-      { id: rating.id, cook_log_id: rating.cook_log_id, member_id: member.user_id, stars, created_at: rating.created_at ?? now() },
+      { id: rating.id, cook_log_id: rating.cook_log_id, member_id: member.user_id, stars, created_at: stamp },
       RATING_FIELDS,
     )
   }
 }
 
-// Removes a meal: every entry logged for it, with their ratings.
-export async function deleteMealLog(cookLogIds) {
+// Removes a meal from the diary. This cook's rating moves to the newest
+// remaining meal so it isn't lost. (The other cook's rating can only be
+// moved from their phone; the screen warns before that happens.)
+export async function deleteMealLog(cookLogIds, member) {
   const ids = Array.isArray(cookLogIds) ? cookLogIds : [cookLogIds]
-  const ratingIds = await db.ratings.where('cook_log_id').anyOf(ids).primaryKeys()
+  const first = await db.cook_log.get(ids[0])
+  const remaining = first
+    ? groupMeals(await db.cook_log.where('recipe_id').equals(first.recipe_id).filter((c) => !ids.includes(c.id)).toArray())
+    : []
+  const ratingsHere = await db.ratings.where('cook_log_id').anyOf(ids).toArray()
+  const mine = ratingsHere
+    .filter((r) => r.member_id === member?.user_id)
+    .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))[0]
+
+  if (mine && remaining.length > 0) {
+    const target = remaining[0]
+    const already = await db.ratings
+      .where('cook_log_id')
+      .anyOf(target.ids)
+      .filter((r) => r.member_id === member.user_id)
+      .first()
+    // Keep whichever rating is newer.
+    if (!already || (already.created_at ?? '') < (mine.created_at ?? '')) {
+      await putAndQueue(
+        'ratings',
+        { id: already?.id ?? newId(), cook_log_id: already?.cook_log_id ?? target.ids[0], member_id: member.user_id, stars: mine.stars, created_at: mine.created_at },
+        RATING_FIELDS,
+      )
+    }
+  }
+
   await db.transaction('rw', [db.cook_log, db.ratings, db.outbox], async () => {
-    await db.ratings.bulkDelete(ratingIds)
+    await db.ratings.bulkDelete(ratingsHere.map((r) => r.id))
     await db.cook_log.bulkDelete(ids)
     // Ratings go with the log entry on the server (on delete cascade).
     for (const id of ids) await enqueue('cook_log', 'delete', { id })

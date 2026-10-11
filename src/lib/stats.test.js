@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { computeStats, groupMeals, hoursTogether, mealRatings, recipeRatings } from './stats.js'
+import { computeStats, groupMeals, hoursTogether, mealRatings, ratingIsStale, recipeRatings } from './stats.js'
 
 const at = (time) => `2026-10-01T${time}:00.000Z`
 
@@ -89,4 +89,17 @@ test('both cooks logging the same dinner count as one meal with both ratings', (
   assert.equal(stats.mealsLogged, 2)
   assert.equal(stats.mostMade[0].count, 2)
   assert.equal(stats.topRated[0].average, 3.5)
+})
+
+test('a rating carries over until the recipe is edited after it', () => {
+  const cookLog = [
+    { id: 'l1', recipe_id: 'r1', cooked_on: '2026-10-10' },
+    { id: 'l2', recipe_id: 'r1', cooked_on: '2026-11-02' }, // made again, not re-rated
+  ]
+  const ratings = [{ cook_log_id: 'l1', member_id: 'erin', stars: 4, created_at: '2026-10-11T08:00:00Z' }]
+  const { byMember, ratedAt } = recipeRatings('r1', cookLog, ratings)
+  assert.deepEqual(byMember, { erin: 4 })
+  assert.equal(ratingIsStale(ratedAt.erin, null), false)
+  assert.equal(ratingIsStale(ratedAt.erin, '2026-10-01T00:00:00Z'), false)
+  assert.equal(ratingIsStale(ratedAt.erin, '2026-10-20T00:00:00Z'), true)
 })
