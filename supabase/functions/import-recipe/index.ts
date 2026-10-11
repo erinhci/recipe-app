@@ -202,6 +202,7 @@ Return the recipe exactly as written. Rules:
 - item is the ingredient name. prep is preparation like "diced" or "room temperature", or null.
 - steps are the instructions in order, one entry per step, without step numbers.
 - servings is the number of servings the recipe makes as written, or null if not stated.
+- total_time_minutes is the total time, prep and cooking together, in minutes. Use the stated total time if there is one. Otherwise estimate it from the steps.
 - cuisine must be one of the allowed values; use "Other" if none fits. meal_type must be one of the allowed values.
 - If the image or text contains no recipe, return an empty title and empty lists.
 - source_name is who the recipe is credited to if the image or text names it: a person, blog, website, cookbook, or social account. Use null if no one is credited. Do not guess.

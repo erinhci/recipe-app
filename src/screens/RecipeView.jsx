@@ -4,11 +4,11 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
-import { addCookingTime, addNote, deleteCookingSessions, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, rateRecipe } from '../lib/data'
+import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, rateRecipe } from '../lib/data'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 import { useOnline } from '../lib/useOnline'
-import { formatMinutes, groupMeals, ratingIsStale, recipeRatings, sessionsByDay } from '../lib/stats'
+import { formatMinutes, groupMeals, ratingIsStale, recipeRatings } from '../lib/stats'
 import StarPicker from '../components/StarPicker'
 import NutritionPanel from '../components/NutritionPanel'
 
@@ -34,19 +34,18 @@ export default function RecipeView() {
   const data = useLiveQuery(async () => {
     const recipe = await db.recipes.get(id)
     if (!recipe) return { recipe: null }
-    const [ingredients, steps, notes, members, cookLog, sessions] = await Promise.all([
+    const [ingredients, steps, notes, members, cookLog] = await Promise.all([
       db.ingredients.where('recipe_id').equals(id).sortBy('position'),
       db.steps.where('recipe_id').equals(id).sortBy('position'),
       db.notes.where('recipe_id').equals(id).sortBy('created_at'),
       db.members.toArray(),
       db.cook_log.where('recipe_id').equals(id).toArray(),
-      db.cooking_sessions.where('recipe_id').equals(id).toArray(),
     ])
     cookLog.sort((a, b) => b.cooked_on.localeCompare(a.cooked_on) || (b.created_at ?? '').localeCompare(a.created_at ?? ''))
     const ratings = await db.ratings.where('cook_log_id').anyOf(cookLog.map((c) => c.id)).toArray()
     // Short records of which notes changed this recipe (no recipe copies).
     const changeRecords = await db.recipe_versions.where('recipe_id').equals(id).toArray()
-    return { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords, sessions }
+    return { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords }
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
@@ -54,25 +53,33 @@ export default function RecipeView() {
   const [noteText, setNoteText] = useState('')
   const online = useOnline()
   const location = useLocation()
-  const finishedSession = location.state?.finishedSession ?? null
+  // Set when cooking mode's Finish just logged today's meal.
+  const [finishedCooking] = useState(location.state?.finishedCooking ?? null)
   const [message] = useState(location.state?.message ?? '')
   const [logDate, setLogDate] = useState(localDate())
   const [logStars, setLogStars] = useState(null)
-  const [logMinutes, setLogMinutes] = useState('')
-  const [logStatus, setLogStatus] = useState('')
+  const [logStatus, setLogStatus] = useState(() =>
+    finishedCooking
+      ? finishedCooking.alreadyLogged
+        ? `${formatDay(finishedCooking.day)} was already logged.`
+        : `Logged ${formatDay(finishedCooking.day)}.`
+      : '',
+  )
   const [showAllHistory, setShowAllHistory] = useState(false)
   const [changingRating, setChangingRating] = useState(false)
   const [ratingStatus, setRatingStatus] = useState('')
   const logHeadingRef = useRef(null)
   const loaded = Boolean(data?.recipe)
 
-  // Coming back from cooking mode: go straight to "How was it?".
+  // Coming back from cooking mode: go straight to "How was it?", and clear
+  // the state so a refresh doesn't ask again.
   useEffect(() => {
-    if (finishedSession && loaded) {
+    if (finishedCooking && loaded) {
       logHeadingRef.current?.focus()
       logHeadingRef.current?.scrollIntoView({ block: 'start' })
+      navigate(location.pathname, { replace: true, state: null })
     }
-  }, [finishedSession, loaded])
+  }, [finishedCooking, loaded, navigate, location.pathname])
 
   if (data === undefined) {
     return (
@@ -93,7 +100,7 @@ export default function RecipeView() {
     )
   }
 
-  const { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords, sessions } = data
+  const { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords } = data
   // Which notes led to a recipe change (kept with the version saved then).
   const changesFromNote = new Map()
   for (const version of changeRecords) {
@@ -112,32 +119,12 @@ export default function RecipeView() {
 
   async function handleLogMeal(event) {
     event.preventDefault()
-    const minutes = Number(logMinutes) || 0
-    let text
-    if (sameDay) {
-      // Already logged: only the time is added.
-      text = `Added ${formatMinutes(minutes)} to ${formatDay(logDate)}.`
-    } else {
-      // A first rating can be given with the first log; after that, the
-      // rating carries over and is changed in Your rating.
-      await logMeal(
-        { recipeId: recipe.id, cookedOn: logDate, sessionId: finishedSession, stars: meals.length === 0 ? logStars : null },
-        member,
-      )
-      text = `Logged ${formatDay(logDate)}${minutes ? `, ${formatMinutes(minutes)}` : ''}.`
-    }
-    if (minutes) await addCookingTime({ recipeId: recipe.id, cookedOn: logDate, minutes }, member)
+    // A first rating can be given with the first log; after that, the
+    // rating carries over and is changed in Ratings.
+    const result = await logMeal({ recipeId: recipe.id, cookedOn: logDate, stars: meals.length === 0 ? logStars : null }, member)
     setLogStars(null)
-    setLogMinutes('')
     setLogDate(localDate())
-    setLogStatus(text)
-    // Clear the "just finished" state so a refresh doesn't ask again.
-    if (finishedSession) navigate(location.pathname, { replace: true, state: null })
-  }
-
-  async function handleRemoveTime(row) {
-    if (!window.confirm(`Remove ${formatMinutes(row.minutes)} of cooking time from ${formatDay(row.day)}? Stats will count it out.`)) return
-    await deleteCookingSessions(row.sessionIds)
+    setLogStatus(result.alreadyLogged ? `${formatDay(logDate)} was already logged.` : `Logged ${formatDay(logDate)}.`)
   }
 
   async function handleDeleteLog(meal) {
@@ -147,11 +134,8 @@ export default function RecipeView() {
     const warning = othersHere.length
       ? ` ${othersHere.join(' and ')}'s rating is saved with this entry and will be removed; they can rate again.`
       : ' Your rating stays.'
-    const time = timeByDay.get(meal.cooked_on)
-    const timeNote = time ? ` Its ${formatMinutes(time.minutes)} of cooking time is removed too.` : ''
-    if (!window.confirm(`Remove ${formatDay(meal.cooked_on)} from the cook log?${warning}${timeNote}`)) return
+    if (!window.confirm(`Remove ${formatDay(meal.cooked_on)} from the cook log?${warning}`)) return
     await deleteMealLog(meal.ids, member)
-    if (time) await deleteCookingSessions(time.ids)
   }
 
   async function handleRate(n) {
@@ -172,18 +156,7 @@ export default function RecipeView() {
   const ratedMembers = Object.keys(summary.byMember).sort((a, b) => (b === member.user_id) - (a === member.user_id))
   // Both cooks logging the same dinner is one meal.
   const meals = groupMeals(cookLog)
-  // Cooking time by day. Days with time but no logged meal (cooking mode
-  // opened without logging) get their own row so the time can be seen
-  // and removed.
-  const timeByDay = sessionsByDay(sessions)
-  const loggedDays = new Set(meals.map((m) => m.cooked_on))
-  const rows = [
-    ...meals.map((meal) => ({ key: meal.key, day: meal.cooked_on, meal })),
-    ...[...timeByDay.keys()].filter((day) => !loggedDays.has(day)).map((day) => ({ key: `time-${day}`, day, meal: null })),
-  ]
-    .map((row) => ({ ...row, sessionIds: timeByDay.get(row.day)?.ids ?? [], minutes: timeByDay.get(row.day)?.minutes ?? 0 }))
-    .sort((a, b) => b.day.localeCompare(a.day))
-  const history = showAllHistory ? rows : rows.slice(0, HISTORY_SHOWN)
+  const history = showAllHistory ? meals : meals.slice(0, HISTORY_SHOWN)
   const sameDay = meals.find((m) => m.cooked_on === logDate)
   // Ratings belong to the recipe. One goes stale only if the recipe was
   // edited after it was given.
@@ -206,8 +179,12 @@ export default function RecipeView() {
       <p role="status" style={message ? undefined : { margin: 0 }}>
         {message && <strong>{message}</strong>}
       </p>
-      {(recipe.cuisine || recipe.meal_type) && (
-        <p className="hint">{[recipe.cuisine, recipe.meal_type].filter(Boolean).join(' · ')}</p>
+      {(recipe.cuisine || recipe.meal_type || recipe.total_time_minutes > 0) && (
+        <p className="hint">
+          {[recipe.cuisine, recipe.meal_type, recipe.total_time_minutes > 0 && formatMinutes(recipe.total_time_minutes)]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
       )}
 
       {(ratedMembers.length > 0 || meals.length > 0) && (
@@ -328,7 +305,7 @@ export default function RecipeView() {
 
       <section aria-labelledby="log-heading">
         <h2 id="log-heading" ref={logHeadingRef} tabIndex={-1}>
-          {finishedSession ? 'How was it?' : 'Your rating'}
+          {finishedCooking ? 'How was it?' : 'Your rating'}
         </h2>
         {meals.length === 0 ? (
           <p className="hint">Rate it after the first time you make it. Log that below.</p>
@@ -379,6 +356,16 @@ export default function RecipeView() {
         </p>
 
         <h3 className="subheading">Cook log</h3>
+        <p className="hint" style={{ marginTop: 0 }}>
+          {recipe.total_time_minutes > 0 ? (
+            `Each time you log it adds ${formatMinutes(recipe.total_time_minutes)} to your time cooking together.`
+          ) : (
+            <>
+              This recipe has no total time, so logging it doesn't add to your time cooking together.{' '}
+              <Link to={`/recipe/${recipe.id}/edit`}>Add a total time</Link>
+            </>
+          )}
+        </p>
         <form onSubmit={handleLogMeal}>
           {meals.length === 0 && <StarPicker legend="Your rating (optional)" value={logStars} onChange={setLogStars} />}
           <div className="inline-form">
@@ -396,36 +383,13 @@ export default function RecipeView() {
                 }}
               />
             </div>
-            {!finishedSession && (
-              <div className="field">
-                <label htmlFor="cook-minutes">Minutes cooking</label>
-                <input
-                  id="cook-minutes"
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  max="240"
-                  value={logMinutes}
-                  aria-describedby="cook-minutes-hint"
-                  onChange={(e) => {
-                    setLogMinutes(e.target.value)
-                    setLogStatus('')
-                  }}
-                />
-              </div>
-            )}
-            <button className="btn" type="submit" disabled={!logDate || (Boolean(sameDay) && !Number(logMinutes))}>
-              {sameDay && Number(logMinutes) ? 'Add time' : 'Add to log'}
+            <button className="btn" type="submit" disabled={!logDate || Boolean(sameDay)}>
+              Add to log
             </button>
           </div>
-          {!finishedSession && (
-            <p id="cook-minutes-hint" className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-              Minutes are optional. They count toward time cooking together in Stats.
-            </p>
-          )}
           {sameDay && !logStatus && (
             <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-              {loggedByNames(sameDay)} already logged {formatDay(logDate)}. You can still add minutes.
+              {loggedByNames(sameDay)} already logged {formatDay(logDate)}.
             </p>
           )}
           <p role="status" className="hint" style={{ margin: logStatus ? 'var(--space-2) 0 0' : 0 }}>
@@ -433,44 +397,28 @@ export default function RecipeView() {
           </p>
         </form>
 
-        {rows.length === 0 ? (
+        {meals.length === 0 ? (
           <p className="hint">Not made yet.</p>
         ) : (
           <ul className="plain-list divided">
-            {history.map((row) => (
-              <li key={row.key}>
+            {history.map((meal) => (
+              <li key={meal.key}>
                 <span>
-                  <span style={{ display: 'block' }}>{formatDay(row.day)}</span>
+                  <span style={{ display: 'block' }}>{formatDay(meal.cooked_on)}</span>
                   <span className="hint" style={{ display: 'block' }}>
-                    {[
-                      row.sessionIds.length > 0 && formatMinutes(row.minutes),
-                      row.meal ? `logged by ${loggedByNames(row.meal)}` : 'cooking mode, not logged',
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
+                    Logged by {loggedByNames(meal)}
                   </span>
                 </span>
-                <span className="row-actions">
-                  {row.meal && row.sessionIds.length > 0 && (
-                    <button className="link-btn" type="button" onClick={() => handleRemoveTime(row)}>
-                      Remove time<span className="sr-only"> from {formatDay(row.day)}</span>
-                    </button>
-                  )}
-                  <button
-                    className="link-btn"
-                    type="button"
-                    onClick={() => (row.meal ? handleDeleteLog(row.meal) : handleRemoveTime(row))}
-                  >
-                    Remove<span className="sr-only"> {formatDay(row.day)}</span>
-                  </button>
-                </span>
+                <button className="link-btn" type="button" onClick={() => handleDeleteLog(meal)}>
+                  Remove<span className="sr-only"> {formatDay(meal.cooked_on)}</span>
+                </button>
               </li>
             ))}
           </ul>
         )}
-        {rows.length > HISTORY_SHOWN && !showAllHistory && (
+        {meals.length > HISTORY_SHOWN && !showAllHistory && (
           <button className="btn btn-secondary" type="button" onClick={() => setShowAllHistory(true)}>
-            Show all {rows.length}
+            Show all {meals.length}
           </button>
         )}
       </section>

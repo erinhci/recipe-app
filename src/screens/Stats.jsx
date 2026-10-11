@@ -31,14 +31,13 @@ function CountList({ items, label }) {
 
 export default function Stats() {
   const stats = useLiveQuery(async () => {
-    const [recipes, ingredients, cookLog, ratings, sessions] = await Promise.all([
+    const [recipes, ingredients, cookLog, ratings] = await Promise.all([
       db.recipes.toArray(),
       db.ingredients.toArray(),
       db.cook_log.toArray(),
       db.ratings.toArray(),
-      db.cooking_sessions.toArray(),
     ])
-    return computeStats({ recipes, ingredients, cookLog, ratings, sessions })
+    return computeStats({ recipes, ingredients, cookLog, ratings })
   }, [])
 
   if (stats === undefined) {
@@ -52,7 +51,7 @@ export default function Stats() {
   if (stats.mealsLogged === 0) {
     return (
       <Page title="Stats">
-        <p>No meals logged yet. When you finish cooking a recipe, or tap "We made this" on its page, it shows up here.</p>
+        <p>No meals logged yet. When you finish a recipe in cooking mode, or add it to the cook log on its page, it shows up here.</p>
         <Link className="btn" to="/">
           Go to Library
         </Link>
@@ -79,7 +78,9 @@ export default function Stats() {
           </li>
         </ul>
         <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-          Time comes from cooking mode, or from minutes added in a recipe's cook log, up to 4 hours a session. When you both record the same cook, it counts once.
+          Time adds each recipe's total time once per meal, even when you both log it.
+          {stats.mealsWithoutTime > 0 &&
+            ` ${stats.mealsWithoutTime} ${stats.mealsWithoutTime === 1 ? 'meal doesn\'t' : "meals don't"} count because the recipe has no total time.`}
         </p>
       </section>
 

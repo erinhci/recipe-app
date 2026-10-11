@@ -66,12 +66,37 @@ export async function saveRecipe({ recipe, ingredients, steps }, member, change 
     },
     RECIPE_FIELDS,
   )
-  const fullIngredients = ingredients.map((ing, position) =>
+  let fullIngredients = ingredients.map((ing, position) =>
     pick({ ...ing, id: ing.id ?? newId(), recipe_id: id, position, updated_at: stamp }, INGREDIENT_FIELDS),
   )
-  const fullSteps = steps.map((step, position) =>
+  let fullSteps = steps.map((step, position) =>
     pick({ ...step, id: step.id ?? newId(), recipe_id: id, position, updated_at: stamp }, STEP_FIELDS),
   )
+  // Ratings ask to be redone when ingredients or steps change (by their
+  // updated_at). A save that only changes details like the total time or
+  // cuisine keeps the old times, so it doesn't count as a recipe change.
+  if (!isNew) {
+    const [oldIngredients, oldSteps] = await Promise.all([
+      db.ingredients.where('recipe_id').equals(id).toArray(),
+      db.steps.where('recipe_id').equals(id).toArray(),
+    ])
+    const same = (rows, oldRows, fields) => {
+      if (rows.length !== oldRows.length) return false
+      const byId = new Map(oldRows.map((r) => [r.id, r]))
+      return rows.every((row) => {
+        const old = byId.get(row.id)
+        return old && fields.every((f) => f === 'updated_at' || (row[f] ?? null) === (old[f] ?? null))
+      })
+    }
+    if (same(fullIngredients, oldIngredients, INGREDIENT_FIELDS) && same(fullSteps, oldSteps, STEP_FIELDS)) {
+      const keep = (rows, oldRows) => {
+        const byId = new Map(oldRows.map((r) => [r.id, r]))
+        return rows.map((row) => ({ ...row, updated_at: byId.get(row.id).updated_at ?? row.updated_at }))
+      }
+      fullIngredients = keep(fullIngredients, oldIngredients)
+      fullSteps = keep(fullSteps, oldSteps)
+    }
+  }
 
   const changeRecord = change
     ? { id: newId(), recipe_id: id, snapshot: { next_change: change }, created_by: member.user_id, created_at: stamp }
@@ -157,11 +182,10 @@ async function setDeleted(recipeId, fields) {
 }
 
 // ---------------------------------------------------------------------------
-// Cooking sessions, the cook log, and ratings
+// The cook log and ratings
 // ---------------------------------------------------------------------------
 
-const SESSION_FIELDS = ['id', 'recipe_id', 'started_by', 'started_at', 'ended_at']
-const LOG_FIELDS = ['id', 'recipe_id', 'cooked_on', 'session_id', 'created_by', 'created_at']
+const LOG_FIELDS = ['id', 'recipe_id', 'cooked_on', 'created_by', 'created_at']
 const RATING_FIELDS = ['id', 'cook_log_id', 'member_id', 'stars', 'created_at']
 
 async function putAndQueue(table, row, fields) {
@@ -172,54 +196,6 @@ async function putAndQueue(table, row, fields) {
   })
   afterWrite()
   return clean
-}
-
-// Starts timing a cook. Time from both phones counts once in stats.
-export async function startCookingSession(recipeId, member) {
-  const session = await putAndQueue(
-    'cooking_sessions',
-    { id: newId(), recipe_id: recipeId, started_by: member.user_id, started_at: now(), ended_at: null },
-    SESSION_FIELDS,
-  )
-  return session.id
-}
-
-// Marks the session's end time. Called again if cooking resumes later
-// (for example, the phone was locked), so the latest time wins.
-export async function endCookingSession(sessionId) {
-  const session = await db.cooking_sessions.get(sessionId)
-  if (!session) return
-  await putAndQueue('cooking_sessions', { ...session, ended_at: now() }, SESSION_FIELDS)
-}
-
-// Records cooking time without cooking mode. It's placed at 6 PM on that
-// day, so if both cooks add time for the same meal it overlaps and counts
-// once in stats, the same as two phones in cooking mode.
-// Time added for today before 6 PM ends now instead, so it never sits
-// in the future.
-export async function addCookingTime({ recipeId, cookedOn, minutes }, member) {
-  const length = minutes * 60 * 1000
-  let start = new Date(`${cookedOn}T18:00:00`)
-  let end = new Date(start.getTime() + length)
-  if (end.getTime() > Date.now()) {
-    end = new Date()
-    start = new Date(end.getTime() - length)
-  }
-  return putAndQueue(
-    'cooking_sessions',
-    { id: newId(), recipe_id: recipeId, started_by: member.user_id, started_at: start.toISOString(), ended_at: end.toISOString() },
-    SESSION_FIELDS,
-  )
-}
-
-// Removes cooking time (sessions from cooking mode or added by hand).
-export async function deleteCookingSessions(ids) {
-  if (!ids.length) return
-  await db.transaction('rw', [db.cooking_sessions, db.outbox], async () => {
-    await db.cooking_sessions.bulkDelete(ids)
-    for (const id of ids) await enqueue('cooking_sessions', 'delete', { id })
-  })
-  afterWrite()
 }
 
 // Today's date on this phone, as YYYY-MM-DD.
@@ -233,7 +209,7 @@ export function localDate(date = new Date()) {
 // phone), it's the same meal and nothing new is added.
 // A rating, if given, is this cook's rating of the recipe.
 // Returns { id, alreadyLogged }.
-export async function logMeal({ recipeId, cookedOn, sessionId = null, stars = null }, member) {
+export async function logMeal({ recipeId, cookedOn, stars = null }, member) {
   const day = cookedOn || localDate()
   const existing = await db.cook_log
     .where('recipe_id')
@@ -248,7 +224,6 @@ export async function logMeal({ recipeId, cookedOn, sessionId = null, stars = nu
         id: newId(),
         recipe_id: recipeId,
         cooked_on: day,
-        session_id: sessionId,
         created_by: member.user_id,
         created_at: now(),
       },

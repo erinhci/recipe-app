@@ -1,25 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { computeStats, groupMeals, hoursTogether, mealRatings, ratingIsStale, recipeRatings } from './stats.js'
+import { computeStats, formatMinutes, groupMeals, mealRatings, ratingIsStale, recipeRatings } from './stats.js'
 
 const at = (time) => `2026-10-01T${time}:00.000Z`
-
-test('overlapping sessions from both phones count once', () => {
-  const sessions = [
-    { started_at: at('18:00'), ended_at: at('19:00') },
-    { started_at: at('18:30'), ended_at: at('19:30') }, // other phone, same meal
-    { started_at: at('20:00'), ended_at: at('20:30') },
-  ]
-  assert.equal(hoursTogether(sessions), 2)
-})
-
-test('open sessions count nothing and long ones stop at 4 hours', () => {
-  const sessions = [
-    { started_at: at('08:00'), ended_at: null },
-    { started_at: '2026-10-02T08:00:00.000Z', ended_at: '2026-10-02T20:00:00.000Z' },
-  ]
-  assert.equal(hoursTogether(sessions), 4)
-})
 
 test('ratings use each cook’s latest rating, then average', () => {
   const cookLog = [
@@ -54,7 +37,7 @@ test('kitchen stats from the cook log', () => {
     { id: 'c', recipe_id: 'r2', cooked_on: '2026-10-03' },
     { id: 'd', recipe_id: 'r3', cooked_on: '2026-10-04' },
   ]
-  const stats = computeStats({ recipes, ingredients, cookLog, ratings: [], sessions: [] })
+  const stats = computeStats({ recipes, ingredients, cookLog, ratings: [] })
   assert.equal(stats.mealsLogged, 4)
   assert.deepEqual(stats.mostMade.map((r) => [r.title, r.count]), [['Tacos', 2], ['Mochi', 1]])
   assert.deepEqual(stats.cuisines[0], { name: 'Mexican', count: 2 })
@@ -84,7 +67,6 @@ test('both cooks logging the same dinner count as one meal with both ratings', (
     ingredients: [],
     cookLog,
     ratings,
-    sessions: [],
   })
   assert.equal(stats.mealsLogged, 2)
   assert.equal(stats.mostMade[0].count, 2)
@@ -104,25 +86,25 @@ test('a rating carries over until the recipe is edited after it', () => {
   assert.equal(ratingIsStale(ratedAt.erin, '2026-10-20T00:00:00Z'), true)
 })
 
-test('sessionsByDay groups by start day and counts overlaps once', async () => {
-  const { sessionsByDay, formatMinutes } = await import('./stats.js')
-  const at = (d, h, m = 0) => new Date(`${d}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`).toISOString()
-  const days = sessionsByDay([
-    { id: 'a', started_at: at('2026-10-10', 18), ended_at: at('2026-10-10', 18, 30) },
-    { id: 'b', started_at: at('2026-10-10', 18), ended_at: at('2026-10-10', 18, 30) },
-    { id: 'c', started_at: at('2026-10-09', 12), ended_at: at('2026-10-09', 13, 15) },
-    { id: 'd', started_at: at('2026-10-08', 12), ended_at: null },
-  ])
-  assert.deepEqual(days.get('2026-10-10'), { ids: ['a', 'b'], minutes: 30 })
-  assert.deepEqual(days.get('2026-10-09'), { ids: ['c'], minutes: 75 })
-  assert.deepEqual(days.get('2026-10-08'), { ids: ['d'], minutes: 0 })
+
+test('time together adds the recipe time once per meal', () => {
+  const recipes = [
+    { id: 'a', title: 'A', total_time_minutes: 30 },
+    { id: 'b', title: 'B', total_time_minutes: null },
+  ]
+  const cookLog = [
+    { id: '1', recipe_id: 'a', cooked_on: '2026-10-10', created_by: 'u1' },
+    { id: '2', recipe_id: 'a', cooked_on: '2026-10-10', created_by: 'u2' },
+    { id: '3', recipe_id: 'a', cooked_on: '2026-10-11', created_by: 'u1' },
+    { id: '4', recipe_id: 'b', cooked_on: '2026-10-11', created_by: 'u1' },
+  ]
+  const stats = computeStats({ recipes, ingredients: [], cookLog, ratings: [] })
+  assert.equal(stats.hours, 1)
+  assert.equal(stats.mealsWithoutTime, 1)
+})
+
+test('formatMinutes', () => {
   assert.equal(formatMinutes(25), '25 min')
   assert.equal(formatMinutes(75), '1 hr 15 min')
   assert.equal(formatMinutes(120), '2 hr')
-  assert.equal(formatMinutes(0), 'under a minute')
-})
-
-test('hoursTogether ignores time that is still in the future', () => {
-  const nowMs = Date.parse('2026-10-11T12:00:00Z')
-  assert.equal(hoursTogether([{ started_at: '2026-10-11T18:00:00Z', ended_at: '2026-10-11T19:00:00Z' }], nowMs), 0)
 })

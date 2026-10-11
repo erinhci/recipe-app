@@ -3,10 +3,6 @@
 
 import { keyWords } from './cooking.js'
 
-const HOUR = 3600 * 1000
-// A screen left on overnight shouldn't count as a night of cooking.
-const MAX_SESSION = 4 * HOUR
-
 // Staples that would top the ingredient list for every kitchen.
 const STAPLES = new Set(['salt', 'water', 'pepper', 'black pepper', 'kosher salt', 'ice'])
 
@@ -15,62 +11,6 @@ export const MILESTONES = [
   { kind: 'cuisines', thresholds: [3, 5, 10], label: (n) => `${n} cuisines tried` },
   { kind: 'hours', thresholds: [5, 10, 25, 50], label: (n) => `${n} hours cooking together` },
 ]
-
-// Total time spent cooking. When both phones time the same meal, the
-// overlapping time counts once.
-export function hoursTogether(sessions, nowMs = Date.now()) {
-  const spans = sessions
-    .filter((s) => s.started_at)
-    .map((s) => {
-      const start = Date.parse(s.started_at)
-      const end = s.ended_at ? Date.parse(s.ended_at) : null
-      // A session still open (phone closed mid-cook) counts nothing.
-      if (end === null || Number.isNaN(start) || Number.isNaN(end) || end <= start) return null
-      const capped = Math.min(end, start + MAX_SESSION, nowMs)
-      // Time set in the future counts nothing yet.
-      return capped > start ? [start, capped] : null
-    })
-    .filter(Boolean)
-    .sort((a, b) => a[0] - b[0])
-
-  let total = 0
-  let current = null
-  for (const [start, end] of spans) {
-    if (current && start <= current[1]) {
-      current[1] = Math.max(current[1], end)
-    } else {
-      if (current) total += current[1] - current[0]
-      current = [start, end]
-    }
-  }
-  if (current) total += current[1] - current[0]
-  return total / HOUR
-}
-
-// A session's calendar day on this phone, as YYYY-MM-DD.
-const dayOf = (iso) => {
-  const d = new Date(iso)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
-// Cooking sessions grouped by the day they started, with minutes counted
-// the same way as in Stats (overlaps once, capped at 4 hours each).
-// Returns Map(day -> { ids, minutes }).
-export function sessionsByDay(sessions, nowMs = Date.now()) {
-  const days = new Map()
-  for (const s of sessions) {
-    if (!s.started_at) continue
-    const day = dayOf(s.started_at)
-    if (!days.has(day)) days.set(day, [])
-    days.get(day).push(s)
-  }
-  const result = new Map()
-  for (const [day, list] of days) {
-    result.set(day, { ids: list.map((s) => s.id), minutes: Math.round(hoursTogether(list, nowMs) * 60) })
-  }
-  return result
-}
 
 // 25 -> "25 min", 75 -> "1 hr 15 min", 120 -> "2 hr"
 export function formatMinutes(minutes) {
@@ -149,7 +89,7 @@ function countBy(items, keyFor) {
   return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-export function computeStats({ recipes, ingredients, cookLog, ratings, sessions, nowMs = Date.now() }) {
+export function computeStats({ recipes, ingredients, cookLog, ratings }) {
   const recipeById = new Map(recipes.map((r) => [r.id, r]))
   // Meals whose recipe was deleted for good aren't on the phone anymore.
   const entries = cookLog.filter((c) => recipeById.has(c.recipe_id))
@@ -187,7 +127,11 @@ export function computeStats({ recipes, ingredients, cookLog, ratings, sessions,
     .slice(0, 8)
     .map((item) => ({ ...item, name: labels.get(item.name) }))
 
-  const hours = hoursTogether(sessions, nowMs)
+  // Time together: each meal adds its recipe's total time once, even when
+  // both cooks logged it. Meals of recipes with no time add nothing.
+  const timed = meals.filter((c) => recipeById.get(c.recipe_id).total_time_minutes > 0)
+  const hours = timed.reduce((sum, c) => sum + recipeById.get(c.recipe_id).total_time_minutes, 0) / 60
+  const mealsWithoutTime = meals.length - timed.length
   const cuisinesTried = cuisines.filter((c) => c.name !== 'Other').length
   const totals = { meals: meals.length, cuisines: cuisinesTried, hours }
 
@@ -203,6 +147,7 @@ export function computeStats({ recipes, ingredients, cookLog, ratings, sessions,
     mealsLogged: meals.length,
     recipesCooked: new Set(meals.map((c) => c.recipe_id)).size,
     hours,
+    mealsWithoutTime,
     cuisinesTried,
     mostMade,
     topRated,

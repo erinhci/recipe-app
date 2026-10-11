@@ -31,6 +31,7 @@ export default function RecipeEdit() {
   const [servings, setServings] = useState(draft ? draft.servings : '4')
   const [cuisine, setCuisine] = useState(draft?.cuisine ?? '')
   const [mealType, setMealType] = useState(draft?.mealType ?? '')
+  const [totalTime, setTotalTime] = useState(draft?.totalTime ? String(draft.totalTime) : '')
   const [sourceUrl, setSourceUrl] = useState(draft?.sourceUrl || incoming?.originals?.url || '')
   const [sourceName, setSourceName] = useState(draft?.sourceName ?? '')
   const [ingredientText, setIngredientText] = useState(draft?.ingredientText ?? '')
@@ -48,6 +49,7 @@ export default function RecipeEdit() {
         setServings(String(recipe.base_servings ?? ''))
         setCuisine(recipe.cuisine ?? '')
         setMealType(recipe.meal_type ?? '')
+        setTotalTime(recipe.total_time_minutes ? String(recipe.total_time_minutes) : '')
         setSourceUrl(recipe.source_url ?? '')
         setSourceName(recipe.source_name ?? '')
         setIngredientText(proposed?.ingredientText ?? ingredients.map(ingredientToLine).join('\n'))
@@ -70,6 +72,10 @@ export default function RecipeEdit() {
     const base = Number(servings)
     if (!title.trim()) return setError('Add a title.')
     if (!base || base <= 0) return setError('Servings must be a number above 0.')
+    const minutes = totalTime.trim() ? Number(totalTime) : null
+    if (minutes !== null && !(Number.isInteger(minutes) && minutes > 0)) {
+      return setError('Total time must be a whole number of minutes, or left blank.')
+    }
     if (parsed.length === 0) return setError('Add at least one ingredient.')
 
     // Reuse ids by position so an edit changes rows instead of replacing them.
@@ -93,7 +99,7 @@ export default function RecipeEdit() {
               existing?.recipe.source_type ??
               SOURCE_TYPES[incoming?.originals?.kind] ??
               (sourceUrl.trim() ? 'url' : 'manual'),
-            total_time_minutes: existing?.recipe.total_time_minutes ?? draft?.totalTime ?? null,
+            total_time_minutes: minutes,
           },
           ingredients,
           steps,
@@ -162,6 +168,21 @@ export default function RecipeEdit() {
           />
           <span id="servings-hint" className="hint">
             Enter the original amount. The recipe opens scaled to 2.
+          </span>
+        </div>
+
+        <div className="field">
+          <label htmlFor="total-time">Total time, in minutes</label>
+          <input
+            id="total-time"
+            inputMode="numeric"
+            value={totalTime}
+            onChange={(e) => setTotalTime(e.target.value)}
+            aria-describedby="total-time-hint"
+          />
+          <span id="total-time-hint" className="hint">
+            Prep and cooking together. Each time you log this recipe, it adds this much to your time cooking together in
+            Stats.
           </span>
         </div>
 

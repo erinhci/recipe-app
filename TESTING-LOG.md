@@ -11,7 +11,8 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
-| 2026-10-11 | Cooking time could only come from cooking mode, and couldn't be seen or removed | Minutes can be added in the cook log; each day shows its time with Remove time (0.15.0) | See entry |
+| 2026-10-11 | Typing minutes for each meal was tedious, and the time is an estimate anyway | Each recipe's total time is added once per logged meal; cooking mode's Finish logs the meal; manual minutes and timed sessions removed (0.16.0) | See entry |
+| 2026-10-11 | Cooking time could only come from cooking mode, and couldn't be seen or removed | Minutes can be added in the cook log; each day shows its time with Remove time (0.15.0), replaced in 0.16.0 | See entry |
 | 2026-10-11 | No way to keep a rating after a recipe edit; ratings and cook log too large; "Show original" did nothing useful | Keep-rating option, compact ratings and log, breakdown shown once, servings reset link (0.14.0) | See entry |
 | 2026-10-11 | Before deeper user testing, the look should be plain and the app should meet WCAG 2.2 AA | Black-and-white theme, spacing cleanup, accessibility audit and fixes (0.13.0) | See entry |
 | 2026-10-11 | Keeping earlier versions of every recipe isn't needed; the note already says what changed | Earlier versions removed; only a short note-to-change record is kept | See entry |
@@ -28,6 +29,38 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Time from the recipe instead of by hand
+
+**Finding.** A few minutes after 0.15.0, Erin found that typing minutes for
+each meal was tedious, and since the number is an estimate anyway, the
+recipe's own time would do. Cooking mode should just record that we made
+it.
+
+**Change (version 0.16.0).**
+
+- Recipes have a "Total time, in minutes" field in Edit. Imports already
+  read a stated total time; Gemini now estimates one from the steps when
+  the recipe doesn't give one.
+- Time cooking together in Stats adds each recipe's total time once per
+  logged meal, even when both cooks log it. Stats says how many meals
+  don't count because their recipe has no time, and the recipe page links
+  to Edit to add one.
+- Finish in cooking mode logs today's meal and opens "How was it?". Stop
+  cooking logs nothing. A mistaken log is removed from the cook log like
+  any other.
+- The manual minutes field, "Remove time", and the "cooking mode, not
+  logged" rows are gone. Cooking mode no longer times sessions.
+
+**Bug found while testing.** Adding a total time asked to re-rate the
+recipe, because every save marked the ingredients and steps as changed.
+Saves that leave the ingredients and steps as they were now keep their
+old times, so only real changes ask for a new rating.
+
+**Decision in the case study.** This replaced a feature built 15 minutes
+earlier. Measured time was precise but asked for effort at the end of
+every meal; an estimate from the recipe costs nothing and is close
+enough for a "time together" stat.
 
 ## 2026-10-11: Adding and removing cooking time
 

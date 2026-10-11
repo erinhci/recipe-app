@@ -26,7 +26,6 @@ export const SYNCED_TABLES = [
   'steps',
   'recipe_versions',
   'notes',
-  'cooking_sessions',
   'cook_log',
   'ratings',
 ]

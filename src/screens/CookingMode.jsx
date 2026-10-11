@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import Working from '../components/Working'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
-import { endCookingSession, startCookingSession } from '../lib/data'
+import { localDate, logMeal } from '../lib/data'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { ingredientsForStep } from '../lib/cooking'
 import { askStep } from '../lib/askStep'
 import { useOnline } from '../lib/useOnline'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 
-// Coming back within this long continues the same cook (same step, same timer).
+// Coming back within this long continues the same cook (same step).
 const RESUME_WINDOW = 30 * 60 * 1000
 
 function readSaved(recipeId) {
@@ -94,35 +94,13 @@ export default function CookingMode() {
 
   const saved = useMemo(() => readSaved(id), [id])
   const [stepIndex, setStepIndex] = useState(saved?.step ?? 0)
-  const sessionRef = useRef(saved?.sessionId ?? null)
   const [answers, setAnswers] = useState({}) // step index -> [{ question, answer, error }]
   const [question, setQuestion] = useState('')
   const [asking, setAsking] = useState(false)
 
-  // Time this cook for stats: start (or continue) a session on arrival and
-  // record an end time whenever the app is hidden or cooking mode closes.
+  // Remember the step, so coming back to cooking mode picks up there.
   useEffect(() => {
-    // One start per visit, even if React runs this effect twice.
-    if (!sessionRef.current) sessionRef.current = startCookingSession(id, member)
-    Promise.resolve(sessionRef.current).then((sessionId) => {
-      sessionRef.current = sessionId
-      writeSaved(id, { sessionId, step: stepIndex })
-    })
-    const end = () => Promise.resolve(sessionRef.current).then((sessionId) => sessionId && endCookingSession(sessionId))
-    const onHide = () => {
-      if (document.visibilityState === 'hidden') end()
-    }
-    document.addEventListener('visibilitychange', onHide)
-    return () => {
-      document.removeEventListener('visibilitychange', onHide)
-      end()
-    }
-    // Only on arrival and leaving; the step is saved separately below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, member])
-
-  useEffect(() => {
-    if (typeof sessionRef.current === 'string') writeSaved(id, { sessionId: sessionRef.current, step: stepIndex })
+    writeSaved(id, { step: stepIndex })
   }, [id, stepIndex])
 
   const steps = data?.steps ?? []
@@ -165,10 +143,14 @@ export default function CookingMode() {
   const needed = step ? ingredientsForStep(step.text, ingredients) : []
   const stepAnswers = answers[current] ?? []
 
+  // Finish logs today's meal (its time comes from the recipe's total
+  // time) and goes to "How was it?". Stop cooking logs nothing.
   async function finish(toLog) {
-    const sessionId = await sessionRef.current
     writeSaved(id, null)
-    navigate(`/recipe/${id}`, { replace: true, state: toLog ? { finishedSession: sessionId } : undefined })
+    if (!toLog) return navigate(`/recipe/${id}`, { replace: true })
+    const today = localDate()
+    const { alreadyLogged } = await logMeal({ recipeId: id, cookedOn: today }, member)
+    navigate(`/recipe/${id}`, { replace: true, state: { finishedCooking: { day: today, alreadyLogged } } })
   }
 
   async function handleAsk(event) {

@@ -28,6 +28,11 @@ db.version(2).stores({
 db.version(3).stores({
   members: 'id, user_id, kitchen_id',
 })
+// Cooking time now comes from each recipe's total time, so timed
+// sessions aren't kept.
+db.version(4).stores({
+  cooking_sessions: null,
+})
 
 export async function getMeta(key) {
   const row = await db.meta.get(key)

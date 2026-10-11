@@ -25,8 +25,9 @@ Next: the Next features in the build spec.
 1. Create a project on the free plan.
 2. Open the SQL editor and run each file in `supabase/migrations/` once,
    in order: `0001_init.sql`, `0002_remove_members.sql`,
-   `0003_nutrition.sql`, `0004_source_credit.sql`, then
-   `0005_drop_recipe_copies.sql`. (Run
+   `0003_nutrition.sql`, `0004_source_credit.sql`,
+   `0005_drop_recipe_copies.sql`, then `0006_drop_cooking_sessions.sql`
+   (after both phones are on 0.16.0). (Run
    `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and

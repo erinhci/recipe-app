@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.16.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Recipes have a total time, and each logged meal adds it to your time cooking together",
+      "Finishing in cooking mode logs that you made it; remove it from the cook log if it was a mistake",
+      "No more typing minutes by hand, and changing only the time or cuisine no longer asks you to re-rate"
+    ]
+  },
+  {
     "version": "0.15.0",
     "date": "2026-10-11",
     "notes": [
