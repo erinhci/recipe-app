@@ -21,6 +21,14 @@ db.version(1).stores({
   meta: 'key',
 })
 
+// Memberships gained their own id (a cook can leave and rejoin).
+db.version(2).stores({
+  members: null,
+})
+db.version(3).stores({
+  members: 'id, user_id, kitchen_id',
+})
+
 export async function getMeta(key) {
   const row = await db.meta.get(key)
   return row?.value

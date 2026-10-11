@@ -16,15 +16,19 @@ export default function Library() {
 
   return (
     <Page title="Library">
+      <p>
+        <Link className="btn" to="/recipe/new">
+          Add a recipe
+        </Link>
+      </p>
       {recipes === undefined ? (
         <p role="status">Loading recipes…</p>
       ) : recipes.length === 0 ? (
         <div className="card">
           <h2>No recipes yet</h2>
-          <p>Add your first one from a screenshot, a PDF, or a link.</p>
-          <Link className="btn" to="/import">
-            Import a recipe
-          </Link>
+          <p style={{ margin: 0 }}>
+            Add your first one by typing or pasting it in. Anything one of you adds shows up on the other's phone.
+          </p>
         </div>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>

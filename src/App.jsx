@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
 import { isConfigured } from './lib/supabase'
@@ -10,6 +11,10 @@ import Join from './screens/Join'
 import Library from './screens/Library'
 import Settings from './screens/Settings'
 import ComingSoon from './screens/ComingSoon'
+import Import from './screens/Import'
+import RecipeView from './screens/RecipeView'
+import RecipeEdit from './screens/RecipeEdit'
+import { startSync } from './lib/sync'
 
 function NotConfigured() {
   return (
@@ -25,6 +30,13 @@ function NotConfigured() {
 function Shell() {
   const { session, member, loading } = useAuth()
   const online = useOnline()
+  const kitchenId = member?.kitchen_id
+
+  // Keep this phone in sync with the kitchen while signed in.
+  useEffect(() => {
+    if (!kitchenId) return undefined
+    return startSync()
+  }, [kitchenId])
 
   if (loading) {
     return (
@@ -65,15 +77,10 @@ function Shell() {
       <Routes>
         {joinRoute}
         <Route path="/" element={<Library />} />
-        <Route
-          path="/import"
-          element={
-            <ComingSoon
-              title="Import"
-              description="Add a recipe from a screenshot, PDF, link, or pasted text."
-            />
-          }
-        />
+        <Route path="/import" element={<Import />} />
+        <Route path="/recipe/new" element={<RecipeEdit />} />
+        <Route path="/recipe/:id" element={<RecipeView />} />
+        <Route path="/recipe/:id/edit" element={<RecipeEdit />} />
         <Route
           path="/stats"
           element={

@@ -3,6 +3,30 @@ import Page from '../components/Page'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useOnline } from '../lib/useOnline'
+import { syncNow, useSyncStatus } from '../lib/sync'
+import RecentlyDeleted from '../components/RecentlyDeleted'
+
+const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
+
+function SyncStatus() {
+  const { state, error, lastSyncedAt } = useSyncStatus()
+  const text = {
+    idle: lastSyncedAt ? `Up to date as of ${timeFormat.format(new Date(lastSyncedAt))}.` : 'Not synced yet.',
+    syncing: 'Syncing…',
+    offline: "Offline. Changes are saved on this phone and sync when you're back online.",
+    error: `Sync problem: ${error}`,
+  }[state]
+  return (
+    <section className="card" aria-labelledby="sync-heading">
+      <h2 id="sync-heading">Sync</h2>
+      <p role="status">{text}</p>
+      {state === 'idle' && error && <p className="hint">{error}</p>}
+      <button className="btn btn-secondary" type="button" onClick={() => syncNow()} disabled={state === 'syncing'}>
+        Sync now
+      </button>
+    </section>
+  )
+}
 
 export default function Settings() {
   const { member, refreshMember, signOut } = useAuth()
@@ -161,6 +185,10 @@ export default function Settings() {
           </p>
         )}
       </section>
+
+      <RecentlyDeleted />
+
+      <SyncStatus />
 
       <button className="btn btn-secondary" type="button" onClick={signOut}>
         Sign out
