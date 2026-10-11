@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
-import { addNote, deleteMealLog, deleteRecipe, localDate, logMeal, rateRecipe, restoreVersion } from '../lib/data'
+import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, rateRecipe, restoreVersion } from '../lib/data'
 import { ingredientToLine } from '../lib/ingredients'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
@@ -38,8 +38,8 @@ export default function RecipeView() {
     ])
     cookLog.sort((a, b) => b.cooked_on.localeCompare(a.cooked_on) || (b.created_at ?? '').localeCompare(a.created_at ?? ''))
     const ratings = await db.ratings.where('cook_log_id').anyOf(cookLog.map((c) => c.id)).toArray()
-    const versions = (await db.recipe_versions.where('recipe_id').equals(id).reverse().sortBy('created_at')).slice(0, VERSIONS_SHOWN)
-    return { recipe, ingredients, steps, notes, members, cookLog, ratings, versions }
+    const allVersions = await db.recipe_versions.where('recipe_id').equals(id).reverse().sortBy('created_at')
+    return { recipe, ingredients, steps, notes, members, cookLog, ratings, versions: allVersions.slice(0, VERSIONS_SHOWN), allVersions }
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
@@ -87,7 +87,13 @@ export default function RecipeView() {
     )
   }
 
-  const { recipe, ingredients, steps, notes, members, cookLog, ratings, versions } = data
+  const { recipe, ingredients, steps, notes, members, cookLog, ratings, versions, allVersions } = data
+  // Which notes led to a recipe change (kept with the version saved then).
+  const changesFromNote = new Map()
+  for (const version of allVersions) {
+    const change = version.snapshot?.next_change
+    if (change?.note_id && !changesFromNote.has(change.note_id)) changesFromNote.set(change.note_id, { ...change, version })
+  }
   const shownServings = showOriginal ? recipe.base_servings : servings
   const factor = scaleFactor(recipe.base_servings, shownServings)
   const nameFor = (userId) => members.find((m) => m.user_id === userId)?.display_name ?? 'A former cook'
@@ -412,14 +418,34 @@ export default function RecipeView() {
                 <p className="hint" style={{ margin: '0 0 var(--space-2)' }}>
                   {nameFor(note.author_id)}, {dateFormat.format(new Date(note.created_at))}
                 </p>
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  disabled={!online}
-                  onClick={() => navigate(`/recipe/${recipe.id}/note/${note.id}`)}
-                >
-                  Turn into a recipe change
-                </button>
+                {changesFromNote.has(note.id) && (
+                  <p style={{ margin: '0 0 var(--space-2)' }}>
+                    <strong>Used to change the recipe</strong> ({nameFor(changesFromNote.get(note.id).version.created_by)},{' '}
+                    {dateFormat.format(new Date(changesFromNote.get(note.id).version.created_at))})
+                    {changesFromNote.get(note.id).summary && `: ${changesFromNote.get(note.id).summary}`}
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    disabled={!online}
+                    onClick={() => navigate(`/recipe/${recipe.id}/note/${note.id}`)}
+                  >
+                    {changesFromNote.has(note.id) ? 'Make another change from it' : 'Turn into a recipe change'}
+                  </button>
+                  {note.author_id === member.user_id && (
+                    <button
+                      className="btn btn-secondary"
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm('Delete this note?')) await deleteNote(note.id)
+                      }}
+                    >
+                      Delete<span className="sr-only"> this note</span>
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -436,8 +462,10 @@ export default function RecipeView() {
             return (
               <details key={version.id} className="card">
                 <summary style={{ minHeight: 'var(--target)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  Before {nameFor(version.created_by)}'s edit, {timeFormat.format(new Date(version.created_at))}
+                  Before {nameFor(version.created_by)}'s {snap.next_change ? 'change from a note' : 'edit'},{' '}
+                  {timeFormat.format(new Date(version.created_at))}
                 </summary>
+                {snap.next_change?.summary && <p className="hint">The change: {snap.next_change.summary}</p>}
                 <p style={{ fontWeight: 600 }}>
                   {snap.recipe?.title} (serves {snap.recipe?.base_servings})
                 </p>

@@ -43,7 +43,7 @@ function applyToList(items, changes, makeChanged, makeAdded) {
 function valid(change, count) {
   const n = change.number
   if (!Number.isInteger(n)) return false
-  if (change.action === 'add') return n >= 0 && n <= count && Boolean(change.text?.trim())
+  if (change.action === 'add') return Boolean(change.text?.trim())
   if (change.action === 'change') return n >= 1 && n <= count && Boolean(change.text?.trim())
   return change.action === 'remove' && n >= 1 && n <= count
 }
@@ -51,8 +51,13 @@ function valid(change, count) {
 // Returns the changed ingredients and steps (ready for saveRecipe; kept and
 // changed lines keep their ids) and a list of before/after items to show.
 export function applyChanges({ ingredients, steps }, changes) {
-  const ingChanges = changes.filter((c) => c.target === 'ingredient' && valid(c, ingredients.length))
-  const stepChanges = changes.filter((c) => c.target === 'step' && valid(c, steps.length))
+  // An add past the end goes at the end.
+  const clamp = (c, count) => (c.action === 'add' ? { ...c, number: Math.min(Math.max(c.number, 0), count) } : c)
+  const ingChanges = changes
+    .filter((c) => c.target === 'ingredient' && valid(c, ingredients.length))
+    .map((c) => clamp(c, ingredients.length))
+  const stepChanges = changes.filter((c) => c.target === 'step' && valid(c, steps.length)).map((c) => clamp(c, steps.length))
+  const skipped = changes.length - ingChanges.length - stepChanges.length
 
   const newIngredients = applyToList(
     ingredients,
@@ -75,6 +80,8 @@ export function applyChanges({ ingredients, steps }, changes) {
       number: c.number,
       before: c.action === 'add' ? null : toText(list[c.number - 1]),
       after: c.action === 'remove' ? null : c.text,
+      reason: c.reason ?? null,
+      atEnd: c.action === 'add' && c.number === list.length && list.length > 0,
       needsReview: Boolean(after?.needs_review),
     }
   }
@@ -83,5 +90,5 @@ export function applyChanges({ ingredients, steps }, changes) {
     ...ingChanges.map(describe('ingredient', ingredients, ingredientToLine)).sort(order),
     ...stepChanges.map(describe('step', steps, (s) => s.text)).sort(order),
   ]
-  return { ingredients: newIngredients, steps: newSteps, items }
+  return { ingredients: newIngredients, steps: newSteps, items, skipped }
 }

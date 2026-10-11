@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
-import { addNote, loadRecipe, saveRecipe } from '../lib/data'
+import { loadRecipe, saveRecipe } from '../lib/data'
 import { ingredientToLine } from '../lib/ingredients'
 import { applyChanges, suggestEdit } from '../lib/noteEdit'
 import { useOnline } from '../lib/useOnline'
@@ -12,6 +12,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'nu
 
 function itemHeading(item) {
   const kind = item.target === 'ingredient' ? 'Ingredient' : 'Step'
+  if (item.action === 'add' && item.atEnd) return `New ${kind.toLowerCase()} at the end`
   if (item.action === 'add') return item.number === 0 ? `New ${kind.toLowerCase()} at the start` : `New ${kind.toLowerCase()} after ${kind.toLowerCase()} ${item.number}`
   return `${kind} ${item.number}, ${item.action === 'remove' ? 'removed' : 'changed'}`
 }
@@ -56,7 +57,7 @@ export default function NoteEdit() {
     if (applied.items.length === 0) {
       return setResult({ status: 'none', reason: answer.no_change_reason || "The note doesn't describe a change to the recipe." })
     }
-    setResult({ status: 'ready', summary: answer.summary, base, ...applied })
+    setResult({ status: 'ready', summary: answer.summary, base, ...applied, skipped: applied.skipped + (answer.skipped ?? 0) })
   }, [id, source])
 
   useEffect(() => {
@@ -101,9 +102,9 @@ export default function NoteEdit() {
       return
     }
     try {
-      await saveRecipe({ recipe: result.base.recipe, ingredients: result.ingredients, steps: result.steps }, member)
-      // Leave a note so the other cook knows what changed and why.
-      await addNote(id, `Changed the recipe from ${author}'s note: ${result.summary || 'see the recipe'}`, member)
+      // The note and summary are kept with the saved version, so the note
+      // shows what it led to and Earlier versions shows why it changed.
+      await saveRecipe({ recipe: result.base.recipe, ingredients: result.ingredients, steps: result.steps }, member, changeInfo())
       navigate(`/recipe/${id}`, { replace: true, state: { message: 'Recipe updated. The previous version is under Earlier versions.' } })
     } catch (error) {
       setSaving(false)
@@ -111,10 +112,15 @@ export default function NoteEdit() {
     }
   }
 
+  function changeInfo() {
+    return { note_id: note.id, summary: result.summary || null }
+  }
+
   function handleEditFirst() {
     navigate(`/recipe/${id}/edit`, {
       state: {
         proposed: {
+          change: changeInfo(),
           ingredientText: result.ingredients.map(ingredientToLine).join('\n'),
           stepText: result.steps.map((s) => s.text).join('\n\n'),
         },
@@ -182,6 +188,12 @@ export default function NoteEdit() {
         <section aria-labelledby="proposal-heading">
           <h2 id="proposal-heading">Suggested change</h2>
           <p role="status">{result.summary}</p>
+          {result.skipped > 0 && (
+            <p className="card" style={{ background: 'var(--color-flag-bg)' }}>
+              Gemini suggested {result.skipped} more {result.skipped === 1 ? 'change' : 'changes'} that couldn't be applied, so
+              this may not cover the whole note. Compare it with the note, then use Edit before saving to add anything missing.
+            </p>
+          )}
           <p className="hint">
             Check each change. Amounts are as the recipe is written, for {result.base.recipe.base_servings} servings.
             Nothing is saved until you approve.
@@ -190,6 +202,11 @@ export default function NoteEdit() {
             {result.items.map((item) => (
               <li key={`${item.target}-${item.action}-${item.number}-${item.after}`} className="card">
                 <h3 style={{ fontSize: '1rem', margin: '0 0 var(--space-2)' }}>{itemHeading(item)}</h3>
+                {item.reason && (
+                  <p className="hint" style={{ margin: '0 0 var(--space-2)' }}>
+                    {item.reason}
+                  </p>
+                )}
                 {item.before !== null && (
                   <p style={{ margin: '0 0 var(--space-1)' }}>
                     <strong>Before: </strong>

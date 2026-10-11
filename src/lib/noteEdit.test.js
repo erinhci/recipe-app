@@ -20,7 +20,7 @@ test('a changed line keeps its id and is read again', () => {
   assert.equal(out.ingredients[1].quantity, 1)
   assert.equal(out.ingredients[0], recipe.ingredients[0]) // untouched lines are the same objects
   assert.deepEqual(out.items, [
-    { target: 'ingredient', action: 'change', number: 2, before: '2 tbsp soy sauce', after: '1 tbsp soy sauce', needsReview: false },
+    { target: 'ingredient', action: 'change', number: 2, before: '2 tbsp soy sauce', after: '1 tbsp soy sauce', reason: null, atEnd: false, needsReview: false },
   ])
 })
 
@@ -53,4 +53,14 @@ test('changes pointing at missing lines are ignored; lines without amounts are f
   assert.deepEqual(out.steps.map((s) => s.id), ['s1', 's2'])
   assert.equal(out.items.length, 1)
   assert.equal(out.items[0].needsReview, true)
+})
+
+test('an ingredient added past the end lands at the end, with its reason', () => {
+  const out = applyChanges(recipe, [
+    { target: 'ingredient', action: 'add', number: 4, text: 'avocado oil, for greasing the pan', reason: 'Adds the oil used to grease the pan' },
+  ])
+  assert.deepEqual(out.ingredients.map((i) => i.item), ['glutinous rice flour', 'soy sauce', 'nori', 'avocado oil'])
+  assert.equal(out.items[0].reason, 'Adds the oil used to grease the pan')
+  assert.equal(out.items[0].needsReview, false) // "for greasing" is fine without an amount
+  assert.equal(out.skipped, 0)
 })

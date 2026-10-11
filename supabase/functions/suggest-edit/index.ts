@@ -14,10 +14,13 @@
 // Request body (JSON):
 //   { title, base_servings, usual_servings, ingredients: string[], steps: string[], note }
 // Response:
-//   { summary, no_change_reason, changes: [{ target, action, number, text }] }
+//   { summary, no_change_reason, skipped, changes: [{ target, action, number, text, reason }] }
 //   target: "ingredient" | "step"; action: "change" | "add" | "remove"
 //   number: for change/remove, the item's number (1-based);
-//           for add, the number it goes after (0 = at the start)
+//           for add, the number it goes after (0 = at the start; a number
+//           past the end is treated as "at the end")
+//   reason: what this one change does, in plain words
+//   skipped: how many suggested changes couldn't be used
 
 const DEFAULT_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
 const MAX_NOTE = 2000
@@ -44,7 +47,13 @@ type Request_ = {
   note: string
 }
 
-type Change = { target: 'ingredient' | 'step'; action: 'change' | 'add' | 'remove'; number: number; text: string | null }
+type Change = {
+  target: 'ingredient' | 'step'
+  action: 'change' | 'add' | 'remove'
+  number: number
+  text: string | null
+  reason: string | null
+}
 
 export function readRequest(body: any): Request_ | string {
   const note = String(body?.note ?? '').trim()
@@ -74,12 +83,16 @@ export function buildPrompt(r: Request_) {
   return [
     'Two people who cook together left a note on one of their recipes. Turn the note into changes to the recipe.',
     'Rules:',
+    '- A note often asks for more than one thing. Make one change for each thing it asks for, and check that every part of the note is covered.',
     '- Change only what the note asks for or clearly implies. Leave everything else alone.',
+    '- An ingredient the note says was used but is missing from the list is an "add". To add at the end of a list, use the number of the last item.',
+    '- Advice about heat, timing, or technique ("pan was too hot", "cook longer") is a "change" to the step it applies to. Write the step so the next cook knows what to do, like "over medium heat".',
     '- Refer to ingredients and steps by their numbers below.',
     '- An ingredient line is written as amount, unit, ingredient, then preparation after a comma, like "1 tbsp soy sauce" or "2 cloves garlic, minced".',
     '- A changed step keeps its other wording. Update a step too when an ingredient change makes it wrong.',
     '- If the note is only an opinion or a memory with nothing to change ("so good", "made it for Mom"), return no changes and explain why in no_change_reason.',
-    '- summary: one short sentence in plain words, like "Halves the soy sauce."',
+    '- reason: for each change, a few plain words on what it does, like "Adds the avocado oil used to grease the pan".',
+    '- summary: one short sentence covering all the changes, like "Halves the soy sauce and lowers the heat."',
     `- ${servingsRule}`,
     '',
     `Recipe: ${r.title}`,
@@ -106,32 +119,43 @@ const SCHEMA = {
           action: { type: 'STRING', enum: ['change', 'add', 'remove'] },
           number: { type: 'INTEGER' },
           text: { type: 'STRING', nullable: true },
+          reason: { type: 'STRING', nullable: true },
         },
-        required: ['target', 'action', 'number'],
+        required: ['target', 'action', 'number', 'reason'],
       },
     },
   },
   required: ['summary', 'changes'],
 }
 
-// Keeps only changes that point at real lines and carry text where needed.
-export function cleanChanges(raw: any, counts: { ingredient: number; step: number }): Change[] {
-  if (!Array.isArray(raw)) return []
+// Keeps changes that point at real lines and carry text where needed.
+// An add past the end goes at the end. Returns what was kept and how many
+// suggestions were dropped, so the app can say so.
+export function cleanChanges(raw: any, counts: { ingredient: number; step: number }): { changes: Change[]; skipped: number } {
+  if (!Array.isArray(raw)) return { changes: [], skipped: 0 }
   const out: Change[] = []
+  let skipped = 0
   for (const c of raw) {
     const target = c?.target
     const action = c?.action
-    const number = Number(c?.number)
+    let number = Number(c?.number)
     const text = typeof c?.text === 'string' ? c.text.trim() : ''
-    if (target !== 'ingredient' && target !== 'step') continue
-    if (!['change', 'add', 'remove'].includes(action)) continue
-    if (!Number.isInteger(number)) continue
+    const reason = typeof c?.reason === 'string' && c.reason.trim() ? c.reason.trim() : null
+    const known = (target === 'ingredient' || target === 'step') && ['change', 'add', 'remove'].includes(action)
+    if (!known || !Number.isInteger(number) || (action !== 'remove' && !text)) {
+      skipped++
+      continue
+    }
     const max = counts[target as 'ingredient' | 'step']
-    if (action === 'add' ? number < 0 || number > max : number < 1 || number > max) continue
-    if (action !== 'remove' && !text) continue
-    out.push({ target, action, number, text: action === 'remove' ? null : text })
+    if (action === 'add') {
+      number = Math.min(Math.max(number, 0), max)
+    } else if (number < 1 || number > max) {
+      skipped++
+      continue
+    }
+    out.push({ target, action, number, text: action === 'remove' ? null : text, reason })
   }
-  return out
+  return { changes: out, skipped }
 }
 
 async function askGemini(prompt: string, apiKey: string, models: string[]) {
@@ -190,9 +214,10 @@ async function handle(request: Request): Promise<Response> {
     const result = await askGemini(buildPrompt(req), apiKey, models.length ? models : DEFAULT_MODELS)
     if (result.status !== 200) return json({ error: result.error }, result.status)
     const parsed = result.parsed
-    const changes = cleanChanges(parsed?.changes, { ingredient: req.ingredients.length, step: req.steps.length })
+    const { changes, skipped } = cleanChanges(parsed?.changes, { ingredient: req.ingredients.length, step: req.steps.length })
     return json({
       summary: String(parsed?.summary ?? '').trim(),
+      skipped,
       no_change_reason: changes.length ? null : String(parsed?.no_change_reason ?? '').trim() || null,
       changes,
     })

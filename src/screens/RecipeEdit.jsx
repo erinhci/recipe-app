@@ -97,6 +97,7 @@ export default function RecipeEdit() {
           steps,
         },
         member,
+        proposed?.change ?? null,
       )
       const files = incoming?.originals?.files
       if (files?.length) {

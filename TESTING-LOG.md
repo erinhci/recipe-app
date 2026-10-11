@@ -11,11 +11,49 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | A note asking for two changes only got one, and saving added a duplicate note | Every part of a note is covered or flagged; no duplicate note | See entry |
 | 2026-10-11 | Partner wants calorie and protein estimates for recipes | Nutrition estimates added to the MVP | See entry |
 | 2026-10-11 | Logging after midnight defaults to the wrong day | Open | Not built |
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Changes from a note: missed change and duplicate note
+
+**Finding.** Erin's note on Isobe mochi asked for two things: find a middle
+heat for the glaze, and add the avocado oil used to grease the pan. After
+"Turn into a recipe change", the recipe got one change, the oil never
+appeared in the ingredients, and the summary still said the oil was added.
+Saving also posted an automatic note ("Changed the recipe from Erin's
+note: ...") that read as a duplicate and had its own "Turn into a recipe
+change" button.
+
+**Cause.**
+
+- Gemini numbered the new ingredient as one past the end of the list. The
+  app treated that as an invalid position and dropped the change without
+  saying so, while the summary described every change Gemini meant to make.
+- The automatic note was meant to tell the other cook what changed, but it
+  repeated the original note in a second place.
+
+**Change.**
+
+- An ingredient or step added past the end now goes at the end.
+- Gemini is told to cover every part of a note, and to turn heat or timing
+  advice into a change to the step it applies to.
+- Each change shows its own reason. If any suggestion can't be applied,
+  the review screen says so and points to Edit before saving.
+- No automatic note. The original note now shows "Used to change the
+  recipe" with the date and summary, and Earlier versions labels that
+  version as a change from a note.
+- Whoever wrote a note can delete it, which also clears the old automatic
+  notes.
+- Lines like "avocado oil, for greasing the pan" no longer get flagged for a
+  missing amount.
+
+**Design takeaway.** An AI summary has to describe what was applied, and a
+partial result has to be visible. Silent drops break trust in the approve
+step, which is the safeguard the feature depends on.
 
 ## 2026-10-11: Nutrition estimates
 

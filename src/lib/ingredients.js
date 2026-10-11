@@ -8,7 +8,7 @@ const COUNT_UNITS = new Set([
 ])
 
 // Lines that are fine without an amount.
-const NO_AMOUNT_OK = /\b(to taste|as needed|optional|for serving|for garnish|for frying|pinch of|dash of)\b/i
+const NO_AMOUNT_OK = /\b(to taste|as needed|optional|for serving|for garnish|for frying|for greasing|for the pan|for brushing|pinch of|dash of)\b/i
 
 // Splits a typed or pasted line like "1 1/2 cups flour, sifted" into
 // { quantity, unit, item, prep_note, raw_text, needs_review }.

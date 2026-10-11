@@ -44,7 +44,10 @@ export async function loadRecipe(id) {
 
 // Create or update a recipe with its ingredients and steps.
 // On update, the previous version is kept in recipe_versions.
-export async function saveRecipe({ recipe, ingredients, steps }, member) {
+// change (optional) describes why, e.g. { note_id, summary } when the edit
+// came from a note; it's kept with that version so the app can show which
+// note led to which change.
+export async function saveRecipe({ recipe, ingredients, steps }, member, change = null) {
   const stamp = now()
   const isNew = !recipe.id || !(await db.recipes.get(recipe.id))
   const id = recipe.id ?? newId()
@@ -79,7 +82,7 @@ export async function saveRecipe({ recipe, ingredients, steps }, member) {
       version = {
         id: newId(),
         recipe_id: id,
-        snapshot: previous,
+        snapshot: change ? { ...previous, next_change: change } : previous,
         created_by: member.user_id,
         created_at: stamp,
       }
@@ -108,6 +111,14 @@ export async function saveRecipe({ recipe, ingredients, steps }, member) {
 
   afterWrite()
   return id
+}
+
+export async function deleteNote(noteId) {
+  await db.transaction('rw', [db.notes, db.outbox], async () => {
+    await db.notes.delete(noteId)
+    await enqueue('notes', 'delete', { id: noteId })
+  })
+  afterWrite()
 }
 
 export async function addNote(recipeId, body, member) {
