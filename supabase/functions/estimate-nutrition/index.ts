@@ -1,0 +1,187 @@
+// Supabase Edge Function: estimate-nutrition
+//
+// Estimates calories, protein, carbs, and fat for each ingredient line of
+// a recipe. The app adds the lines up and divides by servings itself, so
+// the totals always match the breakdown shown to the cooks.
+//
+// The Gemini key is read from the GEMINI_API_KEY secret and never leaves
+// the server. Only signed-in users can call this function (JWT
+// verification stays on when it's deployed).
+//
+// Request body (JSON): { title, base_servings, ingredients: string[] }
+// Response: { items: [{ number, calories, protein_g, carbs_g, fat_g, assumption }], notes }
+//   One item per ingredient line that could be estimated, numbered from 1.
+
+const DEFAULT_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
+// No single ingredient line in a home recipe should be above this.
+const MAX_LINE_CALORIES = 20000
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  })
+}
+
+type Input = { title: string; base_servings: number; ingredients: string[] }
+
+type Item = {
+  number: number
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  assumption: string | null
+}
+
+export function readInput(body: any): Input | string {
+  const ingredients = Array.isArray(body?.ingredients)
+    ? body.ingredients.map((s: unknown) => String(s).trim()).filter(Boolean).slice(0, 80)
+    : []
+  if (ingredients.length === 0) return 'This recipe has no ingredients to estimate.'
+  return {
+    title: String(body?.title ?? 'this recipe').slice(0, 200),
+    base_servings: Number(body?.base_servings) > 0 ? Number(body.base_servings) : 2,
+    ingredients,
+  }
+}
+
+export function buildPrompt(input: Input) {
+  return [
+    'Estimate the nutrition of each ingredient line in this home recipe, for the full amount on that line.',
+    'Rules:',
+    '- Use standard USDA-style values. Treat ingredients as raw or as sold unless the line says cooked.',
+    '- calories in kcal; protein_g, carbs_g, and fat_g in grams. Round to whole numbers.',
+    '- Water, ice, salt, and plain spices with no amount count as 0.',
+    '- If a line has no amount ("oil for frying", "cheese to taste"), assume a typical amount for this recipe and say what you assumed in assumption. For frying oil, count only what the food absorbs.',
+    '- If you had to guess what an ingredient is or how big it is ("1 onion"), say what you assumed. Otherwise leave assumption empty.',
+    '- Return one item for every line, using the line numbers below.',
+    '- notes: one short sentence about anything that makes the whole estimate less reliable, or empty.',
+    '',
+    `Recipe: ${input.title} (serves ${input.base_servings})`,
+    'Ingredients:',
+    ...input.ingredients.map((line, i) => `${i + 1}. ${line}`),
+  ].join('\n')
+}
+
+const SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    items: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          number: { type: 'INTEGER' },
+          calories: { type: 'NUMBER' },
+          protein_g: { type: 'NUMBER' },
+          carbs_g: { type: 'NUMBER' },
+          fat_g: { type: 'NUMBER' },
+          assumption: { type: 'STRING', nullable: true },
+        },
+        required: ['number', 'calories', 'protein_g', 'carbs_g', 'fat_g'],
+      },
+    },
+    notes: { type: 'STRING', nullable: true },
+  },
+  required: ['items'],
+}
+
+// Keeps one sensible item per real line.
+export function cleanItems(raw: any, lineCount: number): Item[] {
+  if (!Array.isArray(raw)) return []
+  const seen = new Set<number>()
+  const out: Item[] = []
+  const amount = (v: unknown) => {
+    const n = Number(v)
+    return Number.isFinite(n) && n >= 0 ? Math.round(n) : null
+  }
+  for (const r of raw) {
+    const number = Number(r?.number)
+    if (!Number.isInteger(number) || number < 1 || number > lineCount || seen.has(number)) continue
+    const calories = amount(r?.calories)
+    const protein_g = amount(r?.protein_g)
+    const carbs_g = amount(r?.carbs_g)
+    const fat_g = amount(r?.fat_g)
+    if (calories === null || protein_g === null || carbs_g === null || fat_g === null) continue
+    if (calories > MAX_LINE_CALORIES) continue
+    const assumption = typeof r?.assumption === 'string' && r.assumption.trim() ? r.assumption.trim() : null
+    seen.add(number)
+    out.push({ number, calories, protein_g, carbs_g, fat_g, assumption })
+  }
+  return out.sort((a, b) => a.number - b.number)
+}
+
+async function askGemini(prompt: string, apiKey: string, models: string[]) {
+  let overLimit = false
+  for (const model of models) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0 },
+        }),
+      },
+    )
+    if (response.status === 429 || response.status === 503) {
+      // Free limit reached or model busy: try the next model.
+      overLimit = true
+      continue
+    }
+    if (!response.ok) {
+      const detail = await response.text()
+      return { status: 502, error: `Gemini error (${response.status}): ${detail.slice(0, 300)}` }
+    }
+    const result = await response.json()
+    const text = result?.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? '').join('')
+    if (!text) return { status: 502, error: 'Gemini returned nothing. Try again.' }
+    return { status: 200, parsed: JSON.parse(text) }
+  }
+  return {
+    status: overLimit ? 429 : 503,
+    error: 'Gemini is over the free limit right now. Try again in a minute.',
+  }
+}
+
+async function handle(request: Request): Promise<Response> {
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  if (request.method !== 'POST') return json({ error: 'Use POST.' }, 405)
+
+  const apiKey = Deno.env.get('GEMINI_API_KEY')
+  if (!apiKey) return json({ error: 'The Gemini key is not set up yet.' }, 500)
+  const models = String(Deno.env.get('GEMINI_MODELS') ?? '').split(',').map((m: string) => m.trim()).filter(Boolean)
+
+  let body: any
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'The request was not valid JSON.' }, 400)
+  }
+
+  const input = readInput(body)
+  if (typeof input === 'string') return json({ error: input }, 400)
+
+  try {
+    const result = await askGemini(buildPrompt(input), apiKey, models.length ? models : DEFAULT_MODELS)
+    if (result.status !== 200) return json({ error: result.error }, result.status)
+    const items = cleanItems(result.parsed?.items, input.ingredients.length)
+    if (items.length === 0) return json({ error: 'Gemini could not estimate this recipe. Try again.' }, 502)
+    const notes = typeof result.parsed?.notes === 'string' && result.parsed.notes.trim() ? result.parsed.notes.trim() : null
+    return json({ items, notes })
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+}
+
+// Deno runs this as a server; tests import the helpers above in Node.
+declare const Deno: any
+if (typeof Deno !== 'undefined') Deno.serve(handle)

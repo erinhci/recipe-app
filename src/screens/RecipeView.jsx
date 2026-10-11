@@ -12,6 +12,7 @@ import { originalLinks } from '../lib/importRecipe'
 import { useOnline } from '../lib/useOnline'
 import { groupMeals, ratingIsStale, recipeRatings } from '../lib/stats'
 import StarPicker from '../components/StarPicker'
+import NutritionPanel from '../components/NutritionPanel'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 // cooked_on is a calendar date; read it as local noon so it never shifts a day.
@@ -261,6 +262,8 @@ export default function RecipeView() {
           })}
         </ul>
       </section>
+
+      <NutritionPanel recipe={recipe} ingredients={ingredients} member={member} online={online} shownServings={shownServings} />
 
       <section aria-labelledby="steps-heading">
         <h2 id="steps-heading">Steps</h2>

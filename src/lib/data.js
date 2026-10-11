@@ -19,7 +19,7 @@ function afterWrite() {
 const RECIPE_FIELDS = [
   'id', 'kitchen_id', 'title', 'base_servings', 'cuisine', 'meal_type', 'tags',
   'total_time_minutes', 'source_type', 'source_url', 'original_file',
-  'created_by', 'created_at', 'updated_at', 'deleted_at', 'deleted_by',
+  'created_by', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'nutrition',
 ]
 const INGREDIENT_FIELDS = [
   'id', 'recipe_id', 'position', 'quantity', 'unit', 'item', 'prep_note',

@@ -15,7 +15,7 @@ Done: sign-in and shared kitchens; recipes with scaling, units, notes, and
 offline sync; import from screenshots, PDFs, links, and pasted text;
 cooking mode with step questions; cook log with a rating from each cook;
 kitchen stats and milestones; recipe changes drafted from notes, with
-earlier versions that can be restored.
+earlier versions that can be restored; nutrition estimates.
 Next: the Next features in the build spec.
 
 ## One-time setup
@@ -24,7 +24,8 @@ Next: the Next features in the build spec.
 
 1. Create a project on the free plan.
 2. Open the SQL editor and run each file in `supabase/migrations/` once,
-   in order: `0001_init.sql`, then `0002_remove_members.sql`. (Run
+   in order: `0001_init.sql`, `0002_remove_members.sql`, then
+   `0003_nutrition.sql`. (Run
    `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and
@@ -46,6 +47,9 @@ Next: the Next features in the build spec.
 8. Do the same for `suggest-edit`, pasting in
    `supabase/functions/suggest-edit/index.ts`. It drafts recipe changes
    from notes.
+9. Do the same for `estimate-nutrition`, pasting in
+   `supabase/functions/estimate-nutrition/index.ts`. It estimates calories
+   and macros. Run `0003_nutrition.sql` first so estimates can be saved.
 
 ### 2. Vercel
 
