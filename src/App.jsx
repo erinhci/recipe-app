@@ -16,6 +16,7 @@ import RecipeView from './screens/RecipeView'
 import RecipeEdit from './screens/RecipeEdit'
 import CookingMode from './screens/CookingMode'
 import Stats from './screens/Stats'
+import NoteEdit from './screens/NoteEdit'
 import { startSync } from './lib/sync'
 
 function NotConfigured() {
@@ -87,6 +88,7 @@ function Shell() {
         <Route path="/recipe/:id" element={<RecipeView />} />
         <Route path="/recipe/:id/edit" element={<RecipeEdit />} />
         <Route path="/recipe/:id/cook" element={<CookingMode />} />
+        <Route path="/recipe/:id/note/:noteId" element={<NoteEdit />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/settings" element={<Settings />} />
         <Route

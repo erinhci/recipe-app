@@ -23,6 +23,8 @@ export default function RecipeEdit() {
   // An imported draft arrives with the original screenshots, PDF, or link.
   const incoming = isNew ? location.state : null
   const draft = incoming?.form
+  // A change Gemini drafted from a note, opened here to adjust before saving.
+  const proposed = isNew ? null : location.state?.proposed
 
   const [loaded, setLoaded] = useState(isNew)
   const [existing, setExisting] = useState(null)
@@ -47,11 +49,12 @@ export default function RecipeEdit() {
         setCuisine(recipe.cuisine ?? '')
         setMealType(recipe.meal_type ?? '')
         setSourceUrl(recipe.source_url ?? '')
-        setIngredientText(ingredients.map(ingredientToLine).join('\n'))
-        setStepText(steps.map((s) => s.text).join('\n\n'))
+        setIngredientText(proposed?.ingredientText ?? ingredients.map(ingredientToLine).join('\n'))
+        setStepText(proposed?.stepText ?? steps.map((s) => s.text).join('\n\n'))
       }
       setLoaded(true)
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isNew])
 
   const parsed = useMemo(
@@ -145,6 +148,9 @@ export default function RecipeEdit() {
             <p className="hint">You're offline, so the original won't be attached to the recipe.</p>
           )}
         </>
+      )}
+      {proposed && (
+        <p>Gemini's suggested change is filled in below. Adjust it, then save. Nothing is saved until you do.</p>
       )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="field">

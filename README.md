@@ -12,8 +12,9 @@ The product plan and build spec live in the project doc (Build spec tab).
 Done: sign-in and shared kitchens; recipes with scaling, units, notes, and
 offline sync; import from screenshots, PDFs, links, and pasted text;
 cooking mode with step questions; cook log with a rating from each cook;
-kitchen stats and milestones.
-Next: AI-drafted edits from notes, then the Next features in the build spec.
+kitchen stats and milestones; recipe changes drafted from notes, with
+earlier versions that can be restored.
+Next: the Next features in the build spec.
 
 ## One-time setup
 
@@ -40,6 +41,9 @@ Next: AI-drafted edits from notes, then the Next features in the build spec.
 7. Do the same for a function named `ask-step`, pasting in
    `supabase/functions/ask-step/index.ts`. It answers questions typed in
    cooking mode and uses the same Gemini secret.
+8. Do the same for `suggest-edit`, pasting in
+   `supabase/functions/suggest-edit/index.ts`. It drafts recipe changes
+   from notes.
 
 ### 2. Vercel
 

@@ -238,3 +238,16 @@ export async function deleteMealLog(cookLogId) {
   })
   afterWrite()
 }
+
+// Puts an earlier version back. The current version is kept as a version
+// too (saveRecipe does that), so a restore can itself be undone.
+export async function restoreVersion(versionId, member) {
+  const version = await db.recipe_versions.get(versionId)
+  const current = version && (await db.recipes.get(version.recipe_id))
+  if (!version?.snapshot?.recipe || !current) throw new Error('That version is not on this phone.')
+  const { recipe, ingredients = [], steps = [] } = version.snapshot
+  const restoredFields = ['title', 'base_servings', 'cuisine', 'meal_type', 'tags', 'total_time_minutes', 'source_url']
+  const merged = { ...current }
+  for (const field of restoredFields) if (recipe[field] !== undefined) merged[field] = recipe[field]
+  return saveRecipe({ recipe: merged, ingredients, steps }, member)
+}
