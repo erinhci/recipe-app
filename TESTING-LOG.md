@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Notes looked like big cards, the app's own note offered "Turn into a recipe change", and a note could be applied again | Notes look like a comments thread; a used note can't be applied twice | See entry |
 | 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | `1a7579d` |
 | 2026-10-11 | Phones kept showing an older version after updates shipped | App offers updates and shows its version | `e8b0626` |
 | 2026-10-11 | A note asking for two changes only got one, and saving added a duplicate note | Every part of a note is covered or flagged; no duplicate note | `f39d1d0` |
@@ -19,6 +20,27 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Notes as a comments thread
+
+**Finding.** Looking at the notes after the avocado oil fix, Erin found
+three problems. Each note was a large card with full-size buttons, so a few
+notes filled the screen. The note the app had posted after a change
+("Changed the recipe from Erin's note: ...") offered "Turn into a recipe
+change", which made no sense for a change already made. A note that had
+already changed the recipe could be applied again.
+
+**Change.**
+
+- Notes look like a comments thread: initial, name, and date, the note,
+  then small text actions. Oldest first, with a "Add a note" box and Post
+  button at the bottom.
+- A note that was used shows "Used to change the recipe" with the summary,
+  and no longer offers the change. The review screen also refuses a note
+  that was already used, in case the other phone hasn't synced yet.
+- Notes the old version of the app posted after a change show as a quiet
+  "Recipe updated: ..." line with no change action. The author can delete
+  them.
 
 ## 2026-10-11: Waiting on Gemini
 

@@ -20,6 +20,7 @@ const formatDay = (day) => dateFormat.format(new Date(`${day}T12:00:00`))
 const timeFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 const VERSIONS_SHOWN = 10
 const HISTORY_SHOWN = 10
+const shortDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
 
 export default function RecipeView() {
   const { id } = useParams()
@@ -32,7 +33,7 @@ export default function RecipeView() {
     const [ingredients, steps, notes, members, cookLog] = await Promise.all([
       db.ingredients.where('recipe_id').equals(id).sortBy('position'),
       db.steps.where('recipe_id').equals(id).sortBy('position'),
-      db.notes.where('recipe_id').equals(id).reverse().sortBy('created_at'),
+      db.notes.where('recipe_id').equals(id).sortBy('created_at'),
       db.members.toArray(),
       db.cook_log.where('recipe_id').equals(id).toArray(),
     ])
@@ -399,58 +400,91 @@ export default function RecipeView() {
 
       <section aria-labelledby="notes-heading">
         <h2 id="notes-heading">Notes</h2>
-        <form onSubmit={handleAddNote} className="field">
-          <label htmlFor="note">Add a note</label>
-          <textarea id="note" rows={2} value={noteText} onChange={(e) => setNoteText(e.target.value)} />
-          <button className="btn" type="submit" disabled={!noteText.trim()} style={{ alignSelf: 'flex-start' }}>
-            Save note
+        {notes.length === 0 ? (
+          <p className="hint">No notes yet. Leave one for next time, like what you'd change.</p>
+        ) : (
+          <ul className="comments">
+            {notes.map((note) => {
+              const mine = note.author_id === member.user_id
+              const used = changesFromNote.get(note.id)
+              // Notes the app used to post after a change ("Changed the recipe
+              // from ..."). They describe a change already made, so they get
+              // no "Turn into a recipe change".
+              const appNote = /^Changed the recipe from .+'s note:/.test(note.body)
+              const name = nameFor(note.author_id)
+              const deleteButton = mine && (
+                <button
+                  className="link-btn"
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm('Delete this note?')) await deleteNote(note.id)
+                  }}
+                >
+                  Delete<span className="sr-only"> this note</span>
+                </button>
+              )
+              if (appNote) {
+                return (
+                  <li key={note.id} className="comment comment-app">
+                    <p className="hint" style={{ margin: 0 }}>
+                      {note.body.replace(/^Changed the recipe from .+?'s note: /, 'Recipe updated: ')} ·{' '}
+                      {shortDate.format(new Date(note.created_at))}
+                    </p>
+                    {deleteButton && <div className="comment-actions">{deleteButton}</div>}
+                  </li>
+                )
+              }
+              return (
+                <li key={note.id} className="comment">
+                  <span className="avatar" aria-hidden="true">
+                    {name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="comment-body">
+                    <p className="comment-meta">
+                      <strong>{name}</strong> <span className="hint">{shortDate.format(new Date(note.created_at))}</span>
+                    </p>
+                    <p style={{ margin: 0 }}>{note.body}</p>
+                    {used && (
+                      <p className="hint" style={{ margin: 'var(--space-1) 0 0' }}>
+                        ✓ Used to change the recipe{used.summary ? `: ${used.summary}` : ''} ({nameFor(used.version.created_by)},{' '}
+                        {shortDate.format(new Date(used.version.created_at))})
+                      </p>
+                    )}
+                    <div className="comment-actions">
+                      {!used && (
+                        <button
+                          className="link-btn"
+                          type="button"
+                          disabled={!online}
+                          onClick={() => navigate(`/recipe/${recipe.id}/note/${note.id}`)}
+                        >
+                          Turn into a recipe change
+                        </button>
+                      )}
+                      {deleteButton}
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        {!online && notes.length > 0 && <p className="hint">Turning a note into a recipe change needs the internet.</p>}
+        <form onSubmit={handleAddNote} className="comment-form">
+          <label htmlFor="note" className="sr-only">
+            Add a note
+          </label>
+          <textarea
+            id="note"
+            rows={2}
+            placeholder="Add a note"
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+          />
+          <button className="btn" type="submit" disabled={!noteText.trim()}>
+            Post
           </button>
         </form>
-        {notes.length === 0 ? (
-          <p className="hint">No notes yet.</p>
-        ) : (
-          <>
-          {!online && <p className="hint">Turning a note into a recipe change needs the internet.</p>}
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {notes.map((note) => (
-              <li key={note.id} className="card">
-                <p style={{ margin: 0 }}>{note.body}</p>
-                <p className="hint" style={{ margin: '0 0 var(--space-2)' }}>
-                  {nameFor(note.author_id)}, {dateFormat.format(new Date(note.created_at))}
-                </p>
-                {changesFromNote.has(note.id) && (
-                  <p style={{ margin: '0 0 var(--space-2)' }}>
-                    <strong>Used to change the recipe</strong> ({nameFor(changesFromNote.get(note.id).version.created_by)},{' '}
-                    {dateFormat.format(new Date(changesFromNote.get(note.id).version.created_at))})
-                    {changesFromNote.get(note.id).summary && `: ${changesFromNote.get(note.id).summary}`}
-                  </p>
-                )}
-                <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-                  <button
-                    className="btn btn-secondary"
-                    type="button"
-                    disabled={!online}
-                    onClick={() => navigate(`/recipe/${recipe.id}/note/${note.id}`)}
-                  >
-                    {changesFromNote.has(note.id) ? 'Make another change from it' : 'Turn into a recipe change'}
-                  </button>
-                  {note.author_id === member.user_id && (
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={async () => {
-                        if (window.confirm('Delete this note?')) await deleteNote(note.id)
-                      }}
-                    >
-                      Delete<span className="sr-only"> this note</span>
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-          </>
-        )}
       </section>
 
       {versions.length > 0 && (

@@ -350,3 +350,80 @@ textarea {
     background: radial-gradient(circle, var(--color-accent) 0 4px, transparent 5px);
   }
 }
+
+/* Notes, laid out like a comments thread */
+.comments {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-3);
+}
+.comment {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+.comment:first-child {
+  border-top: 0;
+}
+.comment-app {
+  display: block;
+  /* Lines up with the text of the notes around it */
+  padding-left: calc(32px + var(--space-3));
+}
+.avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.comment-body {
+  flex: 1;
+  min-width: 0;
+}
+.comment-meta {
+  margin: 0 0 var(--space-1);
+}
+.comment-actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+/* Text-style buttons: quiet, but still a full-size touch target */
+.link-btn {
+  min-height: var(--target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.link-btn:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+.comment-form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+.comment-form textarea {
+  flex: 1;
+  min-height: var(--target);
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  resize: vertical;
+}

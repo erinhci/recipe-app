@@ -35,11 +35,19 @@ export default function NoteEdit() {
   // if the other phone syncs a change while this screen is open.
   useEffect(() => {
     let active = true
-    Promise.all([loadRecipe(id), db.notes.get(noteId), db.members.toArray()]).then(([data, note, members]) => {
+    Promise.all([
+      loadRecipe(id),
+      db.notes.get(noteId),
+      db.members.toArray(),
+      db.recipe_versions.where('recipe_id').equals(id).toArray(),
+    ]).then(([data, note, members, versions]) => {
       if (!active) return
       if (!data || data.recipe.deleted_at || !note) return setSource(null)
       const author = members.find((m) => m.user_id === note.author_id)?.display_name ?? 'A former cook'
-      setSource({ data, note, author })
+      // A note turns into a change once. (The second phone may still show the
+      // button until it syncs, so check here too.)
+      const usedIn = versions.find((v) => v.snapshot?.next_change?.note_id === note.id) ?? null
+      setSource({ data, note, author, usedIn })
     })
     return () => {
       active = false
@@ -62,7 +70,7 @@ export default function NoteEdit() {
   }, [id, source])
 
   useEffect(() => {
-    if (source && online && result.status === 'idle') ask()
+    if (source && !source.usedIn && online && result.status === 'idle') ask()
   }, [source, online, result.status, ask])
 
   if (source === undefined) {
@@ -84,7 +92,22 @@ export default function NoteEdit() {
     )
   }
 
-  const { data, note, author } = source
+  const { data, note, author, usedIn } = source
+
+  if (usedIn) {
+    return (
+      <Page title="Change from a note">
+        <p>
+          This note was already used to change the recipe
+          {usedIn.snapshot.next_change.summary ? ` (${usedIn.snapshot.next_change.summary})` : ''}. To change it again, edit the
+          recipe or write a new note.
+        </p>
+        <Link className="btn" to={`/recipe/${id}`}>
+          Back to the recipe
+        </Link>
+      </Page>
+    )
+  }
   const backLink = (
     <Link className="btn btn-secondary" to={`/recipe/${id}`}>
       Cancel
