@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Want photos of finished dishes, to see how it turned out and for stats later | Planned (Later) | Not built |
 | 2026-10-11 | The update banner never appeared; updates showed up later on their own | Banner pinned to the top of the screen; checks for updates more often | See entry |
 | 2026-10-11 | Notes looked like big cards, the app's own note offered "Turn into a recipe change", and a note could be applied again | Notes look like a comments thread; a used note can't be applied twice | See entry |
 | 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | `1a7579d` |
@@ -21,6 +22,18 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Photos of finished dishes (planned)
+
+**Finding.** Erin wants to add photos of what a recipe looked like when
+they made it, and to use them later in more game-like stats. She suggested
+keeping them on the device.
+
+**Planned approach.** A photo on each cook log entry, shrunk to about
+300 KB. It's saved on the phone so it shows offline, and synced to Supabase
+Storage so both phones see it (the free 1 GB holds roughly 3,000 photos).
+Keeping photos only on the phone that took them would hide them from the
+other cook and lose them if the app is deleted.
 
 ## 2026-10-11: Update banner not seen
 
