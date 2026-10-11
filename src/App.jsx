@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './lib/auth'
 import { isConfigured } from './lib/supabase'
 import { useOnline } from './lib/useOnline'
 import BottomNav from './components/BottomNav'
+import UpdateBanner from './components/UpdateBanner'
 import Page from './components/Page'
 import SignIn from './screens/SignIn'
 import Setup from './screens/Setup'
@@ -108,6 +109,7 @@ export default function App() {
       <a className="skip-link btn" href="#main">
         Skip to content
       </a>
+      <UpdateBanner />
       <AuthProvider>
         <Shell />
       </AuthProvider>

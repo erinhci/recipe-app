@@ -2,12 +2,22 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Shown in Settings so testers can tell which version a phone is running.
+const version = (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7)
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // The app asks before switching to a new version (UpdateBanner), so an
+      // update never reloads the page in the middle of cooking.
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Our Kitchen',

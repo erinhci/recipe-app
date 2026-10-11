@@ -11,12 +11,32 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Phones kept showing an older version after updates shipped | App offers updates and shows its version | See entry |
 | 2026-10-11 | A note asking for two changes only got one, and saving added a duplicate note | Every part of a note is covered or flagged; no duplicate note | See entry |
 | 2026-10-11 | Partner wants calorie and protein estimates for recipes | Nutrition estimates added to the MVP | See entry |
 | 2026-10-11 | Logging after midnight defaults to the wrong day | Open | Not built |
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Phones kept an older version
+
+**Finding.** After the ratings change shipped, Erin's phone still showed the
+old layout (stars in the log form and on every date). The new version had
+deployed; the home-screen app was still running the copy it keeps for
+offline use. Closing and reopening the app picked up the change.
+
+**Why it matters.** During testing, feedback on an old version looks like
+feedback on the new one. Without a way to see the version, there's no way
+to tell them apart.
+
+**Change.**
+
+- The app checks for a new version whenever it comes back to the front and
+  shows "A new version of the app is ready" with an Update now button. It
+  never reloads on its own, so it can't interrupt cooking mode.
+- Settings shows the app version and build time, so a screenshot can be
+  matched to a build.
 
 ## 2026-10-11: Changes from a note: missed change and duplicate note
 

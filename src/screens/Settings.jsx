@@ -193,6 +193,13 @@ export default function Settings() {
       <button className="btn btn-secondary" type="button" onClick={signOut}>
         Sign out
       </button>
+
+      <p className="hint" style={{ marginTop: 'var(--space-6)' }}>
+        App version {__APP_VERSION__}, built{' '}
+        {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(
+          new Date(__BUILD_TIME__),
+        )}
+      </p>
     </Page>
   )
 }
