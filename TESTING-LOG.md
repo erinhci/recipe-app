@@ -11,7 +11,8 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
-| 2026-10-11 | Want photos of finished dishes, to see how it turned out and for stats later | Planned (Later) | Not built |
+| 2026-10-11 | Keeping imported screenshots and PDFs is clutter once the recipe is checked | Originals no longer saved; the recipe's credit is kept instead | See entry |
+| 2026-10-11 | Want photos of finished dishes, to see how it turned out and for stats later | Planned (Later), synced between phones | Not built |
 | 2026-10-11 | The update banner never appeared; updates showed up later on their own | Banner pinned to the top of the screen; checks for updates more often | See entry |
 | 2026-10-11 | Notes looked like big cards, the app's own note offered "Turn into a recipe change", and a note could be applied again | Notes look like a comments thread; a used note can't be applied twice | See entry |
 | 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | `1a7579d` |
@@ -22,6 +23,28 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Don't keep imported originals
+
+**Finding.** Erin pointed out that once a recipe's text is copied over and
+checked, the original screenshot or PDF is clutter and uses storage. What's
+worth keeping is the source, if the recipe credits one.
+
+**Change.**
+
+- The original still shows beside the parsed recipe on the review screen,
+  then is discarded when the recipe is saved. Nothing is uploaded.
+- Import picks up who the recipe is credited to: Gemini reads a credit
+  printed in a screenshot or PDF (a site, cookbook, person, or account) and
+  any web address, without guessing; links use the page's author or
+  publisher. The review screen has a Credit field to check or fill in.
+- The recipe page shows "From Just One Cookbook", linked when there's a
+  web address. The old "Show the original" section is gone.
+- Existing stored originals are cleared (migration 0004, then emptying the
+  storage bucket in Supabase).
+
+**Photos follow-up.** Erin confirmed that photos of finished dishes should
+sync between phones.
 
 ## 2026-10-11: Photos of finished dishes (planned)
 

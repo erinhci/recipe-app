@@ -24,8 +24,8 @@ Next: the Next features in the build spec.
 
 1. Create a project on the free plan.
 2. Open the SQL editor and run each file in `supabase/migrations/` once,
-   in order: `0001_init.sql`, `0002_remove_members.sql`, then
-   `0003_nutrition.sql`. (Run
+   in order: `0001_init.sql`, `0002_remove_members.sql`,
+   `0003_nutrition.sql`, then `0004_source_credit.sql`. (Run
    `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and

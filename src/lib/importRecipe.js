@@ -68,6 +68,7 @@ export function draftToForm(draft) {
     mealType: draft.meal_type ?? '',
     totalTime: draft.total_time_minutes ?? null,
     sourceUrl: draft.source_url ?? '',
+    sourceName: draft.source_name ?? '',
     ingredientText: ingredientLines.join('\n'),
     stepText: (draft.steps ?? []).join('\n\n'),
   }
@@ -86,28 +87,4 @@ export function textToForm(text, sourceUrl = '') {
     ingredientText: ingredientLines.join('\n'),
     stepText: steps.join('\n\n'),
   }
-}
-
-// Saves the original screenshots or PDF next to the recipe, in a folder
-// named for the kitchen so storage rules keep it private to the two cooks.
-export async function uploadOriginals(kitchenId, recipeId, files) {
-  const folder = `${kitchenId}/${recipeId}`
-  for (const [index, file] of files.entries()) {
-    const ext = file.type === 'application/pdf' ? 'pdf' : 'jpg'
-    const { error } = await supabase.storage
-      .from('recipe-originals')
-      .upload(`${folder}/${index + 1}.${ext}`, file, { contentType: file.type || 'image/jpeg', upsert: false })
-    if (error && !/exists/i.test(error.message)) throw error
-  }
-  return folder
-}
-
-export async function originalLinks(folder) {
-  const { data: files, error } = await supabase.storage.from('recipe-originals').list(folder)
-  if (error || !files?.length) return []
-  const paths = files.map((f) => `${folder}/${f.name}`)
-  const { data } = await supabase.storage.from('recipe-originals').createSignedUrls(paths, 60 * 60)
-  return (data ?? [])
-    .filter((d) => d.signedUrl)
-    .map((d) => ({ url: d.signedUrl, isPdf: d.path.endsWith('.pdf') }))
 }

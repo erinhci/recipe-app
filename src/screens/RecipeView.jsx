@@ -8,7 +8,6 @@ import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, r
 import { ingredientToLine } from '../lib/ingredients'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
-import { originalLinks } from '../lib/importRecipe'
 import { useOnline } from '../lib/useOnline'
 import { groupMeals, ratingIsStale, recipeRatings } from '../lib/stats'
 import StarPicker from '../components/StarPicker'
@@ -20,6 +19,14 @@ const formatDay = (day) => dateFormat.format(new Date(`${day}T12:00:00`))
 const timeFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 const VERSIONS_SHOWN = 10
 const HISTORY_SHOWN = 10
+// "https://www.justonecookbook.com/..." -> "justonecookbook.com"
+const siteName = (url) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'Original source'
+  }
+}
 const shortDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
 
 export default function RecipeView() {
@@ -47,7 +54,6 @@ export default function RecipeView() {
   const [showOriginal, setShowOriginal] = useState(false)
   const [system, setSystem] = useState(member.unit_pref ?? 'us')
   const [noteText, setNoteText] = useState('')
-  const [originals, setOriginals] = useState(null) // null = not loaded
   const online = useOnline()
   const location = useLocation()
   const finishedSession = location.state?.finishedSession ?? null
@@ -522,47 +528,17 @@ export default function RecipeView() {
         </section>
       )}
 
-      {recipe.original_file && (
-        <section aria-labelledby="original-heading">
-          <h2 id="original-heading">Original</h2>
-          {originals === null ? (
-            <button
-              className="btn btn-secondary"
-              type="button"
-              disabled={!online}
-              onClick={async () => setOriginals(await originalLinks(recipe.original_file))}
-            >
-              Show the original
-            </button>
-          ) : originals.length === 0 ? (
-            <p className="hint">The original couldn't be loaded.</p>
-          ) : (
-            originals.map((item, index) =>
-              item.isPdf ? (
-                <p key={item.url}>
-                  <a href={item.url} target="_blank" rel="noreferrer">
-                    Open the PDF<span className="sr-only"> (opens in a new tab)</span>
-                  </a>
-                </p>
-              ) : (
-                <img
-                  key={item.url}
-                  src={item.url}
-                  alt={`Original recipe, image ${index + 1} of ${originals.length}`}
-                  style={{ width: '100%', height: 'auto', display: 'block', marginBottom: 'var(--space-3)', borderRadius: 'var(--radius)' }}
-                />
-              ),
-            )
-          )}
-          {!online && originals === null && <p className="hint">Connect to the internet to see the original.</p>}
-        </section>
-      )}
-
-      {recipe.source_url && (
+      {(recipe.source_name || recipe.source_url) && (
         <p>
-          <a href={recipe.source_url} target="_blank" rel="noreferrer">
-            Original source<span className="sr-only"> (opens in a new tab)</span>
-          </a>
+          From{' '}
+          {recipe.source_url ? (
+            <a href={recipe.source_url} target="_blank" rel="noreferrer">
+              {recipe.source_name || siteName(recipe.source_url)}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          ) : (
+            recipe.source_name
+          )}
         </p>
       )}
 

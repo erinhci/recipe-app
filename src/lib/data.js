@@ -19,7 +19,7 @@ function afterWrite() {
 const RECIPE_FIELDS = [
   'id', 'kitchen_id', 'title', 'base_servings', 'cuisine', 'meal_type', 'tags',
   'total_time_minutes', 'source_type', 'source_url', 'original_file',
-  'created_by', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'nutrition',
+  'created_by', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'nutrition', 'source_name',
 ]
 const INGREDIENT_FIELDS = [
   'id', 'recipe_id', 'position', 'quantity', 'unit', 'item', 'prep_note',
@@ -304,7 +304,7 @@ export async function restoreVersion(versionId, member) {
   const current = version && (await db.recipes.get(version.recipe_id))
   if (!version?.snapshot?.recipe || !current) throw new Error('That version is not on this phone.')
   const { recipe, ingredients = [], steps = [] } = version.snapshot
-  const restoredFields = ['title', 'base_servings', 'cuisine', 'meal_type', 'tags', 'total_time_minutes', 'source_url']
+  const restoredFields = ['title', 'base_servings', 'cuisine', 'meal_type', 'tags', 'total_time_minutes', 'source_url', 'source_name']
   const merged = { ...current }
   for (const field of restoredFields) if (recipe[field] !== undefined) merged[field] = recipe[field]
   return saveRecipe({ recipe: merged, ingredients, steps }, member)

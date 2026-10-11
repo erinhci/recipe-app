@@ -15,6 +15,8 @@ test('reads a plain Recipe block', () => {
       recipeYield: ['4', '4 servings'],
       recipeCuisine: 'indian',
       totalTime: 'PT1H15M',
+      author: [{ '@type': 'Person', name: 'Priya Rao' }],
+      publisher: { '@type': 'Organization', name: 'Example Kitchen' },
       recipeIngredient: ['1 1/2 lbs chicken thighs', '2 tbsp oil', '&frac12; tsp salt'],
       recipeInstructions: [
         { '@type': 'HowToStep', text: 'Heat the oil.' },
@@ -31,6 +33,7 @@ test('reads a plain Recipe block', () => {
   assert.deepEqual(draft.steps, ['Heat the oil.', 'Brown the chicken.'])
   assert.equal(draft.ingredient_lines[2], '½ tsp salt')
   assert.equal(draft.source_url, 'https://example.com/curry')
+  assert.equal(draft.source_name, 'Priya Rao')
 })
 
 test('finds a recipe inside @graph with sections and a type array', () => {

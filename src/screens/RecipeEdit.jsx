@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
-import { loadRecipe, saveRecipe, updateRecipeFields } from '../lib/data'
-import { uploadOriginals } from '../lib/importRecipe'
+import { loadRecipe, saveRecipe } from '../lib/data'
 import OriginalPanel from '../components/OriginalPanel'
 import { ingredientToLine, parseIngredientLine, parseSteps } from '../lib/ingredients'
 import { CUISINES, MEAL_TYPES } from '../lib/constants'
@@ -33,6 +32,7 @@ export default function RecipeEdit() {
   const [cuisine, setCuisine] = useState(draft?.cuisine ?? '')
   const [mealType, setMealType] = useState(draft?.mealType ?? '')
   const [sourceUrl, setSourceUrl] = useState(draft?.sourceUrl || incoming?.originals?.url || '')
+  const [sourceName, setSourceName] = useState(draft?.sourceName ?? '')
   const [ingredientText, setIngredientText] = useState(draft?.ingredientText ?? '')
   const [stepText, setStepText] = useState(draft?.stepText ?? '')
   const [busy, setBusy] = useState(false)
@@ -49,6 +49,7 @@ export default function RecipeEdit() {
         setCuisine(recipe.cuisine ?? '')
         setMealType(recipe.meal_type ?? '')
         setSourceUrl(recipe.source_url ?? '')
+        setSourceName(recipe.source_name ?? '')
         setIngredientText(proposed?.ingredientText ?? ingredients.map(ingredientToLine).join('\n'))
         setStepText(proposed?.stepText ?? steps.map((s) => s.text).join('\n\n'))
       }
@@ -87,6 +88,7 @@ export default function RecipeEdit() {
             cuisine: cuisine || null,
             meal_type: mealType || null,
             source_url: sourceUrl.trim() || null,
+            source_name: sourceName.trim() || null,
             source_type:
               existing?.recipe.source_type ??
               SOURCE_TYPES[incoming?.originals?.kind] ??
@@ -99,17 +101,7 @@ export default function RecipeEdit() {
         member,
         proposed?.change ?? null,
       )
-      const files = incoming?.originals?.files
-      if (files?.length) {
-        if (navigator.onLine) {
-          try {
-            const folder = await uploadOriginals(member.kitchen_id, savedId, files)
-            await updateRecipeFields(savedId, { original_file: folder })
-          } catch (uploadError) {
-            console.error('Original upload failed', uploadError)
-          }
-        }
-      }
+      // The original screenshot or PDF is only for checking the import; it isn't kept.
       navigate(`/recipe/${savedId}`, { replace: true })
     } catch (e) {
       setError(e.message)
@@ -145,8 +137,8 @@ export default function RecipeEdit() {
                 : 'This phone sorted the text into a recipe. Check the title, ingredients, and steps.'}
           </p>
           <OriginalPanel originals={incoming.originals} />
-          {incoming.originals?.files?.length > 0 && !navigator.onLine && (
-            <p className="hint">You're offline, so the original won't be attached to the recipe.</p>
+          {incoming.originals?.files?.length > 0 && (
+            <p className="hint">The original isn't kept after you save. If it credits someone, that goes in Credit below.</p>
           )}
         </>
       )}
@@ -250,6 +242,20 @@ export default function RecipeEdit() {
           />
           <span id="steps-hint" className="hint">
             One step per line or paragraph. Numbers are removed automatically.
+          </span>
+        </div>
+
+        <div className="field">
+          <label htmlFor="credit">Credit (optional)</label>
+          <input
+            id="credit"
+            type="text"
+            value={sourceName}
+            onChange={(e) => setSourceName(e.target.value)}
+            aria-describedby="credit-hint"
+          />
+          <span id="credit-hint" className="hint">
+            Who the recipe is from, like a website, cookbook, or person.
           </span>
         </div>
 

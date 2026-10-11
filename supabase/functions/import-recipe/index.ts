@@ -17,7 +17,8 @@
 //
 // Response: { draft: { title, servings, cuisine, meal_type, total_time_minutes,
 //   ingredients: [{ quantity, unit, item, prep }] | null,
-//   ingredient_lines: string[] | null, steps: string[], source_url }, method }
+//   ingredient_lines: string[] | null, steps: string[], source_url, source_name }, method }
+//   source_name: who the recipe is credited to (a site, book, or person), if shown.
 
 const CUISINES = [
   'American', 'Chinese', 'French', 'Indian', 'Italian', 'Japanese', 'Korean',
@@ -55,6 +56,7 @@ type Draft = {
   ingredient_lines: string[] | null
   steps: string[]
   source_url: string | null
+  source_name: string | null
 }
 
 function decodeEntities(text: string) {
@@ -138,6 +140,17 @@ function matchCuisine(value: unknown): string | null {
   return null
 }
 
+// Who the page credits: the recipe's author, else the site that published it.
+function creditFrom(recipe: any): string | null {
+  const names = (value: any): string[] =>
+    (Array.isArray(value) ? value : [value])
+      .map((v) => (typeof v === 'string' ? v : v?.name))
+      .map((v) => clean(v))
+      .filter(Boolean)
+  const author = names(recipe.author).join(', ')
+  return (author || names(recipe.publisher)[0] || '').slice(0, 120) || null
+}
+
 export function recipeFromHtml(html: string, sourceUrl: string | null = null): Draft | null {
   const scripts = html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)
   for (const [, body] of scripts) {
@@ -163,6 +176,7 @@ export function recipeFromHtml(html: string, sourceUrl: string | null = null): D
       ingredient_lines: lines,
       steps: flattenSteps(recipe.recipeInstructions),
       source_url: sourceUrl,
+      source_name: creditFrom(recipe),
     }
   }
   return null
@@ -190,6 +204,8 @@ Return the recipe exactly as written. Rules:
 - servings is the number of servings the recipe makes as written, or null if not stated.
 - cuisine must be one of the allowed values; use "Other" if none fits. meal_type must be one of the allowed values.
 - If the image or text contains no recipe, return an empty title and empty lists.
+- source_name is who the recipe is credited to if the image or text names it: a person, blog, website, cookbook, or social account. Use null if no one is credited. Do not guess.
+- source_url is a web address printed with the recipe, or null.
 - Ignore ads, comments, and life stories around the recipe.`
 
 const SCHEMA = {
@@ -214,6 +230,8 @@ const SCHEMA = {
       },
     },
     steps: { type: 'ARRAY', items: { type: 'STRING' } },
+    source_name: { type: 'STRING', nullable: true },
+    source_url: { type: 'STRING', nullable: true },
   },
   required: ['title', 'ingredients', 'steps', 'cuisine', 'meal_type'],
 }
@@ -285,7 +303,8 @@ async function askGemini(parts: unknown[], apiKey: string, models: string[]): Pr
       ingredients: (parsed.ingredients ?? []).filter((i: any) => i?.item),
       ingredient_lines: null,
       steps: (parsed.steps ?? []).map((s: unknown) => String(s).trim()).filter(Boolean),
-      source_url: null,
+      source_url: /^https?:\/\/\S+\.\S+$/.test(String(parsed.source_url ?? '').trim()) ? String(parsed.source_url).trim() : null,
+      source_name: String(parsed.source_name ?? '').trim().slice(0, 120) || null,
     }
   }
   throw lastError ?? new GeminiError('No Gemini model available.', 503)
