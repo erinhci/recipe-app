@@ -7,6 +7,8 @@ import { db } from '../lib/db'
 import { addNote, deleteRecipe } from '../lib/data'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
+import { originalLinks } from '../lib/importRecipe'
+import { useOnline } from '../lib/useOnline'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 
@@ -31,6 +33,8 @@ export default function RecipeView() {
   const [showOriginal, setShowOriginal] = useState(false)
   const [system, setSystem] = useState(member.unit_pref ?? 'us')
   const [noteText, setNoteText] = useState('')
+  const [originals, setOriginals] = useState(null) // null = not loaded
+  const online = useOnline()
 
   if (data === undefined) {
     return (
@@ -193,6 +197,42 @@ export default function RecipeView() {
           </ul>
         )}
       </section>
+
+      {recipe.original_file && (
+        <section aria-labelledby="original-heading">
+          <h2 id="original-heading">Original</h2>
+          {originals === null ? (
+            <button
+              className="btn btn-secondary"
+              type="button"
+              disabled={!online}
+              onClick={async () => setOriginals(await originalLinks(recipe.original_file))}
+            >
+              Show the original
+            </button>
+          ) : originals.length === 0 ? (
+            <p className="hint">The original couldn't be loaded.</p>
+          ) : (
+            originals.map((item, index) =>
+              item.isPdf ? (
+                <p key={item.url}>
+                  <a href={item.url} target="_blank" rel="noreferrer">
+                    Open the PDF<span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </p>
+              ) : (
+                <img
+                  key={item.url}
+                  src={item.url}
+                  alt={`Original recipe, image ${index + 1} of ${originals.length}`}
+                  style={{ width: '100%', height: 'auto', display: 'block', marginBottom: 'var(--space-3)', borderRadius: 'var(--radius)' }}
+                />
+              ),
+            )
+          )}
+          {!online && originals === null && <p className="hint">Connect to the internet to see the original.</p>}
+        </section>
+      )}
 
       {recipe.source_url && (
         <p>

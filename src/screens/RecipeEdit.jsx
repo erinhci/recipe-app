@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
-import { loadRecipe, saveRecipe } from '../lib/data'
+import { loadRecipe, saveRecipe, updateRecipeFields } from '../lib/data'
+import { uploadOriginals } from '../lib/importRecipe'
+import OriginalPanel from '../components/OriginalPanel'
 import { ingredientToLine, parseIngredientLine, parseSteps } from '../lib/ingredients'
 import { CUISINES, MEAL_TYPES } from '../lib/constants'
+
+const SOURCE_TYPES = { images: 'photo', pdf: 'pdf', url: 'url', text: 'text' }
 
 // Add or edit a recipe. Ingredients and steps are typed or pasted one per
 // line; the preview shows how each ingredient line was read and flags
@@ -13,17 +17,22 @@ export default function RecipeEdit() {
   const { id } = useParams()
   const isNew = !id
   const navigate = useNavigate()
+  const location = useLocation()
   const { member } = useAuth()
+
+  // An imported draft arrives with the original screenshots, PDF, or link.
+  const incoming = isNew ? location.state : null
+  const draft = incoming?.form
 
   const [loaded, setLoaded] = useState(isNew)
   const [existing, setExisting] = useState(null)
-  const [title, setTitle] = useState('')
-  const [servings, setServings] = useState('4')
-  const [cuisine, setCuisine] = useState('')
-  const [mealType, setMealType] = useState('')
-  const [sourceUrl, setSourceUrl] = useState('')
-  const [ingredientText, setIngredientText] = useState('')
-  const [stepText, setStepText] = useState('')
+  const [title, setTitle] = useState(draft?.title ?? '')
+  const [servings, setServings] = useState(draft ? draft.servings : '4')
+  const [cuisine, setCuisine] = useState(draft?.cuisine ?? '')
+  const [mealType, setMealType] = useState(draft?.mealType ?? '')
+  const [sourceUrl, setSourceUrl] = useState(draft?.sourceUrl || incoming?.originals?.url || '')
+  const [ingredientText, setIngredientText] = useState(draft?.ingredientText ?? '')
+  const [stepText, setStepText] = useState(draft?.stepText ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -75,13 +84,28 @@ export default function RecipeEdit() {
             cuisine: cuisine || null,
             meal_type: mealType || null,
             source_url: sourceUrl.trim() || null,
-            source_type: existing?.recipe.source_type ?? (sourceUrl.trim() ? 'url' : 'manual'),
+            source_type:
+              existing?.recipe.source_type ??
+              SOURCE_TYPES[incoming?.originals?.kind] ??
+              (sourceUrl.trim() ? 'url' : 'manual'),
+            total_time_minutes: existing?.recipe.total_time_minutes ?? draft?.totalTime ?? null,
           },
           ingredients,
           steps,
         },
         member,
       )
+      const files = incoming?.originals?.files
+      if (files?.length) {
+        if (navigator.onLine) {
+          try {
+            const folder = await uploadOriginals(member.kitchen_id, savedId, files)
+            await updateRecipeFields(savedId, { original_file: folder })
+          } catch (uploadError) {
+            console.error('Original upload failed', uploadError)
+          }
+        }
+      }
       navigate(`/recipe/${savedId}`, { replace: true })
     } catch (e) {
       setError(e.message)
@@ -106,7 +130,22 @@ export default function RecipeEdit() {
   }
 
   return (
-    <Page title={isNew ? 'New recipe' : 'Edit recipe'}>
+    <Page title={incoming ? 'Check the recipe' : isNew ? 'New recipe' : 'Edit recipe'}>
+      {incoming && (
+        <>
+          <p>
+            {incoming.method === 'gemini'
+              ? 'Gemini read this recipe. Compare it with the original and fix anything it got wrong.'
+              : incoming.method === 'page-data'
+                ? "This came from the recipe data on the page. Give it a quick check."
+                : 'This phone sorted the text into a recipe. Check the title, ingredients, and steps.'}
+          </p>
+          <OriginalPanel originals={incoming.originals} />
+          {incoming.originals?.files?.length > 0 && !navigator.onLine && (
+            <p className="hint">You're offline, so the original won't be attached to the recipe.</p>
+          )}
+        </>
+      )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="field">
           <label htmlFor="title">Title</label>

@@ -9,8 +9,9 @@ The product plan and build spec live in the project doc (Build spec tab).
 
 ## Status
 
-Step 1 of the MVP: project setup, database schema, sign-in, and joining a
-shared kitchen. Import, recipes, cooking mode, and stats come next.
+Done: sign-in and shared kitchens; recipes with scaling, units, notes, and
+offline sync; import from screenshots, PDFs, links, and pasted text.
+Next: cooking mode, cook log with ratings, and stats.
 
 ## One-time setup
 
@@ -26,6 +27,14 @@ shared kitchen. Import, recipes, cooking mode, and stats come next.
    sender, and on iPhone it keeps sign-in inside the home-screen app.
 4. After both cooks have created accounts, turn off **Allow new users to
    sign up** on the same page, so nobody else can make an account.
+5. In **Edge Functions**, open **Secrets** and add `GEMINI_API_KEY` with a
+   Gemini API key from Google AI Studio. Optional: `GEMINI_MODELS`, a
+   comma-separated list of models to try in order (default:
+   `gemini-3.8-flash,gemini-3.5-flash-lite`).
+6. In **Edge Functions**, deploy a new function named `import-recipe` using
+   the browser editor, and paste in
+   `supabase/functions/import-recipe/index.ts`. Leave JWT verification on,
+   so only signed-in cooks can use your Gemini quota.
 
 ### 2. Vercel
 

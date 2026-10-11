@@ -24,6 +24,22 @@ export default defineConfig({
       workbox: {
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
+        // Include the PDF reader's worker (.mjs) so PDFs can be read offline.
+        globPatterns: ['**/*.{js,mjs,css,html,svg,webmanifest}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            // OCR engine and English language data, fetched the first time
+            // the phone reads a screenshot itself; kept for offline use.
+            urlPattern: /^https:\/\/(cdn\.jsdelivr\.net|unpkg\.com|tessdata\.projectnaptha\.com)\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'ocr-files',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 180 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

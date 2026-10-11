@@ -133,6 +133,10 @@ export async function restoreRecipe(recipeId) {
   await setDeleted(recipeId, { deleted_at: null, deleted_by: null })
 }
 
+export async function updateRecipeFields(recipeId, fields) {
+  await setDeleted(recipeId, fields)
+}
+
 async function setDeleted(recipeId, fields) {
   await db.transaction('rw', [db.recipes, db.outbox], async () => {
     const recipe = await db.recipes.get(recipeId)
