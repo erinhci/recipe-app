@@ -316,3 +316,37 @@ textarea {
   border-radius: 999px;
   min-width: 0.75rem;
 }
+
+/* Waiting on Gemini or the phone's reader */
+.working {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-3) 0;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+.spinner {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No spinning; the seconds counter still shows it's working. */
+  .spinner {
+    animation: none;
+    border-top-color: var(--color-border);
+    background: radial-gradient(circle, var(--color-accent) 0 4px, transparent 5px);
+  }
+}

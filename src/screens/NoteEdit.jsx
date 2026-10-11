@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Page from '../components/Page'
+import Working from '../components/Working'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { loadRecipe, saveRecipe } from '../lib/data'
@@ -153,7 +154,7 @@ export default function NoteEdit() {
       )}
 
       {online && (result.status === 'idle' || result.status === 'loading') && (
-        <p role="status">Gemini is drafting a change from this note…</p>
+        <Working label="Gemini is drafting a change from this note…" typical="10 to 20 seconds" slowAfter={30} />
       )}
 
       {result.status === 'error' && (

@@ -13,7 +13,8 @@
 //     step_number, question }
 // Response: { answer }
 
-const DEFAULT_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
+// Flash-Lite first: quick answers matter more than depth while cooking.
+const DEFAULT_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.8-flash']
 const MAX_QUESTION = 500
 
 const CORS = {
@@ -84,20 +85,39 @@ export function buildPrompt(q: Question) {
   ].join('\n')
 }
 
+const FUNCTION_NAME = 'ask-step'
+
+// How much the model "thinks" before answering. Less thinking answers
+// sooner. Flash-Lite already uses the least by default, and older models
+// don't take this setting, so it's only sent to Gemini 3 Flash models.
+const THINKING_LEVEL: string | null = 'low'
+
+export function thinkingFor(model: string) {
+  if (!THINKING_LEVEL || model.includes('flash-lite') || !/^gemini-3/.test(model)) return null
+  return { thinkingLevel: THINKING_LEVEL }
+}
+
+// One request to one model. If the model rejects the thinking setting,
+// asks again without it. Logs how long it took (Supabase > Edge Functions > Logs).
+export async function callGemini(model: string, apiKey: string, contents: unknown, generationConfig: Record<string, unknown>) {
+  const send = (thinking: unknown) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ contents, generationConfig: thinking ? { ...generationConfig, thinkingConfig: thinking } : generationConfig }),
+    })
+  const started = Date.now()
+  const thinking = thinkingFor(model)
+  let response = await send(thinking)
+  if (response.status === 400 && thinking) response = await send(null)
+  console.log(JSON.stringify({ fn: FUNCTION_NAME, model, status: response.status, ms: Date.now() - started }))
+  return response
+}
+
 async function askGemini(prompt: string, apiKey: string, models: string[]) {
   let overLimit = false
   for (const model of models) {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 400 },
-        }),
-      },
-    )
+    const response = await callGemini(model, apiKey, [{ role: 'user', parts: [{ text: prompt }] }], { temperature: 0.2, maxOutputTokens: 1024 })
     if (response.status === 429 || response.status === 503) {
       // Free limit reached or model busy: try the next model.
       overLimit = true

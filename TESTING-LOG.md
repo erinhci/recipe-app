@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | See entry |
 | 2026-10-11 | Phones kept showing an older version after updates shipped | App offers updates and shows its version | See entry |
 | 2026-10-11 | A note asking for two changes only got one, and saving added a duplicate note | Every part of a note is covered or flagged; no duplicate note | See entry |
 | 2026-10-11 | Partner wants calorie and protein estimates for recipes | Nutrition estimates added to the MVP | See entry |
@@ -18,6 +19,37 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Waiting on Gemini
+
+**Finding.** While Gemini worked, the screen just sat there. It wasn't
+clear whether anything was happening, and the waits felt long.
+
+**Change: feedback while waiting.**
+
+- Every Gemini wait (import, changes from notes, step questions, nutrition)
+  shows a spinner, what's happening, a seconds counter, and the usual time.
+- After 20 to 30 seconds it says it's taking longer than usual and that
+  waiting is fine.
+- With Reduce Motion on, the spinner stays still; the counter still shows
+  progress. Screen readers hear the message once, not every second.
+
+**Change: speed.**
+
+- Gemini 3.8 Flash "thinks" at a medium level by default before answering.
+  Import, nutrition, and step questions now ask for a low level, which
+  answers sooner. If a model rejects the setting, the app asks again
+  without it.
+- Step questions try Flash-Lite first, since quick answers matter most
+  while cooking.
+- Changes from notes keep the default level. That task has to catch every
+  part of a note (see the avocado oil entry), so accuracy is worth a few
+  seconds.
+- Each Gemini call now logs its model and time in Supabase, so wait times
+  can be compared before and after.
+
+**To measure.** Typical wait per task, and whether lower thinking changes
+the quality of imports or nutrition estimates.
 
 ## 2026-10-11: Phones kept an older version
 

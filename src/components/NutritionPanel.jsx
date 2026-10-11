@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Working from './Working'
 import { updateRecipeFields } from '../lib/data'
 import {
   NUTRIENTS,
@@ -65,9 +66,13 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
         <p className="hint">Gemini can estimate calories, protein, carbs, and fat from the ingredients.</p>
         {estimateButton('Estimate nutrition')}
         {!online && <p className="hint">Estimating needs the internet.</p>}
-        <p role="status" className={error ? 'error' : 'hint'}>
-          {busy ? 'Gemini is estimating…' : error}
-        </p>
+        {busy ? (
+          <Working label="Gemini is estimating each ingredient…" typical="5 to 15 seconds" />
+        ) : (
+          <p role="status" className={error ? 'error' : 'hint'}>
+            {error}
+          </p>
+        )}
       </section>
     )
   }
@@ -184,9 +189,13 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
         </p>
         {!stale && estimateButton('Estimate again')}
       </details>
-      <p role="status" className={error ? 'error' : 'hint'}>
-        {busy ? 'Gemini is estimating…' : error}
-      </p>
+      {busy ? (
+        <Working label="Gemini is estimating each ingredient…" typical="5 to 15 seconds" />
+      ) : (
+        <p role="status" className={error ? 'error' : 'hint'}>
+          {error}
+        </p>
+      )}
     </section>
   )
 }

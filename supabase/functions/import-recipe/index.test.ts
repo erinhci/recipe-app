@@ -80,3 +80,28 @@ test('page text drops scripts and navigation', () => {
   assert.ok(!text.includes('Menu'))
   assert.ok(!text.includes('var x'))
 })
+
+test('thinking is lowered only on Gemini 3 Flash, and dropped if a model rejects it', async () => {
+  const { callGemini, thinkingFor } = await import('./index.ts')
+  assert.deepEqual(thinkingFor('gemini-3.8-flash'), { thinkingLevel: 'low' })
+  assert.equal(thinkingFor('gemini-3.5-flash-lite'), null)
+  assert.equal(thinkingFor('gemini-2.5-flash'), null)
+
+  const sent: any[] = []
+  const realFetch = globalThis.fetch
+  const realLog = console.log
+  console.log = () => {}
+  globalThis.fetch = (async (_url: string, init: any) => {
+    const body = JSON.parse(init.body)
+    sent.push(body.generationConfig)
+    return new Response('{}', { status: body.generationConfig.thinkingConfig ? 400 : 200 })
+  }) as typeof fetch
+  try {
+    const response = await callGemini('gemini-3.8-flash', 'key', [], { temperature: 0 })
+    assert.equal(response.status, 200)
+    assert.deepEqual(sent, [{ temperature: 0, thinkingConfig: { thinkingLevel: 'low' } }, { temperature: 0 }])
+  } finally {
+    globalThis.fetch = realFetch
+    console.log = realLog
+  }
+})

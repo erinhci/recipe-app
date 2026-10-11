@@ -226,24 +226,43 @@ class GeminiError extends Error {
   }
 }
 
+const FUNCTION_NAME = 'import-recipe'
+
+// How much the model "thinks" before answering. Less thinking answers
+// sooner. Flash-Lite already uses the least by default, and older models
+// don't take this setting, so it's only sent to Gemini 3 Flash models.
+const THINKING_LEVEL: string | null = 'low'
+
+export function thinkingFor(model: string) {
+  if (!THINKING_LEVEL || model.includes('flash-lite') || !/^gemini-3/.test(model)) return null
+  return { thinkingLevel: THINKING_LEVEL }
+}
+
+// One request to one model. If the model rejects the thinking setting,
+// asks again without it. Logs how long it took (Supabase > Edge Functions > Logs).
+export async function callGemini(model: string, apiKey: string, contents: unknown, generationConfig: Record<string, unknown>) {
+  const send = (thinking: unknown) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ contents, generationConfig: thinking ? { ...generationConfig, thinkingConfig: thinking } : generationConfig }),
+    })
+  const started = Date.now()
+  const thinking = thinkingFor(model)
+  let response = await send(thinking)
+  if (response.status === 400 && thinking) response = await send(null)
+  console.log(JSON.stringify({ fn: FUNCTION_NAME, model, status: response.status, ms: Date.now() - started }))
+  return response
+}
+
 async function askGemini(parts: unknown[], apiKey: string, models: string[]): Promise<Draft> {
   let lastError: GeminiError | null = null
   for (const model of models) {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: PROMPT }, ...parts] }],
-          generationConfig: {
+    const response = await callGemini(model, apiKey, [{ role: 'user', parts: [{ text: PROMPT }, ...parts] }], {
             responseMimeType: 'application/json',
             responseSchema: SCHEMA,
             temperature: 0,
-          },
-        }),
-      },
-    )
+          })
     if (response.status === 429 || response.status === 503) {
       // Free limit reached or model busy: try the next model.
       lastError = new GeminiError(`Gemini ${model} is over its limit right now.`, response.status)

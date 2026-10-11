@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
+import Working from '../components/Working'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { endCookingSession, startCookingSession } from '../lib/data'
@@ -272,9 +273,7 @@ export default function CookingMode() {
               <button className="btn btn-secondary" type="submit" disabled={!online || asking || !question.trim()} style={{ alignSelf: 'flex-start' }}>
                 {asking ? 'Asking…' : 'Ask'}
               </button>
-              <p role="status" className="sr-only">
-                {asking ? 'Getting an answer' : ''}
-              </p>
+              {asking && <Working label="Getting an answer…" typical="a few seconds" />}
             </form>
           </section>
 

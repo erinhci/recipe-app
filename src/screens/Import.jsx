@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Page from '../components/Page'
+import Working from '../components/Working'
 import { useOnline } from '../lib/useOnline'
 import {
   draftToForm,
@@ -27,6 +28,7 @@ export default function Import() {
   const [pasted, setPasted] = useState('')
   const [busy, setBusy] = useState('') // which source is working
   const [status, setStatus] = useState('')
+  const [progress, setProgress] = useState('')
   const [failure, setFailure] = useState(null) // { source, message }
 
   function review(form, originals, method) {
@@ -36,7 +38,7 @@ export default function Import() {
   async function readWithGemini(source) {
     setFailure(null)
     setBusy(source)
-    setStatus('Reading the recipe. This usually takes 5 to 15 seconds.')
+    setStatus('Gemini is reading the recipe…')
     try {
       if (source === 'images') {
         const blobs = await prepareImages(images)
@@ -73,12 +75,11 @@ export default function Import() {
     setBusy(source)
     try {
       if (source === 'images') {
-        setStatus('Reading the text on this phone. The first time downloads about 4 MB.')
+        setStatus('Reading the text on this phone…')
+        setProgress('the first time downloads about 4 MB')
         const { readImageText } = await import('../lib/readers')
         const blobs = await prepareImages(images)
-        const text = await readImageText(blobs, (p) =>
-          setStatus(`Reading the text on this phone: ${Math.round(p * 100)}%`),
-        )
+        const text = await readImageText(blobs, (p) => setProgress(`${Math.round(p * 100)}% read`))
         return review(textToForm(text), { kind: 'images', files: blobs }, 'on-phone')
       }
       if (source === 'pdf') {
@@ -97,6 +98,7 @@ export default function Import() {
       setFailure({ source, message: error.message, onPhoneFailed: true })
     } finally {
       setBusy('')
+      setProgress('')
     }
   }
 
@@ -126,9 +128,9 @@ export default function Import() {
         </p>
       )}
 
-      <p role="status" aria-live="polite" style={{ fontWeight: 600 }}>
-        {status}
-      </p>
+      {busy && status && (
+        <Working label={status} typical={busy === 'url' ? 'a few seconds' : '5 to 15 seconds'} detail={progress} slowAfter={30} />
+      )}
 
       <section className="card" aria-labelledby="photo-heading">
         <h2 id="photo-heading">Screenshot or photo</h2>
