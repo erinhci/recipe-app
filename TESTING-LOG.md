@@ -66,8 +66,37 @@ to follow).
 - Whether the large next-step card earns its space in two-chef mode, given
   Partner preferred the list. Worth watching in the next session.
 
+**Debrief (from the 15-minute recording).** Erin asked the debrief
+questions right after cooking. Partner's answers, lightly cleaned up:
+
+| Topic | What Partner said | What it points to |
+| --- | --- | --- |
+| Knowing what to do next | "No… the recipe list was pretty straightforward." | The split itself worked |
+| Asking how long it cooks | He was at the oven with his phone on the table: "I didn't really have the hands to carry my phone… I didn't look ahead" | Timing has to be visible at a glance, before hands are full |
+| Skipping the preheat | First time with a new oven, unsure how long prep would take: "didn't want to waste the energy just having the oven run for too long." Knowing the oven now, he'd make the same call, just with better timing | He wants the facts to decide (how long the oven takes, how long prep takes), not an instruction. The "Start now" label added in 0.19.0 is more prescriptive than he wants |
+| Fairness of the split | "The split felt pretty fair… we were both busy at the same time" | Keep the split as is |
+| Ease | "Pretty easy," but "kind of a lot going on": the list showed both cooks' steps with "that tiny thing saying which section I'm on." He'd rather "see all of my steps and maybe a small reminder of where yours are," or a button to expand the other cook's steps | Show your own steps by default and collapse the other cook's into short reminders |
+| Telling steps apart | The other cook's steps were "a little more grayed out but not enough"; "I was reading stuff and I was like, do I need to do this?" | The current dimming isn't enough. Hiding or collapsing beats shading |
+| The large next-step card | Never used it: "I personally just like scrolling through instructions… to pre-look at the next one" | Two sources now (Erin's notes and this) say the list is the main view. The large card may not earn its space |
+| Checking off steps | "Skip over mostly… my hands are dirty"; he caught up later by checking several at once. He wouldn't use voice either: "I feel like I have to be talking a lot" | Check-offs are what drive the waiting and "together" logic, and he mostly doesn't do them. Two-chef mode can't depend on them |
+| Following the other cook | "I was just kind of focused on reading my stuff and getting my stuff done" | "Erin is on step 3" has little value for him |
+| Next time | Would use two-chef mode: "it's nice having the breakdown for who does what," but "still a lot on the screen and a lot of interactions." He'd like it to stay "more of a background tool" | Fewer required taps; glanceable |
+| Font size | "Fine"; the color was "too similar to the other chef's instructions" | Same as above |
+| One change | Time estimates up front "so I can kind of visualize the whole process… not have to be by the book… gauge it yourself and make your own decisions" | An overview of the whole cook with times, at the start |
+| Changing the recipe mid-cook | They made more than planned (extra vegetables, so more eggs). He wasn't sure whether changing servings would change the saved recipe or only this cook, and looked up macros in another app to account for the extra eggs | Cooking needs its own amounts and nutrition for this cook, separate from the recipe |
+| History | A history per recipe ("a little clock symbol") with each time it was made: when, the portions used, and notes from that cook. He wants the original recipe kept as the template and edits made per cook, not a saved version per serving size, because he worried about "delving too far from the original recipe" | Each cook log entry could hold what was actually made that time: servings, changed amounts, and notes |
+
+**Tensions to resolve.**
+
+- Two-chef mode relies on check-offs to know who is waiting and when the
+  shared step can start. The person it's meant to help skips them because
+  his hands are full, and doesn't want voice commands.
+- Erin chose earlier not to keep recipe versions, because notes already
+  record what changed. Partner is asking for something different: a record
+  of each cook, with the original recipe left alone.
+
 **What it means for the case study.** The core promise held: neither
-cook asked the other what to do next. The problems were at the edges of
+cook asked the other what to do next, and Partner called the split fair. The problems were at the edges of
 the split: timing (when to start the oven, how long it all takes), what
 to do while waiting, and amounts that didn't match. The scaling bug only
 surfaced because two people were reading two different parts of the
