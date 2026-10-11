@@ -48,8 +48,20 @@ clear whether anything was happening, and the waits felt long.
 - Each Gemini call now logs its model and time in Supabase, so wait times
   can be compared before and after.
 
-**To measure.** Typical wait per task, and whether lower thinking changes
-the quality of imports or nutrition estimates.
+**Baseline, before the speed change** (Supabase execution time, one call
+each on 2026-10-11):
+
+| Task | Function | Time |
+| --- | --- | --- |
+| Import the Isobe mochi screenshot | import-recipe | 32.1 s |
+| Draft a change from a note | suggest-edit | 17.4 s |
+| Estimate nutrition | estimate-nutrition | 2.9 s |
+
+The import took about twice as long as the "usually 5 to 15 seconds" the
+app had been telling people.
+
+**To measure.** The same tasks after the speed change, and whether lower
+thinking changes the quality of imports or nutrition estimates.
 
 ## 2026-10-11: Phones kept an older version
 
