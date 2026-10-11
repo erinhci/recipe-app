@@ -49,7 +49,7 @@ export default function Import() {
         throw Object.assign(new Error(result.ok ? 'No recipe was found in those images.' : result.message), result)
       }
       if (source === 'pdf') {
-        const result = await importPdf(pdf)
+        const result = await importPdf(pdf, setStatus)
         if (result.ok && hasRecipe(result.draft)) {
           return review(draftToForm(result.draft), { kind: 'pdf', files: [pdf] }, 'gemini')
         }
@@ -163,7 +163,7 @@ export default function Import() {
       <section className="card" aria-labelledby="pdf-heading">
         <h2 id="pdf-heading">PDF</h2>
         <div className="field">
-          <label htmlFor="pdf">Choose a PDF (up to 8 MB)</label>
+          <label htmlFor="pdf">Choose a PDF</label>
           <input id="pdf" type="file" accept="application/pdf" onChange={(e) => setPdf(e.target.files[0] ?? null)} />
         </div>
         <button

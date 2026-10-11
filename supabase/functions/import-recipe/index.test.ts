@@ -1,7 +1,7 @@
 // Run with: node --experimental-strip-types --test supabase/functions/import-recipe/index.test.ts
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { pageText, recipeFromHtml } from './index.ts'
+import { isBlockedPage, pageProblem, pageText, recipeFromHtml } from './index.ts'
 
 const page = (jsonLd: unknown) =>
   `<html><head><script type="application/ld+json">${JSON.stringify(jsonLd)}</script></head><body>Ads and a long story</body></html>`
@@ -107,4 +107,49 @@ test('thinking is lowered only on Gemini 3 Flash, and dropped if a model rejects
     globalThis.fetch = realFetch
     console.log = realLog
   }
+})
+
+test('reads a WordPress recipe plugin page inside a site graph', () => {
+  const draft = recipeFromHtml(
+    page({
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'WebSite', name: 'Cookerru' },
+        { '@type': ['Article', 'BlogPosting'], headline: 'Soondubu jjigae' },
+        {
+          '@type': 'Recipe',
+          name: 'Easy Soondubu Jjigae (Korean Soft Tofu Stew)',
+          author: { '@type': 'Person', name: 'Cookerru' },
+          recipeYield: ['1', '1 person'],
+          prepTime: 'PT5M',
+          cookTime: 'PT10M',
+          totalTime: 'PT15M',
+          recipeIngredient: ['1 tbsp vegetable oil', '1 package (320 g) Korean or regular soft tofu', '1 egg'],
+          recipeInstructions: [
+            { '@type': 'HowToStep', text: 'Heat the oils and fry the aromatics.' },
+            { '@type': 'HowToStep', text: 'Add the water and tofu and simmer.' },
+            { '@type': 'HowToStep', text: 'Crack in the egg and serve.' },
+          ],
+        },
+      ],
+    }),
+    'https://www.cookerru.com/soondubu-jjigae/',
+  )
+  assert.equal(draft?.title, 'Easy Soondubu Jjigae (Korean Soft Tofu Stew)')
+  assert.equal(draft?.servings, 1)
+  assert.equal(draft?.total_time_minutes, 15)
+  assert.equal(draft?.ingredient_lines?.length, 3)
+  assert.equal(draft?.steps.length, 3)
+  assert.equal(draft?.source_name, 'Cookerru')
+})
+
+test('a "checking your browser" page is not the recipe', () => {
+  assert.equal(isBlockedPage('<html><head><title>Just a moment...</title></head></html>'), true)
+  assert.equal(isBlockedPage('<html><head><title>Soondubu</title></head></html>'), false)
+})
+
+test('page errors say what happened and what to try', () => {
+  assert.match(pageProblem(403), /doesn't let apps read its pages \(error 403\)\. Save the page as a PDF/)
+  assert.match(pageProblem(404), /wasn't found/)
+  assert.match(pageProblem(0, true), /took too long/)
 })

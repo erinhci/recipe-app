@@ -13,6 +13,7 @@
 // Request body (JSON), one of:
 //   { "kind": "images", "images": [{ "mimeType": "image/jpeg", "data": "<base64>" }] }
 //   { "kind": "pdf", "pdf": { "mimeType": "application/pdf", "data": "<base64>" } }
+//   { "kind": "text", "text": "..." }  (text the phone read from a large PDF)
 //   { "kind": "url", "url": "https://..." }
 //
 // Response: { draft: { title, servings, cuisine, meal_type, total_time_minutes,
@@ -329,17 +330,56 @@ function isAllowedUrl(raw: string) {
   }
 }
 
-async function fetchPage(url: string) {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; OurKitchenRecipeImport/1.0)',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(15000),
-  })
-  if (!response.ok) throw new GeminiError(`That page returned an error (${response.status}).`, 422)
-  return await response.text()
+// Ask for pages the way a phone browser does. Some sites turn away
+// requests that don't look like a browser.
+const BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+}
+// Backup for sites that still refuse: a public service that reads the page
+// and returns its text. Only the link is sent to it.
+const READER = 'https://r.jina.ai/'
+
+// A "checking your browser" page instead of the recipe.
+export function isBlockedPage(html: string) {
+  return /<title>\s*(just a moment|attention required|access denied)|cf-browser-verification|challenge-platform\/h\/|captcha-delivery/i.test(
+    html.slice(0, 20000),
+  )
+}
+
+// What to tell the cook when a page can't be read.
+export function pageProblem(status: number, timedOut = false) {
+  const tryInstead = ' Save the page as a PDF or take screenshots, and import those instead.'
+  if (timedOut) return `That site took too long to answer.${tryInstead}`
+  if (status === 404 || status === 410) return `That page wasn't found (error ${status}). Check the link.`
+  if ([401, 403, 429, 503].includes(status)) return `That site doesn't let apps read its pages (error ${status}).${tryInstead}`
+  if (status === 0) return `Couldn't reach that site.${tryInstead}`
+  return `That site returned an error (${status}).${tryInstead}`
+}
+
+async function tryFetch(url: string, headers: Record<string, string>, label: string) {
+  const started = Date.now()
+  try {
+    const response = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(12000) })
+    const text = response.ok ? await response.text() : ''
+    console.log(JSON.stringify({ fn: FUNCTION_NAME, step: label, host: new URL(url).hostname, status: response.status, ms: Date.now() - started }))
+    return { ok: response.ok, status: response.status, text, timedOut: false }
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError'
+    console.log(JSON.stringify({ fn: FUNCTION_NAME, step: label, status: 0, error: String(error).slice(0, 200), ms: Date.now() - started }))
+    return { ok: false, status: 0, text: '', timedOut }
+  }
+}
+
+// Returns { html } from the site itself, or { text } from the reader.
+async function readPage(url: string): Promise<{ html?: string; text?: string }> {
+  const direct = await tryFetch(url, BROWSER_HEADERS, 'fetch-page')
+  if (direct.ok && !isBlockedPage(direct.text)) return { html: direct.text }
+  const reader = await tryFetch(READER + url, { Accept: 'text/plain' }, 'fetch-reader')
+  if (reader.ok && reader.text.replace(/\s/g, '').length > 200) return { text: reader.text.slice(0, 30000) }
+  throw new GeminiError(pageProblem(direct.ok ? 403 : direct.status, direct.timedOut), 422)
 }
 
 // ---------------------------------------------------------------------------
@@ -365,11 +405,14 @@ async function handle(request: Request): Promise<Response> {
     if (body.kind === 'url') {
       const url = String(body.url ?? '').trim()
       if (!isAllowedUrl(url)) return json({ error: 'That link is not a web address the app can open.' }, 400)
-      const html = await fetchPage(url)
-      const fromPage = recipeFromHtml(html, url)
-      if (fromPage) return json({ draft: fromPage, method: 'page-data' })
+      const page = await readPage(url)
+      if (page.html) {
+        const fromPage = recipeFromHtml(page.html, url)
+        if (fromPage) return json({ draft: fromPage, method: 'page-data' })
+      }
       if (!apiKey) return json({ error: 'The Gemini key is not set up yet.' }, 500)
-      const draft = await askGemini([{ text: `Web page text:\n${pageText(html)}` }], apiKey, modelList)
+      const text = page.html ? pageText(page.html) : page.text
+      const draft = await askGemini([{ text: `Web page text:\n${text}` }], apiKey, modelList)
       return json({ draft: { ...draft, source_url: url }, method: 'gemini' })
     }
 
@@ -382,6 +425,13 @@ async function handle(request: Request): Promise<Response> {
         inline_data: { mime_type: String(img.mimeType || 'image/jpeg'), data: String(img.data) },
       }))
       const draft = await askGemini(parts, apiKey, modelList)
+      return json({ draft, method: 'gemini' })
+    }
+
+    if (body.kind === 'text') {
+      const text = String(body.text ?? '').trim().slice(0, 30000)
+      if (text.replace(/\s/g, '').length < 40) return json({ error: 'No recipe text was found in that PDF.' }, 400)
+      const draft = await askGemini([{ text: `Recipe text read from a PDF:\n${text}` }], apiKey, modelList)
       return json({ draft, method: 'gemini' })
     }
 

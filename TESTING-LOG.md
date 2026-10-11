@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Partner's PDF import was refused for being over 8 MB, and a recipe link failed with a vague error | Large PDFs read on the phone and sent as text or page images; links fetched like a browser with a backup reader; specific error messages (0.18.1) | See entry |
 | 2026-10-11 | Two-chef mode from the plan wasn't built yet | Built: Gemini split, pick a part, live check-offs on both phones, shared steps, hand-offs (0.18.0) | See entry |
 | 2026-10-11 | Cooking mode hid every step but the current one, which is hard when hands are busy or messy | Upcoming steps listed under the current one; finished steps under Done (0.17.0) | See entry |
 | 2026-10-11 | Typing minutes for each meal was tedious, and the time is an estimate anyway | Each recipe's total time is added once per logged meal; cooking mode's Finish logs the meal; manual minutes and timed sessions removed (0.16.0) | See entry |
@@ -31,6 +32,39 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Partner's imports failed
+
+**Finding.** Partner tried to import a soft tofu stew (soondubu jjigae)
+recipe two ways. The PDF was refused for being 10 MB, over the 8 MB
+limit. The link (cookerru.com) failed with an error that didn't say why.
+
+**Cause.**
+
+- PDF: PDFs were sent to Gemini whole, and a page saved as a PDF is mostly
+  photos, so even a short recipe can be over 8 MB.
+- Link: the page itself is fine. It uses a common WordPress recipe plugin
+  whose recipe data the importer already reads (checked with a test built
+  from the page). The likely cause is the site turning away the
+  function's request, which said it was an app, not a browser. The app
+  then showed the Supabase client's own wording ("non-2xx status code")
+  instead of a reason.
+
+**Change (version 0.18.1).**
+
+- A PDF over 8 MB is read on the phone first. If it has text, only the
+  text is sent (a 13.5 MB test PDF became 233 bytes). If it's a scan, its
+  first pages are sent as compressed images (an 18.8 MB scan became
+  441 KB). The size limit is gone from the screen.
+- Links are requested the way a phone browser asks for a page. If the
+  site still refuses, a public page-reading service is tried. If both
+  fail, the message names the problem, such as "That site doesn't let apps
+  read its pages (error 403)", and suggests saving the page as a PDF or
+  taking screenshots.
+- Any other failure says what kind it was and what to do, instead of the
+  Supabase client's wording.
+- The import function now logs each page request's result, so a failed
+  link can be checked in Supabase's logs.
 
 ## 2026-10-11: Two-chef mode
 

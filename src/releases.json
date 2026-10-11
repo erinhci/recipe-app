@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.18.1",
+    "date": "2026-10-11",
+    "notes": [
+      "PDFs of any size import: a large PDF is read on the phone first and only the recipe text is sent",
+      "Links from sites that turn away apps get a second try, and errors say what happened and what to try instead"
+    ]
+  },
+  {
     "version": "0.18.0",
     "date": "2026-10-11",
     "notes": [
