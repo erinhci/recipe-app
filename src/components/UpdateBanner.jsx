@@ -75,11 +75,11 @@ export default function UpdateBanner() {
         {next?.notes?.[0] && <span style={{ display: 'block', fontWeight: 400 }}>{next.notes[0]}</span>}
       </span>
       <div className="actions" style={{ margin: 0 }}>
-        <button className="btn" type="button" onClick={() => updateServiceWorker(true)}>
-          Update now
-        </button>
         <button className="btn btn-secondary" type="button" onClick={() => setDismissed(true)}>
           Later
+        </button>
+        <button className="btn" type="button" onClick={() => updateServiceWorker(true)}>
+          Update now
         </button>
       </div>
     </div>

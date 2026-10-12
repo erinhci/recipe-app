@@ -226,19 +226,19 @@ export default function TwoChef() {
               <strong>This recipe doesn't split well.</strong> {split.reason}
             </p>
             <p className="actions">
+              <Link to={backToRecipe}>Back to the recipe</Link>
               <Link className="btn" to={soloLink}>
                 Use cooking mode
               </Link>
-              <Link to={backToRecipe}>Back to the recipe</Link>
             </p>
           </>
         ) : (
           <>
             <p className="actions">
+              <Link to={backToRecipe}>Back to the recipe</Link>
               <button className="btn" type="button" onClick={runSplit} disabled={!online || split.state === 'working'}>
                 {redo ? 'Split again' : 'Split the steps'}
               </button>
-              <Link to={backToRecipe}>Back to the recipe</Link>
             </p>
             {!online && <p className="hint">Splitting needs the internet. Once a recipe is split, two-chef mode works offline.</p>}
             {split.state === 'working' && <Working label="Gemini is splitting the steps…" typical="10 to 20 seconds" />}
@@ -674,7 +674,7 @@ export default function TwoChef() {
 
       <ChangeLog recipeId={recipe.id} member={member} />
 
-      <p className="actions">
+      <p className="actions start">
         {online && (
           <button className="link-btn" type="button" onClick={runSplitAgain} disabled={split.state === 'working'}>
             Split again

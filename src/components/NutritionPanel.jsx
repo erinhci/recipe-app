@@ -54,9 +54,11 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
   }
 
   const estimateButton = (label) => (
-    <button className="btn btn-secondary" type="button" onClick={handleEstimate} disabled={!online || busy || ingredients.length === 0}>
-      {busy ? 'Estimating…' : label}
-    </button>
+    <div className="actions">
+      <button className="btn btn-secondary" type="button" onClick={handleEstimate} disabled={!online || busy || ingredients.length === 0}>
+        {busy ? 'Estimating…' : label}
+      </button>
+    </div>
   )
 
   if (!nutrition) {
@@ -93,9 +95,10 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
       </h2>
 
       {stale && (
-        <p className="notice-line">
-          The recipe changed since this estimate. {estimateButton('Estimate again')}
-        </p>
+        <>
+          <p className="notice-line">The recipe changed since this estimate.</p>
+          {estimateButton('Estimate again')}
+        </>
       )}
 
       <ul className="nutrient-tiles">

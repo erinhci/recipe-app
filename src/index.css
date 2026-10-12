@@ -187,13 +187,20 @@ textarea {
 }
 
 /* Layout helpers, so spacing comes from one place */
+/* Action rows: the main action sits on the right, in reach of the thumb.
+   When a row has more than one, the first in the markup (the escape or
+   destructive one) goes to the far left, away from the rest. */
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
   margin: var(--space-4) 0;
 }
+.actions > :first-child:not(:last-child) { margin-right: auto; }
+/* A rare way out on its own (Stop cooking): on the left, with room above. */
+.actions.start { justify-content: flex-start; margin-top: var(--space-8); }
 .plain-list { list-style: none; padding: 0; margin: 0 0 var(--space-3); }
 .plain-list > li + li { margin-top: 0; }
 .choice {
@@ -806,8 +813,8 @@ ul + h3,
 .file-pick.btn.is-busy { cursor: progress; }
 
 /* Settings */
-.deleted-row { align-items: flex-start; }
-.deleted-actions { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-1); flex: none; }
+.divided > li.deleted-row { display: block; }
+.deleted-row .actions { margin: var(--space-2) 0 0; }
 .page-end-actions { display: flex; justify-content: flex-end; margin-top: var(--space-8); }
 
 /* Stats */

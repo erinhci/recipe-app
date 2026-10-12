@@ -161,19 +161,21 @@ export default function Import() {
         <p className="hint" id="file-hint">
           Reading starts as soon as you choose. Up to 6 images in order, or one PDF.
         </p>
-        <label htmlFor="files" className={`btn file-pick${busy ? ' is-busy' : ''}`} aria-disabled={busy ? true : undefined}>
-          <input
-            id="files"
-            className="sr-only"
-            type="file"
-            accept="image/*,application/pdf"
-            multiple
-            aria-describedby="file-hint"
-            disabled={!!busy}
-            onChange={chooseFiles}
-          />
-          {busy === 'file' ? `Reading ${chosenText}…` : 'Choose files'}
-        </label>
+        <div className="actions">
+          <label htmlFor="files" className={`btn file-pick${busy ? ' is-busy' : ''}`} aria-disabled={busy ? true : undefined}>
+            <input
+              id="files"
+              className="sr-only"
+              type="file"
+              accept="image/*,application/pdf"
+              multiple
+              aria-describedby="file-hint"
+              disabled={!!busy}
+              onChange={chooseFiles}
+            />
+            {busy === 'file' ? `Reading ${chosenText}…` : 'Choose files'}
+          </label>
+        </div>
         {failureBlock('file')}
       </section>
 
@@ -228,9 +230,11 @@ export default function Import() {
           <p id="pasted-hint" className="hint" style={{ margin: 'var(--space-2) 0 var(--space-3)' }}>
             The app sorts it for you to check. Works offline.
           </p>
-          <button className="btn" type="submit" disabled={!pasted.trim()}>
-            Sort it
-          </button>
+          <div className="actions" style={{ marginBottom: 0 }}>
+            <button className="btn" type="submit" disabled={!pasted.trim()}>
+              Sort it
+            </button>
+          </div>
         </form>
       </section>
 

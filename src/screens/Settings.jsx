@@ -26,9 +26,11 @@ function SyncStatus() {
       <h2 id="sync-heading">Sync</h2>
       <p role="status">{text}</p>
       {error && !/fetch|network|load failed/i.test(String(error)) && <p className="hint">Details: {String(error)}</p>}
-      <button className="btn btn-secondary" type="button" onClick={() => syncNow()} disabled={state === 'syncing'}>
-        Sync now
-      </button>
+      <div className="actions">
+        <button className="btn btn-secondary" type="button" onClick={() => syncNow()} disabled={state === 'syncing'}>
+          Sync now
+        </button>
+      </div>
     </section>
   )
 }

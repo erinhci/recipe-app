@@ -34,18 +34,17 @@ export default function RecentlyDeleted() {
             const daysLeft = Math.max(0, 30 - Math.floor((Date.now() - new Date(recipe.deleted_at)) / DAY))
             return (
               <li key={recipe.id} className="deleted-row">
-                <span>
-                  {recipe.title}
-                  <span className="hint" style={{ display: 'block' }}>
-                    Deleted by {nameFor(recipe.deleted_by)}. {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left.
-                  </span>
+                {recipe.title}
+                <span className="hint" style={{ display: 'block' }}>
+                  Deleted by {nameFor(recipe.deleted_by)}. {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left.
                 </span>
-                <span className="deleted-actions">
-                  <button className="btn btn-secondary" type="button" onClick={() => restoreRecipe(recipe.id)}>
-                    Restore<span className="sr-only"> {recipe.title}</span>
-                  </button>
+                {/* Delete forever sits at the far left, away from Restore. */}
+                <span className="actions">
                   <button className="link-btn" type="button" onClick={() => forget(recipe)}>
                     Delete forever<span className="sr-only"> {recipe.title}</span>
+                  </button>
+                  <button className="btn btn-secondary" type="button" onClick={() => restoreRecipe(recipe.id)}>
+                    Restore<span className="sr-only"> {recipe.title}</span>
                   </button>
                 </span>
               </li>

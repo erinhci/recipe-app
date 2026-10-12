@@ -49,6 +49,7 @@ export function AddPhoto({ recipeId, cookedOn, member, label, className = 'link-
 // A small photo that opens a larger view with who added it and Remove.
 export function PhotoThumb({ photo, recipeTitle, byName, onStatus }) {
   const dialogRef = useRef(null)
+  const closeRef = useRef(null)
   const alt = `${recipeTitle}, ${formatPhotoDay(photo.cooked_on)}, added by ${byName}`
 
   async function remove() {
@@ -60,7 +61,15 @@ export function PhotoThumb({ photo, recipeTitle, byName, onStatus }) {
 
   return (
     <>
-      <button className="photo-thumb" type="button" onClick={() => dialogRef.current?.showModal()}>
+      <button
+        className="photo-thumb"
+        type="button"
+        onClick={() => {
+          dialogRef.current?.showModal()
+          // Start on Close, not on Remove photo, which comes first in the row.
+          closeRef.current?.focus()
+        }}
+      >
         <PhotoImg photo={photo} alt={`Open photo: ${alt}`} />
       </button>
       <dialog ref={dialogRef} className="photo-dialog" aria-label={alt}>
@@ -69,11 +78,11 @@ export function PhotoThumb({ photo, recipeTitle, byName, onStatus }) {
           {formatPhotoDay(photo.cooked_on)} · added by {byName}
         </p>
         <div className="actions">
-          <button className="btn" type="button" onClick={() => dialogRef.current?.close()}>
-            Close
-          </button>
           <button className="link-btn" type="button" onClick={remove}>
             Remove photo
+          </button>
+          <button ref={closeRef} className="btn" type="button" onClick={() => dialogRef.current?.close()}>
+            Close
           </button>
         </div>
       </dialog>

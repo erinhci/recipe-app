@@ -322,12 +322,14 @@ export default function RecipeEdit() {
           </p>
         )}
 
-        <button className="btn" type="submit" disabled={busy}>
-          {busy ? 'Saving…' : 'Save recipe'}
-        </button>{' '}
-        <button className="btn btn-secondary" type="button" onClick={() => navigate(-1)}>
-          Cancel
-        </button>
+        <div className="actions">
+          <button className="btn btn-secondary" type="button" onClick={() => navigate(-1)}>
+            Cancel
+          </button>
+          <button className="btn" type="submit" disabled={busy}>
+            {busy ? 'Saving…' : 'Save recipe'}
+          </button>
+        </div>
       </form>
     </Page>
   )

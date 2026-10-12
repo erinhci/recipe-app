@@ -223,7 +223,7 @@ export default function CookingMode() {
 
           <ChangeLog recipeId={recipe.id} member={member} />
 
-          <p>
+          <p className="actions start">
             <button className="btn btn-secondary" type="button" onClick={() => finish(false)}>
               Stop cooking
             </button>

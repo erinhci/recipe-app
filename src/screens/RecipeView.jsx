@@ -577,12 +577,12 @@ export default function RecipeView() {
       )}
 
       <div className="actions">
-        <Link className="btn btn-secondary" to={`/recipe/${recipe.id}/edit`}>
-          Edit
-        </Link>
         <button className="btn btn-secondary" type="button" onClick={handleDelete}>
           Delete
         </button>
+        <Link className="btn btn-secondary" to={`/recipe/${recipe.id}/edit`}>
+          Edit
+        </Link>
       </div>
     </Page>
   )

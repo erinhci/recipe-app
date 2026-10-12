@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.25.1",
+    "date": "2026-10-11",
+    "notes": [
+      "Main buttons sit on the right, within reach of your thumb: Save recipe, Sort it, Choose files, Estimate again, Sync now, Edit",
+      "Ways out and deletes sit on the far left of the same row, so they're harder to hit by mistake: Cancel, Delete, Delete forever (now well apart from Restore), Stop cooking (now with space above it, away from Log it)"
+    ]
+  },
+  {
     "version": "0.25.0",
     "date": "2026-10-11",
     "notes": [

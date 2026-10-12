@@ -168,10 +168,10 @@ export default function NoteEdit() {
         <>
           <p>Gemini needs the internet to draft a change. You can still edit the recipe yourself.</p>
           <p className="actions">
+            {backLink}
             <Link className="btn" to={`/recipe/${id}/edit`}>
               Edit the recipe
             </Link>
-            {backLink}
           </p>
         </>
       )}
@@ -186,10 +186,10 @@ export default function NoteEdit() {
             {result.message}
           </p>
           <p className="actions">
+            {backLink}
             <button className="btn" type="button" onClick={ask} disabled={!online}>
               Try again
             </button>
-            {backLink}
           </p>
         </>
       )}
@@ -198,11 +198,11 @@ export default function NoteEdit() {
         <>
           <p role="status">No change found. {result.reason}</p>
           <p className="actions">
-            <Link className="btn" to={`/recipe/${id}/edit`}>
-              Edit the recipe yourself
-            </Link>
             <Link className="btn btn-secondary" to={`/recipe/${id}`}>
               Back to the recipe
+            </Link>
+            <Link className="btn" to={`/recipe/${id}/edit`}>
+              Edit the recipe yourself
             </Link>
           </p>
         </>
@@ -253,18 +253,18 @@ export default function NoteEdit() {
             </p>
           )}
           <div className="actions">
-            <button className="btn" type="button" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving…' : 'Save this change'}
-            </button>
-            <button className="btn btn-secondary" type="button" onClick={handleEditFirst} disabled={saving}>
-              Edit before saving
-            </button>
+            {backLink}
             {saveError && (
               <button className="btn btn-secondary" type="button" onClick={ask} disabled={!online}>
                 Ask again
               </button>
             )}
-            {backLink}
+            <button className="btn btn-secondary" type="button" onClick={handleEditFirst} disabled={saving}>
+              Edit before saving
+            </button>
+            <button className="btn" type="button" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save this change'}
+            </button>
           </div>
         </section>
       )}
