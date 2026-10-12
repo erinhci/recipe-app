@@ -49,7 +49,10 @@ function fakeServer() {
             return { error: null }
           },
         }),
-        select: async () => ({ data: [...table(name).values()].map((r) => structuredClone(r)), error: null }),
+        select: async () =>
+          client.missingTables?.includes(name)
+            ? { data: null, error: { code: 'PGRST205', message: `Could not find the table 'public.${name}' in the schema cache` } }
+            : { data: [...table(name).values()].map((r) => structuredClone(r)), error: null },
       }
     },
     // Storage: files by path. refuseUploads mimics the bucket's size limit.
@@ -58,6 +61,7 @@ function fakeServer() {
     storage: {
       from: () => ({
         upload: async (path, blob) => {
+          if (client.noBucket) return { error: { message: 'Bucket not found', statusCode: '404' } }
           if (client.refuseUploads) return { error: { message: 'The object exceeded the maximum allowed size', statusCode: '413' } }
           if (client.files.has(path)) return { error: { message: 'The resource already exists', statusCode: '409' } }
           client.files.set(path, blob)
@@ -246,4 +250,19 @@ test('a photo removed on the other phone drops its saved image here', async () =
   await syncNow()
   assert.equal(await db.meal_photos.count(), 0)
   assert.equal(await db.photo_files.count(), 0)
+})
+
+test('before the photos migration, a photo waits on this phone without blocking other changes', async () => {
+  server.noBucket = true
+  server.missingTables = ['meal_photos']
+  const photo = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await addNote('r1', 'More salt', member)
+  await syncNow()
+  assert.equal(server.table('notes').size, 1)
+  assert.equal(await db.meal_photos.count(), 1)
+  server.noBucket = false
+  server.missingTables = []
+  await syncNow()
+  assert.ok(server.files.has(photo.path))
+  assert.equal(server.table('meal_photos').size, 1)
 })

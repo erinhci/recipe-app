@@ -77,8 +77,8 @@ function isStorageNetworkError(error) {
 // A photo's file goes to Storage before its record, so the other phone
 // never sees a record without a file. Removing a photo removes the file
 // too, so storage doesn't fill with leftovers. Returns 'sent', 'skip'
-// (the photo was removed before it was sent), or 'refused' (too big, or
-// the kitchen's limit).
+// (the photo was removed before it was sent), 'later' (photos aren't set
+// up on the server yet), or 'refused' (too big, or the kitchen's limit).
 async function pushPhotoFile(entry) {
   const bucket = client.storage.from(PHOTO_BUCKET)
   if (entry.op === 'delete') {
@@ -93,6 +93,11 @@ async function pushPhotoFile(entry) {
   // Already there from an earlier try whose reply was lost.
   if (!error || /exists|duplicate/i.test(error.message ?? '') || String(error.statusCode) === '409') return 'sent'
   if (isStorageNetworkError(error)) throw error
+  // Migration 0010 hasn't been run yet: keep the photo and try next time.
+  if (/bucket not found/i.test(error.message ?? '')) {
+    setStatus({ error: "Photos aren't set up on the server yet (migration 0010). They're kept on this phone until then." })
+    return 'later'
+  }
   console.error('Photo refused', entry, error)
   setStatus({ error: `A photo couldn't be saved: ${error.message}` })
   return 'refused'
@@ -103,6 +108,7 @@ async function pushOutbox() {
   for (const entry of entries) {
     if (entry.table === 'meal_photos') {
       const result = await pushPhotoFile(entry)
+      if (result === 'later') continue
       if (result === 'skip') {
         await db.outbox.delete(entry.seq)
         continue
@@ -153,6 +159,11 @@ async function pullAll() {
   const results = await Promise.all(
     SYNCED_TABLES.map(async (table) => {
       const { data, error } = await client.from(table).select('*')
+      // A table from a migration that hasn't been run yet is skipped, so
+      // the rest of the kitchen still syncs.
+      if (error && (error.code === '42P01' || error.code === 'PGRST205' || /does not exist|could not find the table/i.test(error.message ?? ''))) {
+        return [table, null]
+      }
       if (error) throw error
       return [table, data]
     }),
@@ -161,6 +172,7 @@ async function pullAll() {
 
   await db.transaction('rw', SYNCED_TABLES.map((t) => db.table(t)), async () => {
     for (const [table, rows] of results) {
+      if (rows === null) continue
       const local = db.table(table)
       const serverIds = new Set(rows.map((row) => row.id))
       // Remove rows the server no longer has, unless this phone has an
