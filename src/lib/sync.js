@@ -28,7 +28,10 @@ export const SYNCED_TABLES = [
   'notes',
   'cook_log',
   'ratings',
+  'meal_photos',
 ]
+
+export const PHOTO_BUCKET = 'meal-photos'
 
 // ---------------------------------------------------------------------------
 // Status, readable from React with useSyncStatus()
@@ -65,9 +68,54 @@ function isNetworkError(error) {
   return !error?.code
 }
 
+// Storage calls fail with a message rather than a code when the network
+// is down.
+function isStorageNetworkError(error) {
+  return !navigator.onLine || error?.name === 'StorageUnknownError' || /fetch|network|load failed/i.test(error?.message ?? '')
+}
+
+// A photo's file goes to Storage before its record, so the other phone
+// never sees a record without a file. Removing a photo removes the file
+// too, so storage doesn't fill with leftovers. Returns 'sent', 'skip'
+// (the photo was removed before it was sent), or 'refused' (too big, or
+// the kitchen's limit).
+async function pushPhotoFile(entry) {
+  const bucket = client.storage.from(PHOTO_BUCKET)
+  if (entry.op === 'delete') {
+    if (!entry.payload.path) return 'sent'
+    const { error } = await bucket.remove([entry.payload.path])
+    if (error && isStorageNetworkError(error)) throw error
+    return 'sent'
+  }
+  const file = await db.photo_files.get(entry.payload.id)
+  if (!file) return 'skip'
+  const { error } = await bucket.upload(entry.payload.path, file.blob, { contentType: 'image/jpeg', upsert: false })
+  // Already there from an earlier try whose reply was lost.
+  if (!error || /exists|duplicate/i.test(error.message ?? '') || String(error.statusCode) === '409') return 'sent'
+  if (isStorageNetworkError(error)) throw error
+  console.error('Photo refused', entry, error)
+  setStatus({ error: `A photo couldn't be saved: ${error.message}` })
+  return 'refused'
+}
+
 async function pushOutbox() {
   const entries = await db.outbox.orderBy('seq').toArray()
   for (const entry of entries) {
+    if (entry.table === 'meal_photos') {
+      const result = await pushPhotoFile(entry)
+      if (result === 'skip') {
+        await db.outbox.delete(entry.seq)
+        continue
+      }
+      if (result === 'refused') {
+        await db.transaction('rw', [db.meal_photos, db.photo_files, db.outbox], async () => {
+          await db.meal_photos.delete(entry.payload.id)
+          await db.photo_files.delete(entry.payload.id)
+          await db.outbox.delete(entry.seq)
+        })
+        continue
+      }
+    }
     const query = client.from(entry.table)
     // 'insert' is for insert-only tables such as notes: the database allows
     // adding rows there but not changing them, so a resend after a dropped
@@ -85,6 +133,13 @@ async function pushOutbox() {
       // and show the reason.
       console.error('Sync change refused', entry, error)
       setStatus({ error: `A change couldn't be saved: ${error.message}` })
+      // A photo refused after its file went up (the kitchen's limit):
+      // take the file back down so it doesn't use storage.
+      if (entry.table === 'meal_photos' && entry.op !== 'delete') {
+        await client.storage.from(PHOTO_BUCKET).remove([entry.payload.path])
+        await db.meal_photos.delete(entry.payload.id)
+        await db.photo_files.delete(entry.payload.id)
+      }
     }
     await db.outbox.delete(entry.seq)
   }
@@ -118,6 +173,11 @@ async function pullAll() {
       await local.bulkPut(rows.filter((row) => !pendingIds.has(row.id)))
     }
   })
+
+  // Drop saved images whose photo was removed on the other phone.
+  const photoIds = new Set(await db.meal_photos.toCollection().primaryKeys())
+  const orphans = (await db.photo_files.toCollection().primaryKeys()).filter((id) => !photoIds.has(id))
+  if (orphans.length) await db.photo_files.bulkDelete(orphans)
 }
 
 // ---------------------------------------------------------------------------

@@ -709,3 +709,49 @@ ul + h3,
 .time-fields legend { font-weight: 600; margin-bottom: var(--space-2); padding: 0; }
 .time-fields .field { margin: 0; }
 .time-fields .hint { grid-column: 1 / -1; margin: 0; }
+
+/* Photos of finished dishes */
+.file-pick { display: inline-flex; align-items: center; cursor: pointer; }
+.file-pick:focus-within { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.file-pick[aria-disabled] { cursor: progress; opacity: 0.7; }
+.photo-placeholder { display: block; background: var(--color-subtle); }
+.recipe-photo { margin: 0 0 var(--space-4); }
+.recipe-photo img,
+.recipe-photo .photo-placeholder {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+.recipe-photo figcaption { margin-top: var(--space-1); }
+.photo-prompt { margin: var(--space-4) 0 0; }
+.meal-photos { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-1); }
+.photo-thumb {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 1px solid var(--color-divider);
+  border-radius: calc(var(--radius) / 2);
+  overflow: hidden;
+  background: var(--color-subtle);
+  cursor: zoom-in;
+}
+.photo-thumb img,
+.photo-thumb .photo-placeholder { width: 100%; height: 100%; object-fit: cover; }
+.photo-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.photo-dialog::backdrop { background: rgb(0 0 0 / 0.6); }
+.photo-large { display: block; width: 100%; height: auto; max-height: 70dvh; object-fit: contain; border-radius: calc(var(--radius) / 2); }
+.photo-dialog .photo-placeholder { aspect-ratio: 4 / 3; }
+.card.has-photo { display: flex; gap: var(--space-3); align-items: center; }
+.card-photo { flex: none; width: 56px; height: 56px; object-fit: cover; border-radius: calc(var(--radius) / 2); }
+.card.has-photo > div { min-width: 0; }

@@ -52,6 +52,23 @@ function fakeServer() {
         select: async () => ({ data: [...table(name).values()].map((r) => structuredClone(r)), error: null }),
       }
     },
+    // Storage: files by path. refuseUploads mimics the bucket's size limit.
+    files: new Map(),
+    refuseUploads: false,
+    storage: {
+      from: () => ({
+        upload: async (path, blob) => {
+          if (client.refuseUploads) return { error: { message: 'The object exceeded the maximum allowed size', statusCode: '413' } }
+          if (client.files.has(path)) return { error: { message: 'The resource already exists', statusCode: '409' } }
+          client.files.set(path, blob)
+          return { error: null }
+        },
+        remove: async (paths) => {
+          for (const path of paths) client.files.delete(path)
+          return { data: [], error: null }
+        },
+      }),
+    },
   }
   return client
 }
@@ -172,4 +189,61 @@ test('notes are sent as inserts, which the database allows', async () => {
   await syncNow()
   assert.equal(server.table('notes').size, 1)
   assert.equal([...server.table('notes').values()][0].body, 'Halve the salt')
+})
+
+// Photos of finished dishes
+const { saveMealPhoto, removeMealPhotos } = await import('./photos.js')
+const brianMember = { user_id: 'user-b', kitchen_id: 'kitchen-1', display_name: 'Brian' }
+const jpeg = (size = 1000) => new Blob([new Uint8Array(size)], { type: 'image/jpeg' })
+
+test('a photo uploads to the kitchen folder before its record', async () => {
+  setOnline(false)
+  const photo = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  assert.equal(photo.path, `kitchen-1/r1/${photo.id}.jpg`)
+  assert.equal(server.files.size, 0)
+  setOnline(true)
+  await syncNow()
+  assert.ok(server.files.has(photo.path))
+  assert.equal(server.table('meal_photos').get(photo.id).added_by, 'user-a')
+})
+
+test('a second photo of the same meal replaces yours, not the other cook\'s', async () => {
+  const first = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, brianMember)
+  await syncNow()
+  const second = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await syncNow()
+  assert.equal(server.table('meal_photos').size, 2)
+  assert.ok(!server.files.has(first.path))
+  assert.ok(server.files.has(second.path))
+  assert.equal(await db.photo_files.count(), 2)
+})
+
+test('a photo removed before it was sent never reaches the server', async () => {
+  setOnline(false)
+  const photo = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await removeMealPhotos([photo])
+  setOnline(true)
+  await syncNow()
+  assert.equal(server.table('meal_photos').size, 0)
+  assert.equal(server.files.size, 0)
+  assert.equal(await db.outbox.count(), 0)
+})
+
+test('a photo the server refuses is removed from this phone', async () => {
+  server.refuseUploads = true
+  await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await syncNow()
+  assert.equal(await db.meal_photos.count(), 0)
+  assert.equal(await db.photo_files.count(), 0)
+  assert.equal(server.table('meal_photos').size, 0)
+})
+
+test('a photo removed on the other phone drops its saved image here', async () => {
+  const photo = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await syncNow()
+  server.table('meal_photos').delete(photo.id)
+  await syncNow()
+  assert.equal(await db.meal_photos.count(), 0)
+  assert.equal(await db.photo_files.count(), 0)
 })

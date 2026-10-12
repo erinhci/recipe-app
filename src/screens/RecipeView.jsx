@@ -12,6 +12,8 @@ import { formatMinutes, groupMeals, ratingIsStale, recipeRatings, timeSummary } 
 import StarPicker from '../components/StarPicker'
 import StepText from '../components/StepText'
 import NutritionPanel from '../components/NutritionPanel'
+import { AddPhoto, PhotoImg, PhotoThumb } from '../components/MealPhotos'
+import { newestFirst, removeMealPhotos } from '../lib/photos'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 // cooked_on is a calendar date; read it as local noon so it never shifts a day.
@@ -35,18 +37,19 @@ export default function RecipeView() {
   const data = useLiveQuery(async () => {
     const recipe = await db.recipes.get(id)
     if (!recipe) return { recipe: null }
-    const [ingredients, steps, notes, members, cookLog] = await Promise.all([
+    const [ingredients, steps, notes, members, cookLog, photos] = await Promise.all([
       db.ingredients.where('recipe_id').equals(id).sortBy('position'),
       db.steps.where('recipe_id').equals(id).sortBy('position'),
       db.notes.where('recipe_id').equals(id).sortBy('created_at'),
       db.members.toArray(),
       db.cook_log.where('recipe_id').equals(id).toArray(),
+      db.meal_photos.where('recipe_id').equals(id).toArray(),
     ])
     cookLog.sort((a, b) => b.cooked_on.localeCompare(a.cooked_on) || (b.created_at ?? '').localeCompare(a.created_at ?? ''))
     const ratings = await db.ratings.where('cook_log_id').anyOf(cookLog.map((c) => c.id)).toArray()
     // Short records of which notes changed this recipe (no recipe copies).
     const changeRecords = await db.recipe_versions.where('recipe_id').equals(id).toArray()
-    return { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords }
+    return { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords, photos: newestFirst(photos) }
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
@@ -69,6 +72,7 @@ export default function RecipeView() {
   const [showAllHistory, setShowAllHistory] = useState(false)
   const [changingRating, setChangingRating] = useState(false)
   const [ratingStatus, setRatingStatus] = useState('')
+  const [photoStatus, setPhotoStatus] = useState(null) // { text, error? }
   const logHeadingRef = useRef(null)
   const loaded = Boolean(data?.recipe)
 
@@ -101,7 +105,7 @@ export default function RecipeView() {
     )
   }
 
-  const { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords } = data
+  const { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords, photos } = data
   // Which notes led to a recipe change (kept with the version saved then).
   const changesFromNote = new Map()
   for (const version of changeRecords) {
@@ -111,6 +115,9 @@ export default function RecipeView() {
   const shownServings = servings
   const factor = scaleFactor(recipe.base_servings, shownServings)
   const nameFor = (userId) => members.find((m) => m.user_id === userId)?.display_name ?? 'A former cook'
+  const photoBy = (photo) => (photo.added_by === member.user_id ? 'You' : nameFor(photo.added_by))
+  const photosFor = (day) => photos.filter((p) => p.cooked_on === day)
+  const myPhotoOn = (day) => photosFor(day).some((p) => p.added_by === member.user_id)
 
   async function handleDelete() {
     if (!window.confirm(`Delete "${recipe.title}"? It stays in Recently Deleted in Settings for 30 days.`)) return
@@ -135,8 +142,11 @@ export default function RecipeView() {
     const warning = othersHere.length
       ? ` ${othersHere.join(' and ')}'s rating is saved with this entry and will be removed; they can rate again.`
       : ' Your rating stays.'
-    if (!window.confirm(`Remove ${formatDay(meal.cooked_on)} from the cook log?${warning}`)) return
+    const mealPhotos = photosFor(meal.cooked_on)
+    const photoWarning = mealPhotos.length ? ` Its ${mealPhotos.length === 1 ? 'photo is' : 'photos are'} removed too.` : ''
+    if (!window.confirm(`Remove ${formatDay(meal.cooked_on)} from the cook log?${warning}${photoWarning}`)) return
     await deleteMealLog(meal.ids, member)
+    await removeMealPhotos(mealPhotos)
   }
 
   async function handleRate(n) {
@@ -180,6 +190,15 @@ export default function RecipeView() {
       <p role="status" style={message ? undefined : { margin: 0 }}>
         {message && <strong>{message}</strong>}
       </p>
+      {photos.length > 0 && (
+        <figure className="recipe-photo">
+          <PhotoImg photo={photos[0]} alt={`${recipe.title} as you made it on ${formatDay(photos[0].cooked_on)}`} />
+          <figcaption className="hint">
+            {formatDay(photos[0].cooked_on)} · {photoBy(photos[0])}
+            {photos.length > 1 && ` · ${photos.length} photos in the cook log`}
+          </figcaption>
+        </figure>
+      )}
       {(recipe.cuisine || recipe.meal_type || timeSummary(recipe)) && (
         <p className="hint">
           {[recipe.cuisine, recipe.meal_type, timeSummary(recipe)]
@@ -361,6 +380,19 @@ export default function RecipeView() {
           {ratingStatus}
         </p>
 
+        {finishedCooking && !myPhotoOn(finishedCooking.day) && (
+          <div className="photo-prompt">
+            <AddPhoto
+              recipeId={recipe.id}
+              cookedOn={finishedCooking.day}
+              member={member}
+              label="Add a photo of how it turned out"
+              className="btn btn-secondary"
+              onStatus={setPhotoStatus}
+            />
+          </div>
+        )}
+
         <h3 className="subheading">Cook log</h3>
         <p className="hint" style={{ marginTop: 0 }}>
           {recipe.total_time_minutes > 0 ? (
@@ -403,6 +435,9 @@ export default function RecipeView() {
           </p>
         </form>
 
+        <p role="status" className={photoStatus?.error ? 'error' : 'hint'} style={{ margin: photoStatus ? 'var(--space-2) 0 0' : 0 }}>
+          {photoStatus?.text}
+        </p>
         {meals.length === 0 ? (
           <p className="hint">Not made yet.</p>
         ) : (
@@ -413,6 +448,18 @@ export default function RecipeView() {
                   <span style={{ display: 'block' }}>{formatDay(meal.cooked_on)}</span>
                   <span className="hint" style={{ display: 'block' }}>
                     Logged by {loggedByNames(meal)}
+                  </span>
+                  <span className="meal-photos">
+                    {photosFor(meal.cooked_on).map((photo) => (
+                      <PhotoThumb key={photo.id} photo={photo} recipeTitle={recipe.title} byName={photoBy(photo)} onStatus={setPhotoStatus} />
+                    ))}
+                    <AddPhoto
+                      recipeId={recipe.id}
+                      cookedOn={meal.cooked_on}
+                      member={member}
+                      label={myPhotoOn(meal.cooked_on) ? 'Replace your photo' : 'Add photo'}
+                      onStatus={setPhotoStatus}
+                    />
                   </span>
                 </span>
                 <button className="link-btn" type="button" onClick={() => handleDeleteLog(meal)}>

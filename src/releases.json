@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.21.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Photos of finished dishes: add one to any day in the cook log, or right after cooking. You each get one photo per meal, and both phones see them",
+      "The newest photo shows at the top of the recipe and in the library",
+      "Photos are shrunk to about 300 KB on your phone and saved there, so they show offline. A kitchen keeps up to 500"
+    ]
+  },
+  {
     "version": "0.20.0",
     "date": "2026-10-11",
     "notes": [

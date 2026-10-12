@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Erin: add photos now, limited so storage can't fill by accident, and both cooks can see and add them | Built: one photo per cook per meal, shrunk to about 300 KB, 500 per kitchen, synced (0.21.0) | See entry |
 | 2026-10-11 | Severity 3: the shared step waits for check-offs that Partner skips with dirty hands | One tap catches up earlier steps; shared steps no longer lock (0.20.0) | See entry |
 | 2026-10-11 | Nine open findings rated on Nielsen's severity scale | Four rated 3 (major) and fixed first; then the same tasks are tested again with Partner | See entry |
 | 2026-10-11 | After the debrief: the "Start now" note was too prescriptive; Partner wants the times and to decide himself | Note removed; prep and cook times added to recipes and shown before cooking (0.19.1) | See entry |
@@ -25,7 +26,7 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Keeping earlier versions of every recipe isn't needed; the note already says what changed | Earlier versions removed; only a short note-to-change record is kept | See entry |
 | 2026-10-11 | The version in Settings (a commit code) said nothing useful | Version numbers with plain-language notes; what's new after updating | See entry |
 | 2026-10-11 | Keeping imported screenshots and PDFs is clutter once the recipe is checked | Originals no longer saved; the recipe's credit is kept instead | See entry |
-| 2026-10-11 | Want photos of finished dishes, to see how it turned out and for stats later | Planned (Later), synced between phones | Not built |
+| 2026-10-11 | Want photos of finished dishes, to see how it turned out and for stats later | Planned (Later), synced between phones; built in 0.21.0 | See entry |
 | 2026-10-11 | The update banner never appeared; updates showed up later on their own | Banner pinned to the top of the screen; checks for updates more often | See entry |
 | 2026-10-11 | Notes looked like big cards, the app's own note offered "Turn into a recipe change", and a note could be applied again | Notes look like a comments thread; a used note can't be applied twice | See entry |
 | 2026-10-11 | Waiting on Gemini looked like a frozen screen | Loading indicator; faster settings per task | `1a7579d` |
@@ -36,6 +37,45 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Photos of finished dishes
+
+**Decision.** Erin moved photos up from Later: "a quick and high impact
+UI." Two conditions: storage can't fill up by accident, and both cooks
+can see and add photos.
+
+**Change (version 0.21.0, migration 0010).**
+
+- Each day in the cook log has "Add photo". Each cook can add one photo
+  per meal; adding another replaces theirs, so a meal has at most two.
+  Right after cooking, the rating section offers "Add a photo of how it
+  turned out".
+- The newest photo shows at the top of the recipe, with the date and who
+  added it, and as a small picture on the recipe's card in the library.
+  Tapping a photo in the log opens it larger, with Remove.
+- Removing a meal from the log removes its photos too, and the
+  confirmation says so.
+
+**Limits on storage.** Photos are shrunk on the phone to a JPEG of about
+300 KB, at most 1280 pixels on the long side. The database holds the same
+limits in case a phone doesn't: files over 500 KB or not JPEG are refused
+by the storage bucket, one photo per cook per meal, and 500 photos per
+kitchen (about 150 MB of the free 1 GB). A removed photo's file is deleted
+from storage, so nothing is left behind.
+
+**Offline.** A photo is saved on the phone first and uploads when the
+phone is online; the file goes up before its record, so the other phone
+never sees a photo without its image. Photos from the other phone are
+downloaded once and kept, so they show offline after that.
+
+**How it was tested.** Database rules in an in-memory Postgres (one photo
+each per meal, the 500 KB and 500-photo limits, no access from another
+kitchen). Sync tests for the upload order, replacing, removing before
+upload, refusals, and removal from the other phone. Two phones against a
+fake server: Erin added and replaced a photo, Partner's library and
+recipe showed it, he added his own and removed it, and removing the meal
+removed the rest. No accessibility violations (axe), and the photo picker
+is a labeled file input reachable by keyboard.
 
 ## 2026-10-11: Check-offs that don't hold up the cook
 

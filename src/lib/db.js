@@ -34,6 +34,14 @@ db.version(4).stores({
   cooking_sessions: null,
 })
 
+// Photos of finished dishes: the record syncs like other tables; the
+// shrunk image itself is kept in photo_files ({ id, blob }) so it shows
+// offline, and travels through Supabase Storage.
+db.version(5).stores({
+  meal_photos: 'id, recipe_id, [recipe_id+cooked_on]',
+  photo_files: 'id',
+})
+
 export async function getMeta(key) {
   const row = await db.meta.get(key)
   return row?.value
