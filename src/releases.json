@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.19.1",
+    "date": "2026-10-11",
+    "notes": [
+      "Recipes have prep and cook times, shown on the recipe and at the top of both cooking modes, so you can plan when to start things like the oven",
+      "Two-chef mode no longer tells you to \"start now\"; preheating is a regular step and the timing is your call"
+    ]
+  },
+  {
     "version": "0.19.0",
     "date": "2026-10-11",
     "notes": [

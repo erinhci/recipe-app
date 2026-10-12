@@ -10,7 +10,7 @@ import QuickNote from '../components/QuickNote'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal, saveChefSplit } from '../lib/data'
-import { formatMinutes } from '../lib/stats'
+import { formatMinutes, timeSummary } from '../lib/stats'
 import { scaleFactor } from '../lib/units'
 import { ingredientLine, ingredientsForStep } from '../lib/cooking'
 import { invokeFunction } from '../lib/functions'
@@ -374,7 +374,6 @@ export default function TwoChef() {
   const meet = meetAt(states)
   const left = minutesLeft(states, timing)
   const minutesOf = (state) => timing?.[state.number - 1]?.minutes ?? null
-  const headsUp = (state) => timing?.[state.number - 1]?.heads_up ?? null
   const cleanup = side !== 'all' ? names.while_waiting?.[side] ?? [] : []
   const isNext = (state) => (next.kind === 'step' || next.kind === 'waiting') && next.state.step.id === state.step.id
   const askIndex = next.kind === 'step' || next.kind === 'waiting' ? next.state.number - 1 : null
@@ -404,9 +403,8 @@ export default function TwoChef() {
     <Page title={`${recipe.title}: two chefs`} close={{ label: 'Leave two-chef mode', onClick: leave }}>
       <p className="hint" style={{ marginBottom: 0 }}>
         {[
-          left != null
-            ? `About ${formatMinutes(left)} left`
-            : recipe.total_time_minutes > 0 && `About ${formatMinutes(recipe.total_time_minutes)} in all`,
+          timeSummary(recipe),
+          left != null && `about ${formatMinutes(left)} left`,
           system === 'metric' ? 'Metric units' : 'US units',
           wakeLock === 'on' && 'Screen stays on',
           !live && 'Not connected, so progress stays on this phone',
@@ -460,7 +458,6 @@ export default function TwoChef() {
                 Step {next.state.number} of {steps.length}
                 {next.state.track === 'both' ? ' · together' : side === 'all' ? ` · ${names[next.state.track]}` : ''}
               </h2>
-              {headsUp(next.state) && <p className="heads-up">Start now: {headsUp(next.state)}</p>}
               <p className="cook-step">
                 <StepText text={next.state.step.text} ingredients={ingredients} factor={factor} system={system} />
               </p>
@@ -551,7 +548,6 @@ export default function TwoChef() {
                   {whoHas(state.track)}
                   {minutesOf(state) && ` · about ${formatMinutes(minutesOf(state))}`}
                 </p>
-                {headsUp(state) && !state.done && <p className="heads-up">Start now: {headsUp(state)}</p>}
                 <p className="step-text">
                   <StepText text={state.step.text} ingredients={ingredients} factor={factor} system={system} />
                 </p>

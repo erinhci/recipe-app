@@ -20,7 +20,7 @@ const RECIPE_FIELDS = [
   'id', 'kitchen_id', 'title', 'base_servings', 'cuisine', 'meal_type', 'tags',
   'total_time_minutes', 'source_type', 'source_url', 'original_file',
   'created_by', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'nutrition', 'source_name',
-  'chef_tracks',
+  'chef_tracks', 'prep_minutes', 'cook_minutes',
 ]
 const INGREDIENT_FIELDS = [
   'id', 'recipe_id', 'position', 'quantity', 'unit', 'item', 'prep_note',
@@ -174,7 +174,7 @@ export async function restoreRecipe(recipeId) {
 // Saves a two-chef split: track names on the recipe and a track on each
 // step (in step order). Step edit times stay as they were, so this
 // doesn't count as a recipe change for ratings.
-// extra: { timing: [{ minutes, heads_up }], while_waiting: { a, b } }, kept
+// extra: { timing: [{ minutes }], while_waiting: { a, b } }, kept
 // with the track names on the recipe.
 export async function saveChefSplit(recipeId, names, tracks, extra = {}) {
   await db.transaction('rw', [db.recipes, db.steps, db.outbox], async () => {

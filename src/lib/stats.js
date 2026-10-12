@@ -12,6 +12,19 @@ export const MILESTONES = [
   { kind: 'hours', thresholds: [5, 10, 25, 50], label: (n) => `${n} hours cooking together` },
 ]
 
+// "Prep 10 min · Cook 20 min", plus the total when it isn't just the two
+// added up (or when it's the only time given). Empty when no times.
+export function timeSummary(recipe) {
+  const prep = recipe?.prep_minutes > 0 ? recipe.prep_minutes : null
+  const cook = recipe?.cook_minutes > 0 ? recipe.cook_minutes : null
+  const total = recipe?.total_time_minutes > 0 ? recipe.total_time_minutes : null
+  const parts = []
+  if (prep) parts.push(`Prep ${formatMinutes(prep)}`)
+  if (cook) parts.push(`Cook ${formatMinutes(cook)}`)
+  if (total && total !== (prep ?? 0) + (cook ?? 0)) parts.push(`${parts.length ? 'Total' : 'About'} ${formatMinutes(total)}`)
+  return parts.join(' · ')
+}
+
 // 25 -> "25 min", 75 -> "1 hr 15 min", 120 -> "2 hr"
 export function formatMinutes(minutes) {
   if (minutes < 1) return 'under a minute'

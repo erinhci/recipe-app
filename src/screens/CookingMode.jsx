@@ -9,7 +9,7 @@ import QuickNote from '../components/QuickNote'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal } from '../lib/data'
-import { formatMinutes } from '../lib/stats'
+import { timeSummary } from '../lib/stats'
 import { scaleFactor } from '../lib/units'
 import { ingredientLine, ingredientsForStep } from '../lib/cooking'
 import { useWakeLock } from '../lib/useWakeLock'
@@ -124,7 +124,7 @@ export default function CookingMode() {
     <Page title={recipe.title} close={{ label: 'Exit cooking mode', onClick: () => finish(false) }}>
       <p className="hint" style={{ marginBottom: 0 }}>
         {[
-          recipe.total_time_minutes > 0 && `About ${formatMinutes(recipe.total_time_minutes)} in all`,
+          timeSummary(recipe),
           system === 'metric' ? 'Metric units' : 'US units',
           wakeLock === 'on' ? 'Screen stays on' : wakeLock === 'checking' ? '' : "This phone can't keep the screen on; tap it now and then",
         ]

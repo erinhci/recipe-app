@@ -97,6 +97,8 @@ export function draftToForm(draft) {
     cuisine: draft.cuisine ?? '',
     mealType: draft.meal_type ?? '',
     totalTime: draft.total_time_minutes ?? null,
+    prepTime: draft.prep_minutes ?? null,
+    cookTime: draft.cook_minutes ?? null,
     sourceUrl: draft.source_url ?? '',
     sourceName: draft.source_name ?? '',
     ingredientText: ingredientLines.join('\n'),

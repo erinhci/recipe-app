@@ -696,13 +696,6 @@ ul + h3,
 .star-slider:has(input:focus-visible) { outline: 3px solid var(--color-focus); outline-offset: 4px; border-radius: var(--radius); }
 .star-value { font-weight: 600; min-width: 5ch; }
 
-.heads-up {
-  margin: var(--space-2) 0;
-  padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--color-text);
-  background: var(--color-subtle);
-  font-weight: 600;
-}
 .two-chef-steps > li.is-next {
   border: 2px solid var(--color-text);
   border-radius: var(--radius);
@@ -710,3 +703,9 @@ ul + h3,
   margin: var(--space-2) 0;
 }
 .two-chef-next h3 { margin-top: var(--space-4); }
+
+/* Prep, cook, and total side by side */
+.time-fields { border: 0; padding: 0; margin: 0 0 var(--space-4); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.time-fields legend { font-weight: 600; margin-bottom: var(--space-2); padding: 0; }
+.time-fields .field { margin: 0; }
+.time-fields .hint { grid-column: 1 / -1; margin: 0; }

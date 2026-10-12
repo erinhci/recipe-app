@@ -17,6 +17,7 @@
 //   { "kind": "url", "url": "https://..." }
 //
 // Response: { draft: { title, servings, cuisine, meal_type, total_time_minutes,
+//   prep_minutes, cook_minutes,
 //   ingredients: [{ quantity, unit, item, prep }] | null,
 //   ingredient_lines: string[] | null, steps: string[], source_url, source_name }, method }
 //   source_name: who the recipe is credited to (a site, book, or person), if shown.
@@ -53,6 +54,8 @@ type Draft = {
   cuisine: string | null
   meal_type: string | null
   total_time_minutes: number | null
+  prep_minutes: number | null
+  cook_minutes: number | null
   ingredients: { quantity: number | null; unit: string | null; item: string; prep: string | null }[] | null
   ingredient_lines: string[] | null
   steps: string[]
@@ -172,7 +175,11 @@ export function recipeFromHtml(html: string, sourceUrl: string | null = null): D
       servings: parseServings(recipe.recipeYield),
       cuisine: matchCuisine(recipe.recipeCuisine),
       meal_type: null,
-      total_time_minutes: parseMinutes(recipe.totalTime) ?? parseMinutes(recipe.cookTime),
+      total_time_minutes:
+        parseMinutes(recipe.totalTime) ??
+        ((parseMinutes(recipe.prepTime) ?? 0) + (parseMinutes(recipe.cookTime) ?? 0) || null),
+      prep_minutes: parseMinutes(recipe.prepTime),
+      cook_minutes: parseMinutes(recipe.cookTime),
       ingredients: null,
       ingredient_lines: lines,
       steps: flattenSteps(recipe.recipeInstructions),
@@ -204,6 +211,7 @@ Return the recipe exactly as written. Rules:
 - steps are the instructions in order, one entry per step, without step numbers.
 - servings is the number of servings the recipe makes as written, or null if not stated.
 - total_time_minutes is the total time, prep and cooking together, in minutes. Use the stated total time if there is one. Otherwise estimate it from the steps.
+- prep_minutes is the hands-on prep time and cook_minutes the cooking or baking time, in minutes. Use the stated times if there are any. Otherwise estimate them from the steps.
 - cuisine must be one of the allowed values; use "Other" if none fits. meal_type must be one of the allowed values.
 - If the image or text contains no recipe, return an empty title and empty lists.
 - source_name is who the recipe is credited to if the image or text names it: a person, blog, website, cookbook, or social account. Use null if no one is credited. Do not guess.
@@ -218,6 +226,8 @@ const SCHEMA = {
     cuisine: { type: 'STRING', enum: CUISINES },
     meal_type: { type: 'STRING', enum: MEAL_TYPES },
     total_time_minutes: { type: 'INTEGER', nullable: true },
+    prep_minutes: { type: 'INTEGER', nullable: true },
+    cook_minutes: { type: 'INTEGER', nullable: true },
     ingredients: {
       type: 'ARRAY',
       items: {
@@ -302,6 +312,8 @@ async function askGemini(parts: unknown[], apiKey: string, models: string[]): Pr
       cuisine: CUISINES.includes(parsed.cuisine) ? parsed.cuisine : null,
       meal_type: MEAL_TYPES.includes(parsed.meal_type) ? parsed.meal_type : null,
       total_time_minutes: Number.isInteger(parsed.total_time_minutes) ? parsed.total_time_minutes : null,
+      prep_minutes: Number.isInteger(parsed.prep_minutes) && parsed.prep_minutes > 0 ? parsed.prep_minutes : null,
+      cook_minutes: Number.isInteger(parsed.cook_minutes) && parsed.cook_minutes > 0 ? parsed.cook_minutes : null,
       ingredients: (parsed.ingredients ?? []).filter((i: any) => i?.item),
       ingredient_lines: null,
       steps: (parsed.steps ?? []).map((s: unknown) => String(s).trim()).filter(Boolean),

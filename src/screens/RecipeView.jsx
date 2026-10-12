@@ -8,7 +8,7 @@ import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, r
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 import { useOnline } from '../lib/useOnline'
-import { formatMinutes, groupMeals, ratingIsStale, recipeRatings } from '../lib/stats'
+import { formatMinutes, groupMeals, ratingIsStale, recipeRatings, timeSummary } from '../lib/stats'
 import StarPicker from '../components/StarPicker'
 import StepText from '../components/StepText'
 import NutritionPanel from '../components/NutritionPanel'
@@ -180,9 +180,9 @@ export default function RecipeView() {
       <p role="status" style={message ? undefined : { margin: 0 }}>
         {message && <strong>{message}</strong>}
       </p>
-      {(recipe.cuisine || recipe.meal_type || recipe.total_time_minutes > 0) && (
+      {(recipe.cuisine || recipe.meal_type || timeSummary(recipe)) && (
         <p className="hint">
-          {[recipe.cuisine, recipe.meal_type, recipe.total_time_minutes > 0 && formatMinutes(recipe.total_time_minutes)]
+          {[recipe.cuisine, recipe.meal_type, timeSummary(recipe)]
             .filter(Boolean)
             .join(' · ')}
         </p>

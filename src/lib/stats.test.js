@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { computeStats, formatMinutes, groupMeals, mealRatings, ratingIsStale, recipeRatings } from './stats.js'
+import { computeStats, formatMinutes, timeSummary, groupMeals, mealRatings, ratingIsStale, recipeRatings } from './stats.js'
 
 const at = (time) => `2026-10-01T${time}:00.000Z`
 
@@ -107,4 +107,11 @@ test('formatMinutes', () => {
   assert.equal(formatMinutes(25), '25 min')
   assert.equal(formatMinutes(75), '1 hr 15 min')
   assert.equal(formatMinutes(120), '2 hr')
+})
+
+test('time summary shows prep, cook, and a total that differs', () => {
+  assert.equal(timeSummary({ prep_minutes: 10, cook_minutes: 20, total_time_minutes: 30 }), 'Prep 10 min · Cook 20 min')
+  assert.equal(timeSummary({ prep_minutes: 10, cook_minutes: 20, total_time_minutes: 45 }), 'Prep 10 min · Cook 20 min · Total 45 min')
+  assert.equal(timeSummary({ total_time_minutes: 40 }), 'About 40 min')
+  assert.equal(timeSummary({}), '')
 })

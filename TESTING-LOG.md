@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | After the debrief: the "Start now" note was too prescriptive; Partner wants the times and to decide himself | Note removed; prep and cook times added to recipes and shown before cooking (0.19.1) | See entry |
 | 2026-10-11 | First two-chef cook (egg bites): mismatched amounts in steps, a skipped preheat, idle waiting, missed hand-off, no way to note a change mid-cook, and more | Fixes and additions in 0.19.0; ounces for weighing and Partner's preference for the step list are open | See entry |
 | 2026-10-11 | Partner's PDF import was refused for being over 8 MB, and a recipe link failed with a vague error | Large PDFs read on the phone and sent as text or page images; links fetched like a browser with a backup reader; specific error messages (0.18.1) | See entry |
 | 2026-10-11 | Two-chef mode from the plan wasn't built yet | Built: Gemini split, pick a part, live check-offs on both phones, shared steps, hand-offs (0.18.0) | See entry |
@@ -33,6 +34,31 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Times instead of instructions
+
+**Finding.** In the egg bite debrief, Partner explained he skipped the
+preheat step on purpose: a new oven, not knowing how long prep would
+take, and not wanting it running too long. Knowing the oven now, he'd
+make the same call. 0.19.0 had added a "Start now" note to steps like
+preheating, which tells the cook what to do instead of giving them what
+they need to decide.
+
+**Decision.** Erin: their oven heats fast, so preheating stays a
+regular step. Cooks see the prep and cook time and decide for
+themselves.
+
+**Change (version 0.19.1).**
+
+- The "Start now" note is gone from two-chef mode, and the split no
+  longer asks Gemini for one.
+- Recipes have separate prep and cook times (migration 0009), next to the
+  total. Imports read them from the page or the recipe, and Gemini
+  estimates them when they aren't given. Edit has Prep, Cook, and Total
+  fields; a blank total is prep plus cook.
+- The recipe page and the top of both cooking modes show "Prep 10 min ·
+  Cook 20 min". Two-chef mode adds the time left, from the split's step
+  times.
 
 ## 2026-10-11: First two-chef cook (egg bites)
 

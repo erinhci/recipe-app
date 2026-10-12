@@ -32,6 +32,8 @@ export default function RecipeEdit() {
   const [cuisine, setCuisine] = useState(draft?.cuisine ?? '')
   const [mealType, setMealType] = useState(draft?.mealType ?? '')
   const [totalTime, setTotalTime] = useState(draft?.totalTime ? String(draft.totalTime) : '')
+  const [prepTime, setPrepTime] = useState(draft?.prepTime ? String(draft.prepTime) : '')
+  const [cookTime, setCookTime] = useState(draft?.cookTime ? String(draft.cookTime) : '')
   const [sourceUrl, setSourceUrl] = useState(draft?.sourceUrl || incoming?.originals?.url || '')
   const [sourceName, setSourceName] = useState(draft?.sourceName ?? '')
   const [ingredientText, setIngredientText] = useState(draft?.ingredientText ?? '')
@@ -50,6 +52,8 @@ export default function RecipeEdit() {
         setCuisine(recipe.cuisine ?? '')
         setMealType(recipe.meal_type ?? '')
         setTotalTime(recipe.total_time_minutes ? String(recipe.total_time_minutes) : '')
+        setPrepTime(recipe.prep_minutes ? String(recipe.prep_minutes) : '')
+        setCookTime(recipe.cook_minutes ? String(recipe.cook_minutes) : '')
         setSourceUrl(recipe.source_url ?? '')
         setSourceName(recipe.source_name ?? '')
         setIngredientText(proposed?.ingredientText ?? ingredients.map(ingredientToLine).join('\n'))
@@ -72,10 +76,17 @@ export default function RecipeEdit() {
     const base = Number(servings)
     if (!title.trim()) return setError('Add a title.')
     if (!base || base <= 0) return setError('Servings must be a number above 0.')
-    const minutes = totalTime.trim() ? Number(totalTime) : null
-    if (minutes !== null && !(Number.isInteger(minutes) && minutes > 0)) {
-      return setError('Total time must be a whole number of minutes, or left blank.')
+    // Times are whole minutes or blank. A blank total is prep plus cook.
+    const readMinutes = (text) => (text.trim() ? Number(text) : null)
+    const prep = readMinutes(prepTime)
+    const cook = readMinutes(cookTime)
+    let minutes = readMinutes(totalTime)
+    for (const [name, value] of [['Prep time', prep], ['Cook time', cook], ['Total time', minutes]]) {
+      if (value !== null && !(Number.isInteger(value) && value > 0)) {
+        return setError(`${name} must be a whole number of minutes, or left blank.`)
+      }
     }
+    if (minutes === null && (prep || cook)) minutes = (prep ?? 0) + (cook ?? 0)
     if (parsed.length === 0) return setError('Add at least one ingredient.')
 
     // Reuse ids by position so an edit changes rows instead of replacing them.
@@ -100,6 +111,10 @@ export default function RecipeEdit() {
               SOURCE_TYPES[incoming?.originals?.kind] ??
               (sourceUrl.trim() ? 'url' : 'manual'),
             total_time_minutes: minutes,
+            // Sent only when set (or already stored), so saving works before
+            // migration 0009 adds these columns.
+            ...(prep !== null || existing?.recipe && 'prep_minutes' in existing.recipe ? { prep_minutes: prep } : {}),
+            ...(cook !== null || existing?.recipe && 'cook_minutes' in existing.recipe ? { cook_minutes: cook } : {}),
           },
           ingredients,
           steps,
@@ -171,20 +186,31 @@ export default function RecipeEdit() {
           </span>
         </div>
 
-        <div className="field">
-          <label htmlFor="total-time">Total time, in minutes</label>
-          <input
-            id="total-time"
-            inputMode="numeric"
-            value={totalTime}
-            onChange={(e) => setTotalTime(e.target.value)}
-            aria-describedby="total-time-hint"
-          />
-          <span id="total-time-hint" className="hint">
-            Prep and cooking together. Each time you log this recipe, it adds this much to your time cooking together in
-            Stats.
-          </span>
-        </div>
+        <fieldset className="time-fields" aria-describedby="time-hint">
+          <legend>Time, in minutes</legend>
+          <div className="field">
+            <label htmlFor="prep-time">Prep</label>
+            <input id="prep-time" inputMode="numeric" value={prepTime} onChange={(e) => setPrepTime(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="cook-time">Cook</label>
+            <input id="cook-time" inputMode="numeric" value={cookTime} onChange={(e) => setCookTime(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="total-time">Total</label>
+            <input
+              id="total-time"
+              inputMode="numeric"
+              value={totalTime}
+              placeholder={prepTime || cookTime ? String((Number(prepTime) || 0) + (Number(cookTime) || 0)) : ''}
+              onChange={(e) => setTotalTime(e.target.value)}
+            />
+          </div>
+          <p id="time-hint" className="hint">
+            Shown before you start cooking, so you can plan when to start things like preheating. A blank total is prep
+            plus cook. Each time you log this recipe, the total adds to your time cooking together in Stats.
+          </p>
+        </fieldset>
 
         <div className="field">
           <label htmlFor="cuisine">Cuisine</label>

@@ -138,6 +138,8 @@ test('reads a WordPress recipe plugin page inside a site graph', () => {
   assert.equal(draft?.title, 'Easy Soondubu Jjigae (Korean Soft Tofu Stew)')
   assert.equal(draft?.servings, 1)
   assert.equal(draft?.total_time_minutes, 15)
+  assert.equal(draft?.prep_minutes, 5)
+  assert.equal(draft?.cook_minutes, 10)
   assert.equal(draft?.ingredient_lines?.length, 3)
   assert.equal(draft?.steps.length, 3)
   assert.equal(draft?.source_name, 'Cookerru')

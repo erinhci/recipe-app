@@ -50,15 +50,15 @@ test('Gemini saying it cannot be split keeps its reason', () => {
   assert.deepEqual(split.tracks, ['both', 'both', 'both'])
 })
 
-test('step times, heads-ups, and cleanup tasks are kept tidy', () => {
+test('step times and cleanup tasks are kept tidy', () => {
   const split = cleanSplit(
     {
       splittable: true,
       name_a: 'Pan and Fillings',
       name_b: 'Egg Mixture',
       steps: [
-        { number: 1, track: 'a', minutes: 10, heads_up: ' The oven takes about 10 minutes to heat. ' },
-        { number: 2, track: 'b', minutes: 3, heads_up: '' },
+        { number: 1, track: 'a', minutes: 10 },
+        { number: 2, track: 'b', minutes: 3 },
         { number: 3, track: 'both', minutes: 9999 },
       ],
       while_waiting_a: ['Wipe the cutting board.', ' ', 'Put away the vegetables', 'Rinse the knife', 'One too many'],
@@ -66,11 +66,7 @@ test('step times, heads-ups, and cleanup tasks are kept tidy', () => {
     },
     3,
   )
-  assert.deepEqual(split.timing, [
-    { minutes: 10, heads_up: 'The oven takes about 10 minutes to heat.' },
-    { minutes: 3, heads_up: null },
-    { minutes: null, heads_up: null },
-  ])
+  assert.deepEqual(split.timing, [{ minutes: 10 }, { minutes: 3 }, { minutes: null }])
   assert.deepEqual(split.while_waiting, {
     a: ['Wipe the cutting board', 'Put away the vegetables', 'Rinse the knife'],
     b: ['Toss the egg shells'],
