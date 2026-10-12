@@ -40,18 +40,38 @@ export function sideOf(cook, userId) {
 
 export const otherSide = (side) => (side === 'a' ? 'b' : 'a')
 
-// What this cook should do now.
+// What this cook should do now: their first step not yet checked off.
 // side: 'a', 'b', or 'all' (one phone running both tracks).
-// Returns { kind: 'step', state } | { kind: 'waiting', state, on } |
-//   { kind: 'mine-done' } | { kind: 'all-done' }
+// Shared steps don't lock while the other part is unchecked, since cooks
+// often skip check-offs with busy hands. The returned state's waitingOn
+// says which earlier steps aren't checked off, so the screen can mention it.
+// Returns { kind: 'step', state } | { kind: 'mine-done' } | { kind: 'all-done' }
 export function nextFor(states, side) {
-  const mine = (s) => side === 'all' || s.track === side || s.track === 'both'
-  const open = states.filter((s) => mine(s) && !s.done)
   if (states.every((s) => s.done)) return { kind: 'all-done' }
+  const open = states.filter((s) => isMine(s, side) && !s.done)
   if (open.length === 0) return { kind: 'mine-done' }
-  const ready = open.find((s) => s.waitingOn.length === 0)
-  if (ready) return { kind: 'step', state: ready }
-  return { kind: 'waiting', state: open[0], on: open[0].waitingOn }
+  return { kind: 'step', state: open[0] }
+}
+
+const isMine = (state, side) => side === 'all' || state.track === side || state.track === 'both'
+
+// The steps to mark done when a cook checks one off, in order. Cooks with
+// busy hands catch up by checking the step they're on, so their own
+// earlier steps are checked too. A shared step means both parts before it
+// are finished, so checking one also checks every step before it.
+export function catchUpIds(states, target, side) {
+  const before = states.filter((s) => s.number < target.number && !s.done)
+  const ids = new Set([target.step.id])
+  for (const s of before) if (isMine(s, side)) ids.add(s.step.id)
+  const lastShared = Math.max(0, ...states.filter((s) => ids.has(s.step.id) && s.track === 'both').map((s) => s.number))
+  for (const s of before) if (s.number < lastShared) ids.add(s.step.id)
+  return states.filter((s) => ids.has(s.step.id)).map((s) => s.step.id)
+}
+
+// "3", "2 and 3", "2, 3 and 5"
+export function listNumbers(numbers) {
+  if (numbers.length <= 1) return numbers.join('')
+  return `${numbers.slice(0, -1).join(', ')} and ${numbers[numbers.length - 1]}`
 }
 
 // The first step still to do on a track, for "Brian is on step 3".

@@ -17,8 +17,8 @@ import { invokeFunction } from '../lib/functions'
 import { useOnline } from '../lib/useOnline'
 import { useWakeLock } from '../lib/useWakeLock'
 import { DEFAULT_SERVINGS } from '../lib/constants'
-import { currentOn, meetAt, minutesLeft, nextFor, otherSide, sideOf, splitIsCurrent, stepStates } from '../lib/twoChef'
-import { claimChef, endCook, fetchCook, moveStep, setServings, setStepDone, startCook, swapChefs, watchCook } from '../lib/twoChefLive'
+import { catchUpIds, currentOn, listNumbers, meetAt, minutesLeft, nextFor, otherSide, sideOf, splitIsCurrent, stepStates } from '../lib/twoChef'
+import { claimChef, endCook, fetchCook, moveStep, setServings, setStepsDone, startCook, swapChefs, watchCook } from '../lib/twoChefLive'
 
 // How often to re-read the shared cook as a backup to live updates.
 const POLL_MS = 5000
@@ -70,6 +70,7 @@ export default function TwoChef() {
   const [local, setLocal] = useState(() => readLocal(id) ?? {})
   const [status, setStatus] = useState('')
   const [problem, setProblem] = useState('')
+  const [undoIds, setUndoIds] = useState(null) // the last catch-up, so it can be undone
   const pending = useRef([]) // changes made while offline, sent on reconnect
 
   // Open (or join) the shared cook once the split is ready.
@@ -278,16 +279,36 @@ export default function TwoChef() {
     }
   }
 
-  function toggleDone(state) {
-    const done = !state.done
+  function setDone(ids, done) {
     change(
       (c) => ({
         ...c,
-        done_steps: done ? [...c.done_steps.filter((s) => s !== state.step.id), state.step.id] : c.done_steps.filter((s) => s !== state.step.id),
+        done_steps: done ? [...c.done_steps.filter((s) => !ids.includes(s)), ...ids] : c.done_steps.filter((s) => !ids.includes(s)),
       }),
-      (cid) => setStepDone(cid, state.step.id, done),
+      (cid) => setStepsDone(cid, ids, done),
     )
-    setStatus(done ? `Step ${state.number} done.` : `Step ${state.number} marked not done.`)
+  }
+
+  // Checking a step also checks the earlier steps it implies (catchUpIds),
+  // so a cook who skipped check-offs catches up with one tap.
+  function toggleDone(state) {
+    if (state.done) {
+      setDone([state.step.id], false)
+      setUndoIds(null)
+      setStatus(`Step ${state.number} marked not done.`)
+      return
+    }
+    const ids = catchUpIds(states, state, side)
+    const numbers = states.filter((s) => ids.includes(s.step.id)).map((s) => s.number)
+    setDone(ids, true)
+    setUndoIds(ids.length > 1 ? ids : null)
+    setStatus(ids.length > 1 ? `Steps ${listNumbers(numbers)} done.` : `Step ${state.number} done.`)
+  }
+
+  function undoCatchUp() {
+    setDone(undoIds, false)
+    setUndoIds(null)
+    setStatus('Check-offs undone.')
   }
 
   function move(state, track) {
@@ -375,13 +396,16 @@ export default function TwoChef() {
   const left = minutesLeft(states, timing)
   const minutesOf = (state) => timing?.[state.number - 1]?.minutes ?? null
   const cleanup = side !== 'all' ? names.while_waiting?.[side] ?? [] : []
-  const isNext = (state) => (next.kind === 'step' || next.kind === 'waiting') && next.state.step.id === state.step.id
-  const askIndex = next.kind === 'step' || next.kind === 'waiting' ? next.state.number - 1 : null
+  const isNext = (state) => next.kind === 'step' && next.state.step.id === state.step.id
+  const askIndex = next.kind === 'step' ? next.state.number - 1 : null
+  // A shared step whose other part isn't checked off yet. It doesn't lock;
+  // the card says what's unchecked and leaves the timing to the cooks.
+  const unchecked = next.kind === 'step' && next.state.track === 'both' && side !== 'all' ? next.state.waitingOn : []
 
   // Shown while waiting on the other cook: where you meet, and what to tidy.
   const whileWaiting = (
     <>
-      {meet && (
+      {meet && !isNext(meet) && (
         <p style={{ margin: 'var(--space-2) 0 0' }}>
           You'll work together at step {meet.number}: <StepText text={meet.step.text} ingredients={ingredients} factor={factor} system={system} />
         </p>
@@ -462,19 +486,13 @@ export default function TwoChef() {
                 <StepText text={next.state.step.text} ingredients={ingredients} factor={factor} system={system} />
               </p>
               {minutesOf(next.state) && <p className="hint">About {formatMinutes(minutesOf(next.state))}</p>}
-            </>
-          )}
-          {next.kind === 'waiting' && (
-            <>
-              <h2 id="next-heading" className="cook-count">
-                Waiting
-              </h2>
-              <p className="cook-step">
-                Step {next.state.number} comes next, once step{next.on.length === 1 ? '' : 's'}{' '}
-                {next.on.map((w) => w.number).join(', ')} {next.on.length === 1 ? 'is' : 'are'} done.
-                {otherOn && live ? ` ${otherName} is on step ${otherOn.number}.` : ''}
-              </p>
-              {whileWaiting}
+              {unchecked.length > 0 && (
+                <p>
+                  {live ? otherName : 'The other cook'} hasn't checked off step{unchecked.length === 1 ? '' : 's'}{' '}
+                  {listNumbers(unchecked.map((w) => w.number))} yet. Start when you're both ready.
+                </p>
+              )}
+              {unchecked.length > 0 && whileWaiting}
             </>
           )}
           {next.kind === 'mine-done' && (
@@ -529,6 +547,14 @@ export default function TwoChef() {
       </section>
       <p role="status" className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
         {status}
+        {undoIds && (
+          <>
+            {' '}
+            <button className="link-btn" type="button" onClick={undoCatchUp}>
+              Undo
+            </button>
+          </>
+        )}
       </p>
 
       <section aria-labelledby="all-steps-heading">

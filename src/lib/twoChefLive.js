@@ -37,6 +37,16 @@ export const setServings = (cookId, servings) => call('set_servings', { p_cook: 
 export const claimChef = (cookId, side) => call('claim_chef', { p_cook: cookId, p_side: side })
 export const swapChefs = (cookId) => call('swap_chefs', { p_cook: cookId })
 export const setStepDone = (cookId, stepId, done) => call('set_step_done', { p_cook: cookId, p_step: stepId, p_done: done })
+// Several check-offs at once (catching up), sent one at a time. Stops at
+// the first failure and returns it; otherwise the last result.
+export async function setStepsDone(cookId, stepIds, done) {
+  let result = { ok: true, cook: null }
+  for (const stepId of stepIds) {
+    result = await setStepDone(cookId, stepId, done)
+    if (!result.ok) return result
+  }
+  return result
+}
 export const moveStep = (cookId, stepId, track) => call('move_step', { p_cook: cookId, p_step: stepId, p_track: track })
 export const endCook = (cookId) => call('end_two_chef', { p_cook: cookId })
 

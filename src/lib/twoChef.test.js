@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { currentOn, nextFor, sideOf, splitIsCurrent, stepStates, trackOf } from './twoChef.js'
+import { catchUpIds, currentOn, listNumbers, nextFor, sideOf, splitIsCurrent, stepStates, trackOf } from './twoChef.js'
 
 // Pasta: 1 boil (a), 2 cook pasta (a), 3 make sauce (b), 4 combine (both), 5 plate (a)
 const steps = [
@@ -25,13 +25,34 @@ test('each cook starts on their own track at the same time', () => {
   assert.equal(nextFor(states, 'b').state.step.id, 's3')
 })
 
-test('the shared step waits for both tracks', () => {
+test("the shared step doesn't lock, but says what isn't checked off", () => {
   const states = stepStates(steps, cook(['s1', 's2']))
   const erin = nextFor(states, 'a')
-  assert.equal(erin.kind, 'waiting')
+  assert.equal(erin.kind, 'step')
   assert.equal(erin.state.step.id, 's4')
-  assert.deepEqual(erin.on.map((w) => [w.step.id, w.number]), [['s3', 3]])
+  assert.deepEqual(erin.state.waitingOn.map((w) => [w.step.id, w.number]), [['s3', 3]])
   assert.equal(nextFor(states, 'b').state.step.id, 's3')
+})
+
+test('checking a step catches up your own earlier steps', () => {
+  const states = stepStates(steps, cook())
+  // Erin checks "Cook pasta": "Boil water" is hers too; the sauce isn't.
+  assert.deepEqual(catchUpIds(states, states[1], 'a'), ['s1', 's2'])
+  // Partner checks "Make sauce": nothing of his comes before it.
+  assert.deepEqual(catchUpIds(states, states[2], 'b'), ['s3'])
+})
+
+test('checking a shared step checks both parts before it', () => {
+  const states = stepStates(steps, cook(['s1']))
+  assert.deepEqual(catchUpIds(states, states[3], 'a'), ['s2', 's3', 's4'])
+  // Checking "Plate" after skipping the shared step checks everything.
+  assert.deepEqual(catchUpIds(states, states[4], 'a'), ['s2', 's3', 's4', 's5'])
+})
+
+test('step numbers read as a list', () => {
+  assert.equal(listNumbers([3]), '3')
+  assert.equal(listNumbers([2, 3]), '2 and 3')
+  assert.equal(listNumbers([2, 3, 5]), '2, 3 and 5')
 })
 
 test('steps after a shared step wait for it', () => {

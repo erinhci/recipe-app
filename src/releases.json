@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.20.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Two-chef mode: checking off a step also checks your earlier steps, and checking a shared step checks both parts before it, so you can catch up with one tap. Undo is next to the message",
+      "Shared steps no longer wait for the other cook's check-offs. If their part isn't checked off, the step says so and you start when you're both ready"
+    ]
+  },
+  {
     "version": "0.19.1",
     "date": "2026-10-11",
     "notes": [

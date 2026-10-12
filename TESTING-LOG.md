@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Severity 3: the shared step waits for check-offs that Partner skips with dirty hands | One tap catches up earlier steps; shared steps no longer lock (0.20.0) | See entry |
 | 2026-10-11 | Nine open findings rated on Nielsen's severity scale | Four rated 3 (major) and fixed first; then the same tasks are tested again with Partner | See entry |
 | 2026-10-11 | After the debrief: the "Start now" note was too prescriptive; Partner wants the times and to decide himself | Note removed; prep and cook times added to recipes and shown before cooking (0.19.1) | See entry |
 | 2026-10-11 | First two-chef cook (egg bites): mismatched amounts in steps, a skipped preheat, idle waiting, missed hand-off, no way to note a change mid-cook, and more | Fixes and additions in 0.19.0; ounces for weighing and Partner's preference for the step list are open | See entry |
@@ -35,6 +36,37 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Check-offs that don't hold up the cook
+
+**Finding (severity 3).** Two-chef mode locked a shared step until every
+step before it was checked off. Partner skips check-offs when his hands
+are dirty ("Skip over mostly") and caught up later by checking several at
+once, so the waiting logic was wrong for most of the cook. He also didn't
+want voice commands.
+
+**Change (version 0.20.0).**
+
+- Checking off a step also checks your own earlier steps that aren't
+  checked. Checking a shared step checks every step before it, on both
+  parts, since the parts have come together. One tap catches up.
+- The message says which steps were checked ("Steps 3 and 4 done.") with
+  Undo next to it. Unchecking a step only unchecks that one.
+- Shared steps no longer lock. When the other cook's part isn't checked
+  off, the step says so ("Brian hasn't checked off step 3 yet. Start when
+  you're both ready.") with the tidy-up tasks, and the cooks decide when
+  to start. This follows the earlier decision to give cooks the facts
+  rather than instructions.
+
+**How it was tested.** Unit tests for the catch-up rules, and two phones
+against a fake server: Erin reached the shared step with Partner's step
+unchecked, checked the shared step, and both phones showed steps 3 and 4
+done; Undo reverted both; Partner checked only the shared step from the
+list and caught up the same way. No accessibility violations (axe).
+
+**For the next session.** Watch whether Partner checks off more often now
+that one tap covers several steps, and whether anyone checks a step ahead
+by mistake.
 
 ## 2026-10-11: Severity ratings, round 1
 
