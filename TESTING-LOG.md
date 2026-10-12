@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Nine open findings rated on Nielsen's severity scale | Four rated 3 (major) and fixed first; then the same tasks are tested again with Partner | See entry |
 | 2026-10-11 | After the debrief: the "Start now" note was too prescriptive; Partner wants the times and to decide himself | Note removed; prep and cook times added to recipes and shown before cooking (0.19.1) | See entry |
 | 2026-10-11 | First two-chef cook (egg bites): mismatched amounts in steps, a skipped preheat, idle waiting, missed hand-off, no way to note a change mid-cook, and more | Fixes and additions in 0.19.0; ounces for weighing and Partner's preference for the step list are open | See entry |
 | 2026-10-11 | Partner's PDF import was refused for being over 8 MB, and a recipe link failed with a vague error | Large PDFs read on the phone and sent as text or page images; links fetched like a browser with a backup reader; specific error messages (0.18.1) | See entry |
@@ -34,6 +35,51 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Severity ratings, round 1
+
+**Method.** Erin rated each finding still open after the egg bite session
+on Nielsen's 0 to 4 severity scale
+([Nielsen, 1994](https://www.nngroup.com/articles/how-to-rate-the-severity-of-usability-problems/)),
+weighing frequency (common or rare), impact (easy or hard to overcome) and
+persistence (once, or every time). Fixes from 0.19.0 and 0.19.1 aren't
+rated, since the next session tests them.
+
+| Rating | Meaning (Nielsen's wording) |
+| --- | --- |
+| 0 | I don't agree that this is a usability problem at all |
+| 1 | Cosmetic problem only: need not be fixed unless extra time is available on project |
+| 2 | Minor usability problem: fixing this should be given low priority |
+| 3 | Major usability problem: important to fix, so should be given high priority |
+| 4 | Usability catastrophe: imperative to fix this before product can be released |
+
+| Finding | Evidence | Severity | Reasoning |
+| --- | --- | --- | --- |
+| The shared step waits for check-offs that people skip | Partner: "Skip over mostly, because sometimes in between steps my hands are dirty"; he caught up by checking several at once | 3 | High frequency: skipped on most steps, every cook. Persistent: hands are dirty every time. Impact: Partner caught up by checking several at once, so the cook finished, but the waiting and "together" logic is wrong until he does |
+| The other cook's steps look too much like your own | Partner: "a little more grayed out, but not enough… do I need to do this?" | 3 | Frequent: every step of every two-chef cook. Persistent. Impact: Partner stopped to work out whether a step was his and said there was "kind of a lot going on" |
+| The large next-step card goes unused | Partner: "I just like having a scrollable list"; Erin's notes: "[Partner] wasn't using large text" | 1 | Doesn't block the cook: Partner used the step list instead, and it worked. Low confidence, since the evidence comes from one participant in one session |
+| No overview of the whole cook before starting | Partner: "time estimates near the beginning… so I can kind of visualize the whole process" | 3 | Partly fixed in 0.19.1 (prep and cook times at the top). Still open: seeing all of your steps and their times before starting. Re-rate after the next session |
+| Unclear whether changing servings mid-cook changes the saved recipe | Partner: "I wasn't sure if editing the servings… would affect the fully saved recipe or just this session" | 2 | Partner hesitated once; no wrong amounts resulted. Likely to come up whenever a cook is scaled mid-cook |
+| Nutrition doesn't reflect changes made mid-cook | Partner "ended up looking up the macronutrients on a separate app" | 3 | Raising servings on the recipe page is a workaround in the app, but it's a roundabout extra step he didn't find, and it scales every ingredient, so it only approximates added eggs or vegetables |
+| No record of each cook: servings, changes, notes | Partner: "maybe a history mode… with the portioning of that time we made it" | 2 | Doesn't block the cook. Same root as the nutrition and ounces findings: the app knows the recipe, not what was actually cooked |
+| Amounts can't be shown by weight (ounces) | Erin's notes: "[Partner] preferred using oz instead of cups for measuring out chicken (he's tracking protein)" | 2 | Frequent for Partner, low impact: nothing shows it stopped him, and he can weigh the chicken himself |
+| Logging after midnight defaults to the next day | Found Oct 10 | 1 | Low frequency, can be caught and edited, and a change might clash with what users expect |
+
+**Changes to the first ratings after review.** Check-offs went from 4 to 3:
+the cook finished and nothing in the session was blocked by a stale
+check-off, though the logic is wrong until someone catches up. Ounces went
+from 3 to 2, since its first reasoning (needing another app) belonged to
+the nutrition finding.
+
+**Limitations.** One rater (Erin), one session, and one participant who
+also uses the app daily. Nielsen recommends averaging three to five
+evaluators. No second rater was available, so these ratings get revisited
+after the next session.
+
+**Next.** Fix the 3s first: check-offs gating the shared step, the other
+cook's steps, nutrition after mid-cook changes, and the open part of the
+overview. Nutrition, the per-cook record and ounces share a root and are
+planned as one cluster. Then test the same tasks with Partner again.
 
 ## 2026-10-11: Times instead of instructions
 
