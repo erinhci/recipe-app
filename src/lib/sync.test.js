@@ -29,6 +29,9 @@ function fakeServer() {
     from(name) {
       return {
         upsert: async (row, options = {}) => {
+          if (client.missingColumn && row[client.missingColumn.column] !== undefined && name === client.missingColumn.table) {
+            return { error: { code: 'PGRST204', message: `Could not find the '${client.missingColumn.column}' column` } }
+          }
           if (failNext) {
             const error = failNext
             failNext = null
@@ -288,4 +291,20 @@ test('deleting forever removes the recipe, its rows, and its photo files', async
   assert.equal(await db.notes.count(), 0)
   assert.equal(await db.cook_log.count(), 0)
   assert.equal(await db.meal_photos.count(), 0)
+})
+
+test('a change for a column the database lacks waits for the migration instead of being dropped', async () => {
+  const { logMeal } = await import('./data.js')
+  const id = await saveRecipe(structuredClone(sample), member)
+  await syncNow()
+  server.missingColumn = { table: 'cook_log', column: 'servings' }
+  await logMeal({ recipeId: id, cookedOn: '2026-10-11', servings: 2 }, member)
+  await syncNow()
+  assert.equal(server.table('cook_log').size, 0)
+  assert.equal(await db.cook_log.count(), 1)
+  assert.equal(await db.outbox.count(), 1)
+  server.missingColumn = null
+  await syncNow()
+  assert.equal(server.table('cook_log').size, 1)
+  assert.equal([...server.table('cook_log').values()][0].servings, 2)
 })

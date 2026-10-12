@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Cooking screens review: "what does fold mean" isn't relevant; Ask on the left; no way to log a change mid-recipe; steps hard to scan. Plus the open severity 3s (the other cook's steps, overview, nutrition for what was made) and library filtering | Suggested questions per step, change log per cook with servings and nutrition, bold actions and amounts, scroll focus, two-chef plan and reminders, library search, sort, and filters (0.23.0) | See entry |
 | 2026-10-11 | Heuristic evaluation, round 1 (Library, Add a recipe, Stats, Settings): crowded cards, add button out of reach and limited, cluttered import, list-heavy stats, slow kitchen list, no permanent delete, odd Sign out placement, meaningless build code | Fixed in 0.22.0 | See entry |
 | 2026-10-11 | Erin: add photos now, limited so storage can't fill by accident, and both cooks can see and add them | Built: one photo per cook per meal, shrunk to about 300 KB, 500 per kitchen, synced (0.21.0) | See entry |
 | 2026-10-11 | Severity 3: the shared step waits for check-offs that Partner skips with dirty hands | One tap catches up earlier steps; shared steps no longer lock (0.20.0) | See entry |
@@ -38,6 +39,59 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Cooking screens and the open severity 3s
+
+**What Erin found** (reviewing solo and two-chef cooking on her phone):
+
+- The example question "What does fold in mean?" is confusing when the
+  recipe has no folding. A likely question for the step, ready to tap,
+  "feels more intelligent", with typing your own still possible.
+- The Ask button sat on the left, under the field; the right is expected.
+- "Note for next time" doesn't allow for changes mid-recipe.
+- An animation that brings each step forward while scrolling could help
+  the earlier pain point of telling steps apart.
+- Bolding key actions and measurements would help someone scan a step.
+- The library needs filtering and sorting soon.
+
+**Decision.** A change made while cooking is saved with that day's cook,
+and the recipe stays as written; any change can still update the recipe.
+This answers the tension from the egg bite debrief between notes and
+Partner's request for "a history mode... with the portioning of that time
+we made it." Erin also moved the three open severity 3 findings into this
+build.
+
+**Change (version 0.23.0, migration 0011).**
+
+| Finding | Change |
+| --- | --- |
+| Irrelevant example question | Gemini suggests the 2 questions a cook is most likely to ask at each step (doneness, timing, swaps). Tap one to ask it. Suggestions are made once per version of the steps and kept on the phone |
+| Ask on the left | The question field and Ask button share a row, Ask on the right |
+| No way to log a change mid-recipe | "Changes this time" replaces "Note for next time": a change is saved with today's cook, listed on that day in the cook log, and has "Update recipe", which opens the existing note-to-recipe-change flow |
+| No record of each cook (severity 2) | Each cook records the servings made (from cooking mode, or a picker in the log) and its changes |
+| Nutrition doesn't reflect changes made mid-cook (severity 3) | Each cook shows calories and protein for what was made: the recipe estimate scaled to the servings, plus Gemini's estimate of the logged changes |
+| Hard to scan steps | Actions that start a sentence or clause, amounts with units, temperatures, and times are bold |
+| Telling steps apart while scrolling | The step nearest the middle of the screen gets a bar and grows slightly as you scroll; with reduced motion it gets the bar only |
+| The other cook's steps look too similar (severity 3) | In two-chef mode the other cook's steps are one-line reminders, with a button to show them in full |
+| No overview before starting (severity 3, open part) | "Your plan" at the top of two-chef mode: your steps and shared steps with their times, the other cook's runs folded into one line, open until the first check-off |
+| Library filtering | Search across titles, cuisines, and ingredients; sort by recently added, most made, top rated, quickest, or A to Z; chips for not made yet, meal types, and cuisines. The view is remembered on the phone |
+
+**Fixed along the way.** Amounts in step text now match an ingredient
+when the import rounded them (0.3 cup in the list, 1/3 cup in the step),
+so they scale too. Changes for a table or column that a migration hasn't
+added yet wait on the phone instead of being dropped.
+
+**How it was checked.** Unit tests for emphasis, rounded amounts, per-cook
+nutrition, library filtering and sorting, the suggestion function, and
+changes waiting for a migration. In the browser against a fake server:
+suggestions loaded and answered, a change was logged and sent with
+today's date, Finish saved 2 servings, and the change estimate raised the
+cook's nutrition; two-chef mode showed the plan and three reminders,
+which expanded; library filters and sort narrowed and reordered. No
+accessibility violations (axe) in light or dark mode.
+
+**Setup.** Run migration 0011 and redeploy `ask-step`. Until then, changes
+and servings stay on the phone and suggestions don't appear.
 
 ## 2026-10-11: Heuristic evaluation, round 1
 

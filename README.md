@@ -29,7 +29,7 @@ Next: the Next features in the build spec.
    `0005_drop_recipe_copies.sql`, `0006_drop_cooking_sessions.sql`
    (after both phones are on 0.16.0), `0007_two_chef.sql`, then
    `0008_shared_servings_half_stars.sql`, then `0009_prep_cook_time.sql`, then
-   `0010_meal_photos.sql`. (Run
+   `0010_meal_photos.sql`, then `0011_cook_record.sql`. (Run
    `0001b_grants_only.sql` only if an early copy of 0001 was used.)
 3. In Authentication, open **Sign In / Providers**. Under User Signups,
    turn off **Confirm email** and save. The app uses email and
@@ -47,7 +47,8 @@ Next: the Next features in the build spec.
    so only signed-in cooks can use your Gemini quota.
 7. Do the same for a function named `ask-step`, pasting in
    `supabase/functions/ask-step/index.ts`. It answers questions typed in
-   cooking mode and uses the same Gemini secret.
+   cooking mode, suggests likely questions for each step, and uses the
+   same Gemini secret.
 8. Do the same for `suggest-edit`, pasting in
    `supabase/functions/suggest-edit/index.ts`. It drafts recipe changes
    from notes.

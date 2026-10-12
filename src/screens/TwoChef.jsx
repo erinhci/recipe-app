@@ -6,7 +6,8 @@ import Working from '../components/Working'
 import StepText from '../components/StepText'
 import ServingsBar from '../components/ServingsBar'
 import AskStep from '../components/AskStep'
-import QuickNote from '../components/QuickNote'
+import ChangeLog from '../components/ChangeLog'
+import { useScrollFocus } from '../lib/useScrollFocus'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal, saveChefSplit } from '../lib/data'
@@ -26,6 +27,12 @@ const emptyCook = () => ({ id: null, chef_a: null, chef_b: null, done_steps: [],
 
 // This phone's own pick when there's no live cook (offline) or when one
 // phone runs both parts. Kept for the browser tab only.
+// The first sentence of a step, cut to a short line for reminders.
+function shortStep(text) {
+  const first = String(text).split(/(?<=[.!?])\s/)[0]
+  return first.length > 70 ? `${first.slice(0, 67).trimEnd()}…` : first
+}
+
 function readLocal(recipeId) {
   try {
     return JSON.parse(sessionStorage.getItem(`two-chef:${recipeId}`) ?? 'null')
@@ -72,6 +79,10 @@ export default function TwoChef() {
   const [problem, setProblem] = useState('')
   const [undoIds, setUndoIds] = useState(null) // the last catch-up, so it can be undone
   const pending = useRef([]) // changes made while offline, sent on reconnect
+  // The other cook's steps show as one-line reminders unless expanded.
+  const [showTheirs, setShowTheirs] = useState(false)
+  const stepsRef = useRef(null)
+  useScrollFocus(stepsRef, [cook?.id, local.side, showTheirs, cook?.done_steps?.length])
 
   // Open (or join) the shared cook once the split is ready.
   useEffect(() => {
@@ -335,7 +346,7 @@ export default function TwoChef() {
 
   async function finish() {
     const today = localDate()
-    const { alreadyLogged } = await logMeal({ recipeId: id, cookedOn: today }, member)
+    const { alreadyLogged } = await logMeal({ recipeId: id, cookedOn: today, servings }, member)
     if (live && cook.id) await endCook(cook.id)
     writeLocal(id, null)
     navigate(backToRecipe, { replace: true, state: { finishedCooking: { day: today, alreadyLogged } } })
@@ -401,6 +412,22 @@ export default function TwoChef() {
   // A shared step whose other part isn't checked off yet. It doesn't lock;
   // the card says what's unchecked and leaves the timing to the cooks.
   const unchecked = next.kind === 'step' && next.state.track === 'both' && side !== 'all' ? next.state.waitingOn : []
+
+  // The overview: your steps (and shared ones) with their times; runs of
+  // the other cook's steps fold into one line.
+  const mineOrShared = (state) => side === 'all' || state.track === side || state.track === 'both'
+  const plan = { rows: [], count: 0, minutes: 0 }
+  for (const state of states) {
+    if (mineOrShared(state)) {
+      plan.rows.push({ kind: 'mine', key: state.step.id, state })
+      plan.count += 1
+      plan.minutes += minutesOf(state) ?? 0
+    } else {
+      const last = plan.rows[plan.rows.length - 1]
+      if (last?.kind === 'theirs') last.numbers.push(state.number)
+      else plan.rows.push({ kind: 'theirs', key: state.step.id, numbers: [state.number] })
+    }
+  }
 
   // Shown while waiting on the other cook: where you meet, and what to tidy.
   const whileWaiting = (
@@ -473,6 +500,31 @@ export default function TwoChef() {
           {problem}
         </p>
       )}
+
+      <details className="card plan" open={states.every((s) => !s.done)}>
+        <summary>
+          {side === 'all' ? 'The plan' : 'Your plan'}: {plan.count} {plan.count === 1 ? 'step' : 'steps'}
+          {plan.minutes > 0 && ` · about ${formatMinutes(plan.minutes)}`}
+        </summary>
+        <ol className="plan-list">
+          {plan.rows.map((row) =>
+            row.kind === 'theirs' ? (
+              <li key={row.key} className="plan-theirs">
+                {otherName === 'You' ? 'The other cook' : otherName}: {row.numbers.length === 1 ? 'step' : 'steps'} {listNumbers(row.numbers)}
+              </li>
+            ) : (
+              <li key={row.key} className={row.state.done ? 'is-done' : ''}>
+                <span className="plan-number">{row.state.number}.</span>
+                <span className="plan-text">
+                  {row.state.track === 'both' && side !== 'all' && <strong>Together: </strong>}
+                  {shortStep(row.state.step.text)}
+                </span>
+                {minutesOf(row.state) && <span className="plan-min">{formatMinutes(minutesOf(row.state))}</span>}
+              </li>
+            ),
+          )}
+        </ol>
+      </details>
 
       <section aria-labelledby="next-heading" className="two-chef-next">
         <div aria-live="polite" aria-atomic="true">
@@ -558,10 +610,29 @@ export default function TwoChef() {
       </p>
 
       <section aria-labelledby="all-steps-heading">
-        <h2 id="all-steps-heading">All steps</h2>
-        <ol className="two-chef-steps">
+        <div className="row-between">
+          <h2 id="all-steps-heading">All steps</h2>
+          {side !== 'all' && (
+            <button className="link-btn" type="button" aria-pressed={showTheirs} onClick={() => setShowTheirs((v) => !v)}>
+              {`${showTheirs ? 'Shorten' : 'Show'} ${otherName === 'The other cook' ? "the other cook's" : `${otherName}'s`} steps${showTheirs ? '' : ' in full'}`}
+            </button>
+          )}
+        </div>
+        <ol className="two-chef-steps scroll-focus" ref={stepsRef}>
           {states.map((state) => {
             const yours = side === 'all' || state.track === side || state.track === 'both'
+            if (!yours && !showTheirs) {
+              return (
+                <li key={state.step.id} className={['theirs', 'is-reminder', state.done ? 'is-done' : ''].join(' ')}>
+                  <p className="step-owner">
+                    {otherOn && otherOn.step.id === state.step.id && `${otherName} is here · `}
+                    {whoHas(state.track)}
+                    {state.done && ' · done'}
+                  </p>
+                  <p className="step-reminder">{shortStep(state.step.text)}</p>
+                </li>
+              )
+            }
             return (
               <li
                 key={state.step.id}
@@ -619,7 +690,7 @@ export default function TwoChef() {
         />
       )}
 
-      <QuickNote recipeId={recipe.id} member={member} />
+      <ChangeLog recipeId={recipe.id} member={member} />
 
       <p className="actions">
         {online && (

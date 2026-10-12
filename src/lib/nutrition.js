@@ -68,3 +68,41 @@ export function formatNutrient(key, value) {
   const rounded = Math.round(value)
   return key === 'calories' ? `${rounded}` : `${rounded} g`
 }
+
+// --- One cook: what was actually made -------------------------------------
+
+const changesBasis = (texts) => texts.join('\n')
+
+// Asks Gemini to estimate the changes made while cooking ("2 more eggs"),
+// each as its own line. Returns { ok, nutrition } to save on the meal.
+export async function estimateChanges(recipe, changeTexts) {
+  const result = await invokeFunction('estimate-nutrition', {
+    title: `Changes made while cooking ${recipe.title}`,
+    base_servings: 1,
+    ingredients: changeTexts,
+  })
+  if (!result.ok) return result
+  return {
+    ok: true,
+    nutrition: { changes: result.data.items, based_on: changesBasis(changeTexts), estimated_at: new Date().toISOString() },
+  }
+}
+
+// Whether the saved estimate of a meal's changes still matches them.
+export const changesEstimated = (mealNutrition, changeTexts) =>
+  changeTexts.length === 0 || mealNutrition?.based_on === changesBasis(changeTexts)
+
+// Totals for one cook: the recipe's estimate scaled to the servings made,
+// plus the estimated changes. Null without a recipe estimate.
+export function mealTotals(recipe, servingsMade, mealNutrition, includeChanges = true) {
+  if (!recipe.nutrition?.items?.length || !(servingsMade > 0)) return null
+  const { perServing } = nutritionTotals(recipe.nutrition, recipe.base_servings)
+  const total = forPortion(perServing, servingsMade)
+  if (includeChanges) {
+    for (const item of mealNutrition?.changes ?? []) {
+      for (const n of NUTRIENTS) total[n.key] += Number(item[n.key]) || 0
+    }
+  }
+  const per = Object.fromEntries(NUTRIENTS.map((n) => [n.key, total[n.key] / servingsMade]))
+  return { total, perServing: per }
+}

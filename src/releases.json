@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.23.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Steps are easier to scan: actions, amounts, temperatures, and times are bold, and the step you're reading stands out as you scroll",
+      "Ask about a step: tap one of the likely questions for that step, or type your own. Ask sits to the right of the field",
+      "Changes this time: log what you changed while cooking (like 2 more eggs). It's saved with that day's cook, and you can update the recipe from it",
+      "Each cook in the log shows how many servings you made, your changes, and nutrition for what you actually made",
+      "Two chefs: a plan of your steps and times up front, and the other cook's steps as one-line reminders you can expand",
+      "Library: search (titles, cuisines, ingredients), sort, and filter by meal type, cuisine, or not made yet"
+    ]
+  },
+  {
     "version": "0.22.0",
     "date": "2026-10-11",
     "notes": [

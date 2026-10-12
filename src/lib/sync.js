@@ -134,6 +134,12 @@ async function pushOutbox() {
           : await query.upsert(entry.payload)
     if (error) {
       if (isNetworkError(error)) throw error
+      // A table or column from a migration that hasn't been run yet: keep
+      // the change on this phone and send it once the migration is run.
+      if (['PGRST204', 'PGRST205', '42P01', '42703'].includes(error.code)) {
+        setStatus({ error: `Waiting for a database update (run the newest migration in Supabase): ${error.message}` })
+        continue
+      }
       // The server refused this change (for example, a recipe deleted on
       // the other phone). Drop it so it doesn't block everything after it,
       // and show the reason.

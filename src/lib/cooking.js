@@ -111,7 +111,8 @@ function bestIngredient(source, afterNumber, afterUnit, value, word, wordUnit, i
   let best = null
   let bestScore = 0
   for (const ing of ingredients) {
-    if (ing.quantity == null || Math.abs(Number(ing.quantity) - value) > 0.01) continue
+    // Close enough counts: imports often round 1/3 cup to 0.3.
+    if (ing.quantity == null || Math.abs(Number(ing.quantity) - value) > Math.max(0.01, Number(ing.quantity) * 0.12)) continue
     const ingUnit = ing.unit ? normalizeUnit(ing.unit) : null
     if (ingUnit && wordUnit !== ingUnit) continue
     if (!ingUnit && word && ['tsp', 'tbsp', 'cup', 'oz', 'lb', 'g', 'kg', 'ml', 'l'].includes(wordUnit)) continue
@@ -132,4 +133,42 @@ function bestIngredient(source, afterNumber, afterUnit, value, word, wordUnit, i
 // Step text as plain text, with amounts scaled.
 export function scaledStepString(text, ingredients, factor, system) {
   return scaleStepText(text, ingredients, factor, system).map((p) => p.text).join('')
+}
+
+// Words worth bolding in a step so it can be scanned: the action that
+// starts a sentence or clause ("Whisk", ", then bake"), and amounts with a
+// unit, temperatures, and times ("2 tsp", "350°F", "18–20 minutes").
+const ACTIONS = [
+  'preheat', 'heat', 'whisk', 'beat', 'stir', 'mix', 'combine', 'toss', 'pour', 'add', 'bake', 'roast', 'boil',
+  'simmer', 'fry', 'stir-fry', 'saute', 'sauté', 'sear', 'grill', 'broil', 'toast', 'steam', 'microwave', 'cook',
+  'chop', 'dice', 'slice', 'mince', 'cut', 'grate', 'peel', 'fold', 'knead', 'roll', 'season', 'sprinkle', 'drain',
+  'rinse', 'thaw', 'press', 'squeeze', 'divide', 'spread', 'cover', 'remove', 'rest', 'cool', 'chill', 'serve',
+  'garnish', 'blend', 'puree', 'mash', 'strain', 'whip', 'marinate', 'coat', 'grease', 'line', 'transfer', 'flip',
+  'reduce', 'melt', 'top', 'fill', 'scoop', 'wrap', 'brush', 'crack', 'soak', 'place', 'arrange', 'shape', 'form',
+  'let', 'set', 'bring', 'turn', 'run', 'pop', 'dip', 'dust', 'freeze', 'refrigerate', 'store', 'repeat', 'flatten',
+]
+const UNIT_WORDS =
+  '°\\s?[FC]\\b|degrees(?:\\s[FC]\\b)?|minutes?\\b|mins?\\b|seconds?\\b|secs?\\b|hours?\\b|hrs?\\b|cups?\\b|tbsp\\b|tablespoons?\\b|tsp\\b|teaspoons?\\b|oz\\b|ounces?\\b|lbs?\\b|pounds?\\b|g\\b|grams?\\b|kg\\b|ml\\b|liters?\\b|l\\b|inch(?:es)?\\b|cloves?\\b|pinch\\b|dash\\b'
+const NUMBER = '\\d+(?:[./]\\d+)?(?:\\s\\d/\\d)?|[½⅓⅔¼¾⅛]'
+const EMPHASIS = new RegExp(
+  `((?:${NUMBER})(?:\\s?[–-]\\s?(?:${NUMBER}))?\\s?(?:${UNIT_WORDS}))` +
+    `|((?:^|(?<=[.;:!?]\\s)|(?<=,\\s)|(?<=\\band\\s)|(?<=\\bthen\\s))(?:${ACTIONS.join('|')})\\b)`,
+  'gi',
+)
+
+// Splits plain step text into [{ text, strong }].
+export function emphasize(text) {
+  const source = String(text ?? '')
+  const parts = []
+  let last = 0
+  for (const match of source.matchAll(EMPHASIS)) {
+    const start = match.index
+    // Part of a longer word or number ("x2", "12" inside "112").
+    if (start > 0 && /[\w/.]/.test(source[start - 1]) && match[1]) continue
+    if (start > last) parts.push({ text: source.slice(last, start), strong: false })
+    parts.push({ text: match[0], strong: true })
+    last = start + match[0].length
+  }
+  if (last < source.length) parts.push({ text: source.slice(last), strong: false })
+  return parts
 }

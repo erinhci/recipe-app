@@ -1,15 +1,18 @@
-import { scaleStepText } from '../lib/cooking'
+import { emphasize, scaleStepText } from '../lib/cooking'
 
 // A step's text with its amounts scaled to match the ingredient list.
-// Changed amounts are bold, so it's clear they aren't the recipe's own.
+// Actions, amounts, temperatures, and times are bold so the step can be
+// scanned with a glance; scaled amounts are among them.
 export default function StepText({ text, ingredients, factor = 1, system = 'us' }) {
-  return scaleStepText(text, ingredients, factor, system).map((part, index) =>
+  return scaleStepText(text, ingredients, factor, system).flatMap((part, index) =>
     part.scaled ? (
       <strong key={index} className="scaled-amount">
         {part.text}
       </strong>
     ) : (
-      <span key={index}>{part.text}</span>
+      emphasize(part.text).map((piece, j) =>
+        piece.strong ? <strong key={`${index}-${j}`}>{piece.text}</strong> : <span key={`${index}-${j}`}>{piece.text}</span>,
+      )
     ),
   )
 }

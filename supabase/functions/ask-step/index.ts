@@ -12,6 +12,9 @@
 //   { title, servings, base_servings, ingredients: string[], steps: string[],
 //     step_number, question }
 // Response: { answer }
+//
+// Suggested questions: { mode: 'suggest', title, ingredients, steps }
+// Response: { questions: string[][] }, two likely questions per step.
 
 // Flash-Lite first: quick answers matter more than depth while cooking.
 const DEFAULT_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.8-flash']
@@ -85,6 +88,58 @@ export function buildPrompt(q: Question) {
   ].join('\n')
 }
 
+// --- Suggested questions --------------------------------------------------
+
+export type SuggestInput = { title: string; ingredients: string[]; steps: string[] }
+
+export function readSuggest(body: any): SuggestInput | string {
+  const steps = Array.isArray(body?.steps) ? body.steps.map((s: unknown) => String(s)).slice(0, 60) : []
+  if (steps.length === 0) return 'This recipe has no steps to ask about.'
+  return {
+    title: String(body?.title ?? 'this recipe').slice(0, 200),
+    ingredients: Array.isArray(body?.ingredients) ? body.ingredients.map((s: unknown) => String(s)).slice(0, 80) : [],
+    steps,
+  }
+}
+
+export function buildSuggestPrompt(input: SuggestInput) {
+  return [
+    'Two people are cooking this recipe at home. For each step, write the 2 questions a home cook is most likely to ask while doing that step.',
+    'Rules:',
+    '- Each question is specific to this recipe and step: doneness cues, timing, substitutions, how to tell it is right, what to do if something goes wrong.',
+    '- Do not ask what a word means unless the step uses a technique a beginner might not know.',
+    '- Under 60 characters each, phrased as the cook would ask it, ending with a question mark.',
+    `- Return exactly ${input.steps.length} lists, one per step, in order.`,
+    '',
+    `Recipe: ${input.title}`,
+    'Ingredients:',
+    ...input.ingredients.map((line) => `- ${line}`),
+    'Steps:',
+    ...input.steps.map((step, i) => `${i + 1}. ${step}`),
+  ].join('\n')
+}
+
+export const SUGGEST_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    questions: { type: 'ARRAY', items: { type: 'ARRAY', items: { type: 'STRING' } } },
+  },
+  required: ['questions'],
+}
+
+// Exactly one list per step, at most 2 short questions each.
+export function cleanSuggestions(raw: any, stepCount: number): string[][] {
+  const lists = Array.isArray(raw?.questions) ? raw.questions : []
+  return Array.from({ length: stepCount }, (_, i) => {
+    const list = Array.isArray(lists[i]) ? lists[i] : []
+    return list
+      .map((q: unknown) => String(q ?? '').trim().replace(/\s+/g, ' '))
+      .filter((q: string) => q.length > 3 && q.length <= 90)
+      .map((q: string) => (q.endsWith('?') ? q : `${q}?`))
+      .slice(0, 2)
+  })
+}
+
 const FUNCTION_NAME = 'ask-step'
 
 // How much the model "thinks" before answering. Less thinking answers
@@ -138,6 +193,27 @@ async function askGemini(prompt: string, apiKey: string, models: string[]) {
   }
 }
 
+async function suggestGemini(input: SuggestInput, apiKey: string, models: string[]) {
+  for (const model of models) {
+    const response = await callGemini(model, apiKey, [{ role: 'user', parts: [{ text: buildSuggestPrompt(input) }] }], {
+      temperature: 0.3,
+      maxOutputTokens: 2048,
+      responseMimeType: 'application/json',
+      responseSchema: SUGGEST_SCHEMA,
+    })
+    if (response.status === 429 || response.status === 503) continue
+    if (!response.ok) return { status: 502, error: `Gemini error (${response.status})` }
+    const result = await response.json()
+    const text = result?.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? '').join('') ?? ''
+    try {
+      return { status: 200, questions: cleanSuggestions(JSON.parse(text), input.steps.length) }
+    } catch {
+      return { status: 502, error: 'Gemini returned something unexpected.' }
+    }
+  }
+  return { status: 429, error: 'Suggestions are over the free limit right now.' }
+}
+
 async function handle(request: Request): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (request.method !== 'POST') return json({ error: 'Use POST.' }, 405)
@@ -151,6 +227,18 @@ async function handle(request: Request): Promise<Response> {
     body = await request.json()
   } catch {
     return json({ error: 'The request was not valid JSON.' }, 400)
+  }
+
+  if (body?.mode === 'suggest') {
+    const input = readSuggest(body)
+    if (typeof input === 'string') return json({ error: input }, 400)
+    try {
+      const result = await suggestGemini(input, apiKey, models.length ? models : DEFAULT_MODELS)
+      if (result.status !== 200) return json({ error: result.error }, result.status)
+      return json({ questions: result.questions })
+    } catch (error) {
+      return json({ error: error instanceof Error ? error.message : String(error) }, 500)
+    }
   }
 
   const question = readQuestion(body)

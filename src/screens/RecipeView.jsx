@@ -13,6 +13,7 @@ import StarPicker from '../components/StarPicker'
 import StepText from '../components/StepText'
 import NutritionPanel from '../components/NutritionPanel'
 import { AddPhoto, PhotoImg, PhotoThumb } from '../components/MealPhotos'
+import MealDetails from '../components/MealDetails'
 import { newestFirst, removeMealPhotos } from '../lib/photos'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -129,7 +130,7 @@ export default function RecipeView() {
     event.preventDefault()
     // A first rating can be given with the first log; after that, the
     // rating carries over and is changed in Ratings.
-    const result = await logMeal({ recipeId: recipe.id, cookedOn: logDate, stars: meals.length === 0 ? logStars : null }, member)
+    const result = await logMeal({ recipeId: recipe.id, cookedOn: logDate, stars: meals.length === 0 ? logStars : null, servings: shownServings }, member)
     setLogStars(null)
     setLogDate(localDate())
     setLogStatus(result.alreadyLogged ? `${formatDay(logDate)} was already logged.` : `Logged ${formatDay(logDate)}.`)
@@ -323,7 +324,7 @@ export default function RecipeView() {
         )}
         {factor !== 1 && (
           <p className="hint">
-            Amounts in bold in the steps are scaled to match the ingredients. Times and pan sizes don't scale. For baked dishes, a smaller pan may be needed.
+            Amounts in the steps are scaled to match the ingredients. Times and pan sizes don't scale. For baked dishes, a smaller pan may be needed.
           </p>
         )}
       </section>
@@ -449,6 +450,7 @@ export default function RecipeView() {
                   <span className="hint" style={{ display: 'block' }}>
                     Logged by {loggedByNames(meal)}
                   </span>
+                  <MealDetails recipe={recipe} meal={meal} changes={notes.filter((n) => n.cooked_on === meal.cooked_on)} online={online} />
                   <span className="meal-photos">
                     {photosFor(meal.cooked_on).map((photo) => (
                       <PhotoThumb key={photo.id} photo={photo} recipeTitle={recipe.title} byName={photoBy(photo)} onStatus={setPhotoStatus} />
@@ -520,6 +522,7 @@ export default function RecipeView() {
                   <div className="comment-body">
                     <p className="comment-meta">
                       <strong>{name}</strong> <span className="hint">{shortDate.format(new Date(note.created_at))}</span>
+                      {note.cooked_on && <span className="hint"> · changed while cooking</span>}
                     </p>
                     <p style={{ margin: 0 }}>{note.body}</p>
                     {used && (

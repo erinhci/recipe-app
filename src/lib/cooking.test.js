@@ -69,3 +69,20 @@ test('nothing changes at the original servings', () => {
   assert.equal(parts.some((p) => p.scaled), false)
   assert.equal(parts.map((p) => p.text).join(''), 'Whisk 4 large eggs and 1/3 cup diced chicken.')
 })
+
+test('actions, amounts, temperatures, and times are emphasized for scanning', async () => {
+  const { emphasize } = await import('./cooking.js')
+  const strong = (t) => emphasize(t).filter((p) => p.strong).map((p) => p.text)
+  assert.deepEqual(strong('Preheat your oven to 350°F (175°C).'), ['Preheat', '350°F', '175°C'])
+  assert.deepEqual(strong('In a bowl, whisk 2 tsp water, then bake 18–20 minutes.'), ['whisk', '2 tsp', 'bake', '18–20 minutes'])
+  // "heat" as a noun mid-sentence isn't an action; a bare count isn't an amount.
+  assert.deepEqual(strong('Cook over medium heat until 6 cups are full.'), ['Cook', '6 cups'])
+  assert.equal(emphasize('Plain text.').map((p) => p.text).join(''), 'Plain text.')
+})
+
+test('an amount rounded on import still matches its step (0.3 cup vs 1/3 cup)', async () => {
+  const { scaleStepText } = await import('./cooking.js')
+  const ingredients = [{ id: 'c', quantity: 0.3, unit: 'cup', item: 'diced chicken' }]
+  const parts = scaleStepText('Toss together 1/3 cup diced chicken.', ingredients, 2)
+  assert.ok(parts.some((p) => p.scaled))
+})

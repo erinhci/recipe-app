@@ -876,3 +876,88 @@ ul + h3,
 .recipe-list > li + li,
 .share-list > li + li,
 .chips > li + li { margin-top: 0; }
+
+/* Scrolling through steps: the one being read stands out */
+.scroll-focus > li {
+  border-left: 3px solid transparent;
+  padding-left: var(--space-3);
+  margin-left: calc(-1 * var(--space-3) - 3px);
+  transition: border-color 160ms ease, transform 200ms ease;
+  transform-origin: left center;
+}
+.scroll-focus > li.in-focus { border-left-color: var(--color-text); transform: scale(1.02); }
+@media (prefers-reduced-motion: reduce) {
+  .scroll-focus > li { transition: none; }
+  .scroll-focus > li.in-focus { transform: none; }
+}
+
+/* Suggested questions */
+.question-chips { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.question-chips > li + li { margin-top: 0; }
+.chip-btn {
+  width: 100%;
+  min-height: var(--target);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.chip-btn:hover:not(:disabled) { background: var(--color-subtle); }
+.chip-btn:disabled { opacity: 0.6; cursor: progress; }
+.small-link { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; flex: none; }
+
+/* Two-chef plan and reminders */
+.plan summary { font-weight: 600; }
+.plan-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; }
+.plan-list > li { display: flex; gap: var(--space-2); align-items: baseline; padding: var(--space-1) 0; margin: 0; }
+.plan-list > li + li { margin-top: 0; border-top: 1px solid var(--color-divider); }
+.plan-number { flex: none; width: 1.5rem; color: var(--color-text-muted); }
+.plan-text { flex: 1; min-width: 0; }
+.plan-min { flex: none; color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; }
+.plan-theirs { color: var(--color-text-muted); font-size: var(--text-sm); padding-left: 2rem !important; }
+.plan-list > li.is-done .plan-text { text-decoration: line-through; color: var(--color-text-muted); }
+.two-chef-steps > li.is-reminder { padding: var(--space-2) 0; }
+.step-reminder { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* One cook in the log */
+.meal-details { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-1); font-size: var(--text-sm); }
+.meal-servings select { width: auto; min-height: var(--target); padding: 0 var(--space-2); font: inherit; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: calc(var(--radius) / 2); }
+.meal-changes { list-style: disc; margin: 0; padding-left: var(--space-5); }
+.meal-changes > li + li { margin-top: var(--space-1); }
+.meal-nutrition { color: var(--color-text-muted); }
+.meal-details .link-btn { align-self: flex-start; }
+
+/* Library search, sort, and filters */
+.library-tools { display: flex; gap: var(--space-2); align-items: stretch; }
+.library-tools .field { margin: 0; }
+.library-tools .field:first-child { flex: 1; min-width: 0; }
+.library-sort select { width: auto; max-width: 10rem; }
+.filter-chips {
+  list-style: none;
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-3) calc(-1 * var(--space-5)) 0;
+  padding: 0 var(--space-5) var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-chips > li { flex: none; margin: 0; }
+.filter-chip {
+  min-height: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.filter-chip[aria-pressed='true'] { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
+.filter-chip[aria-pressed='true'] .chip-count { color: inherit; opacity: 0.8; }
+.library-count { margin: var(--space-3) 0; display: flex; align-items: center; gap: var(--space-1); }

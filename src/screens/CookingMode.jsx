@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import StepText from '../components/StepText'
 import ServingsBar from '../components/ServingsBar'
 import AskStep from '../components/AskStep'
-import QuickNote from '../components/QuickNote'
+import ChangeLog from '../components/ChangeLog'
+import { useScrollFocus } from '../lib/useScrollFocus'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal } from '../lib/data'
@@ -81,6 +82,10 @@ export default function CookingMode() {
     return () => window.removeEventListener('keydown', onKey)
   }, [lastIndex])
 
+  // The upcoming step nearest the middle of the screen stands out.
+  const upcomingRef = useRef(null)
+  useScrollFocus(upcomingRef, [stepIndex, steps.length])
+
   if (data === undefined) {
     return (
       <Page title="Cooking">
@@ -112,7 +117,7 @@ export default function CookingMode() {
     writeSaved(id, null)
     if (!toLog) return navigate(`/recipe/${id}`, { replace: true })
     const today = localDate()
-    const { alreadyLogged } = await logMeal({ recipeId: id, cookedOn: today }, member)
+    const { alreadyLogged } = await logMeal({ recipeId: id, cookedOn: today, servings }, member)
     navigate(`/recipe/${id}`, { replace: true, state: { finishedCooking: { day: today, alreadyLogged } } })
   }
 
@@ -169,7 +174,7 @@ export default function CookingMode() {
           {current < lastIndex && (
             <section aria-labelledby="coming-heading">
               <h2 id="coming-heading">Coming up</h2>
-              <ol className="cook-upcoming" start={current + 2}>
+              <ol className="cook-upcoming scroll-focus" start={current + 2} ref={upcomingRef}>
                 {steps.slice(current + 1).map((upcoming) => (
                   <li key={upcoming.id}>
                     <StepText text={upcoming.text} ingredients={ingredients} factor={factor} system={system} />
@@ -217,7 +222,7 @@ export default function CookingMode() {
             online={online}
           />
 
-          <QuickNote recipeId={recipe.id} member={member} />
+          <ChangeLog recipeId={recipe.id} member={member} />
 
           <p>
             <button className="btn btn-secondary" type="button" onClick={() => finish(false)}>

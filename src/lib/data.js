@@ -148,13 +148,16 @@ export async function deleteNote(noteId) {
   afterWrite()
 }
 
-export async function addNote(recipeId, body, member) {
+// cookedOn marks a change made while cooking that day: it shows with
+// that day's cook in the log, and can still become a recipe change.
+export async function addNote(recipeId, body, member, cookedOn = null) {
   const note = {
     id: newId(),
     recipe_id: recipeId,
     author_id: member.user_id,
     body: body.trim(),
     created_at: now(),
+    ...(cookedOn ? { cooked_on: cookedOn } : {}),
   }
   await db.transaction('rw', [db.notes, db.outbox], async () => {
     await db.notes.put(note)
@@ -236,7 +239,7 @@ async function setDeleted(recipeId, fields) {
 // The cook log and ratings
 // ---------------------------------------------------------------------------
 
-const LOG_FIELDS = ['id', 'recipe_id', 'cooked_on', 'created_by', 'created_at']
+const LOG_FIELDS = ['id', 'recipe_id', 'cooked_on', 'created_by', 'created_at', 'servings', 'nutrition']
 const RATING_FIELDS = ['id', 'cook_log_id', 'member_id', 'stars', 'created_at']
 
 async function putAndQueue(table, row, fields) {
@@ -260,7 +263,7 @@ export function localDate(date = new Date()) {
 // phone), it's the same meal and nothing new is added.
 // A rating, if given, is this cook's rating of the recipe.
 // Returns { id, alreadyLogged }.
-export async function logMeal({ recipeId, cookedOn, stars = null }, member) {
+export async function logMeal({ recipeId, cookedOn, stars = null, servings = null }, member) {
   const day = cookedOn || localDate()
   const existing = await db.cook_log
     .where('recipe_id')
@@ -277,13 +280,26 @@ export async function logMeal({ recipeId, cookedOn, stars = null }, member) {
         cooked_on: day,
         created_by: member.user_id,
         created_at: now(),
+        ...(servings ? { servings: Number(servings) } : {}),
       },
       LOG_FIELDS,
     )
     id = entry.id
+  } else if (servings && Number(existing[0].servings) !== Number(servings)) {
+    // Already logged (the other cook's phone): record how much was made.
+    await putAndQueue('cook_log', { ...existing[0], servings: Number(servings) }, LOG_FIELDS)
   }
   if (stars) await rateRecipe(recipeId, stars, member)
   return { id, alreadyLogged: existing.length > 0 }
+}
+
+// Saves details of one meal (servings made, nutrition for it) on the
+// meal's first log entry, where both phones read them.
+export async function updateMeal(mealIds, fields) {
+  const entries = (await db.cook_log.bulkGet(mealIds)).filter(Boolean)
+  entries.sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''))
+  if (!entries.length) return
+  await putAndQueue('cook_log', { ...entries[0], ...fields }, LOG_FIELDS)
 }
 
 // Sets this cook's rating of a recipe. The rating stays until it's
