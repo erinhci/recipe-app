@@ -28,7 +28,7 @@ export default function ChangeLog({ recipeId, member }) {
     if (!text.trim()) return
     await addNote(recipeId, text, member, today)
     setText('')
-    setStatus("Saved with today's cook.")
+    setStatus("Saved with today's cook. The recipe stays as written.")
   }
 
   return (
@@ -67,8 +67,8 @@ export default function ChangeLog({ recipeId, member }) {
           Log it
         </button>
       </form>
-      <p id={`${id}-hint`} className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-        {status || 'Saved with today’s cook; the recipe stays as written unless you update it.'}
+      <p id={`${id}-hint`} className="hint" role="status" style={{ margin: status ? 'var(--space-2) 0 0' : 0 }}>
+        {status}
       </p>
     </section>
   )

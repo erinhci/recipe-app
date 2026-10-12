@@ -130,7 +130,7 @@ export default function CookingMode() {
       <p className="hint" style={{ marginBottom: 0 }}>
         {[
           timeSummary(recipe),
-          wakeLock === 'on' ? 'Screen stays on' : wakeLock === 'checking' ? '' : "This phone can't keep the screen on; tap it now and then",
+          (wakeLock === 'failed' || wakeLock === 'unsupported') && "Screen may dim; tap it now and then",
         ]
           .filter(Boolean)
           .join(' · ')}

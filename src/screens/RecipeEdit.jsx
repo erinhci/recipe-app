@@ -159,7 +159,7 @@ export default function RecipeEdit() {
           </p>
           <OriginalPanel originals={incoming.originals} />
           {incoming.originals?.files?.length > 0 && (
-            <p className="hint">The original isn't kept after you save. If it credits someone, that goes in Credit below.</p>
+            <p className="hint">The original isn't kept after saving; credit goes in Credit.</p>
           )}
         </>
       )}
@@ -182,7 +182,7 @@ export default function RecipeEdit() {
             aria-describedby="servings-hint"
           />
           <span id="servings-hint" className="hint">
-            Enter the original amount. The recipe opens scaled to 2.
+            As written. It opens scaled to 2.
           </span>
         </div>
 
@@ -207,8 +207,7 @@ export default function RecipeEdit() {
             />
           </div>
           <p id="time-hint" className="hint">
-            Shown before you start cooking, so you can plan when to start things like preheating. A blank total is prep
-            plus cook. Each time you log this recipe, the total adds to your time cooking together in Stats.
+            A blank total is prep plus cook.
           </p>
         </fieldset>
 
@@ -246,7 +245,7 @@ export default function RecipeEdit() {
             aria-describedby="ingredients-hint"
           />
           <span id="ingredients-hint" className="hint">
-            One per line, like "1 1/2 cups flour, sifted". Pasting a list works.
+            One per line, like "1 1/2 cups flour, sifted".
           </span>
         </div>
 
@@ -288,7 +287,7 @@ export default function RecipeEdit() {
             aria-describedby="steps-hint"
           />
           <span id="steps-hint" className="hint">
-            One step per line or paragraph. Numbers are removed automatically.
+            One step per line.
           </span>
         </div>
 
@@ -302,7 +301,7 @@ export default function RecipeEdit() {
             aria-describedby="credit-hint"
           />
           <span id="credit-hint" className="hint">
-            Who the recipe is from, like a website, cookbook, or person.
+            A website, cookbook, or person.
           </span>
         </div>
 

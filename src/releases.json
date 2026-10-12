@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.25.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Less text everywhere: shorter hints, and the tab bar has icons (Import is now Add)",
+      "Recipe page: rating, times made, prep and cook time, and cuisine in one row of icons; Start cooking and Two chefs side by side; nutrition as four numbers with the details tucked away",
+      "Cooking: the step time sits in the step heading, and notes about the screen or saving only show when they matter"
+    ]
+  },
+  {
     "version": "0.24.0",
     "date": "2026-10-11",
     "notes": [

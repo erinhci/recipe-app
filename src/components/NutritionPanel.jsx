@@ -63,9 +63,8 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
     return (
       <section aria-labelledby="nutrition-heading">
         <h2 id="nutrition-heading">Nutrition</h2>
-        <p className="hint">Gemini can estimate calories, protein, carbs, and fat from the ingredients.</p>
-        {estimateButton('Estimate nutrition')}
-        {!online && <p className="hint">Estimating needs the internet.</p>}
+        {estimateButton('Estimate calories and protein')}
+        {!online && <p className="hint">Needs the internet.</p>}
         {busy ? (
           <Working label="Gemini is estimating each ingredient…" typical="5 to 15 seconds" />
         ) : (
@@ -89,55 +88,54 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
 
   return (
     <section aria-labelledby="nutrition-heading">
-      <h2 id="nutrition-heading">Nutrition (estimate)</h2>
+      <h2 id="nutrition-heading">
+        Nutrition <span className="heading-note">per serving, estimated</span>
+      </h2>
 
       {stale && (
-        <div className="card notice">
-          <p style={{ margin: '0 0 var(--space-2)' }}>
-            The ingredients or servings changed since this was estimated. These numbers may be off.
-          </p>
-          {estimateButton('Estimate again')}
-        </div>
+        <p className="notice-line">
+          The recipe changed since this estimate. {estimateButton('Estimate again')}
+        </p>
       )}
 
-      <div className="card">
-        <div className="field" style={{ marginBottom: 'var(--space-3)' }}>
-          <span id="eaten-label" style={{ fontWeight: 600 }}>
-            How much you ate
-          </span>
-          <div className="stepper" role="group" aria-labelledby="eaten-label">
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={() => setEaten((n) => Math.max(0.5, n - 0.5))}
-              disabled={eaten <= 0.5}
-              aria-label="Half a serving less"
-            >
-              −
-            </button>
-            <p style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
-              {servingText(eaten)}
-            </p>
-            <button className="btn btn-secondary" type="button" onClick={() => setEaten((n) => n + 0.5)} aria-label="Half a serving more">
-              +
-            </button>
-          </div>
+      <ul className="nutrient-tiles">
+        {NUTRIENTS.map((n) => (
+          <li key={n.key}>
+            <span className="nutrient-value">{formatNutrient(n.key, perServing[n.key])}</span>
+            <span className="nutrient-label">{n.label}</span>
+          </li>
+        ))}
+      </ul>
+
+      <details className="card">
+        <summary>Portions and breakdown</summary>
+        <p style={{ margin: 'var(--space-3) 0 var(--space-1)', fontWeight: 600 }}>How much you ate</p>
+        <div className="stepper" role="group" aria-label="How much you ate" style={{ marginBottom: 'var(--space-3)' }}>
+          <button
+            className="btn btn-secondary"
+            type="button"
+            onClick={() => setEaten((n) => Math.max(0.5, n - 0.5))}
+            disabled={eaten <= 0.5}
+            aria-label="Half a serving less"
+          >
+            −
+          </button>
+          <p style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
+            {servingText(eaten)}
+          </p>
+          <button className="btn btn-secondary" type="button" onClick={() => setEaten((n) => n + 0.5)} aria-label="Half a serving more">
+            +
+          </button>
         </div>
         <NutrientTable caption={eaten === 1 ? 'Per serving' : `For ${servingText(eaten)}`} values={portion} />
         <p className="hint" style={{ margin: 0 }}>
-          One serving is {Math.round(perServing.calories)} calories and {Math.round(perServing.protein_g)} g protein.
-          Making {servingText(shownServings)} comes to {Math.round(batch.calories)} calories and{' '}
-          {Math.round(batch.protein_g)} g protein in total.
+          All {servingText(shownServings)}: {Math.round(batch.calories)} calories, {Math.round(batch.protein_g)} g protein.
         </p>
-      </div>
-
-      <details className="card">
-        <summary>
-          How this was estimated
-        </summary>
+        <h3 className="subheading" style={{ marginTop: 'var(--space-4)' }}>
+          By ingredient
+        </h3>
         <p className="hint">
-          Gemini estimated each ingredient for the recipe as written (serves {basisServings}), and the app added them up.
-          Estimated {dateFormat.format(new Date(nutrition.estimated_at))}.
+          By ingredient, for the recipe as written (serves {basisServings}). Estimated {dateFormat.format(new Date(nutrition.estimated_at))}.
         </p>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ fontSize: 'var(--text-sm)' }}>
@@ -184,9 +182,7 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
             {missing > 0 && ` ${missing} ${missing === 1 ? 'line was' : 'lines were'} not estimated, so totals are low.`}
           </p>
         )}
-        <p className="hint">
-          Estimates use typical values. Brands, cuts, and how much oil is absorbed can change the real numbers.
-        </p>
+        <p className="hint">Typical values; brands and cuts vary.</p>
         {!stale && estimateButton('Estimate again')}
       </details>
       {busy ? (

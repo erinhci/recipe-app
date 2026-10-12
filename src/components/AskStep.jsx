@@ -109,8 +109,8 @@ export default function AskStep({ recipe, steps, ingredients, factor, system, se
           {asking ? 'Asking…' : 'Ask'}
         </button>
       </form>
-      <p id={`${id}-hint`} className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-        {online ? 'Gemini answers for this recipe at these amounts.' : 'Questions need the internet. The steps still work offline.'}
+      <p id={`${id}-hint`} className="hint" style={{ margin: online ? 0 : 'var(--space-2) 0 0' }}>
+        {online ? '' : 'Questions need the internet.'}
       </p>
       {asking && <Working label="Getting an answer…" typical="a few seconds" />}
     </section>

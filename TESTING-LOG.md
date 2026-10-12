@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Exploratory walkthrough: "it looks like a bunch of big blocks of text" | Text density pass: shorter copy, icon tab bar and facts row, compact nutrition (0.25.0); visual design moves to Figma | See entry |
 | 2026-10-11 | US/Metric toggle and the Units setting changed nothing; the two-chef plan felt redundant; whose step is whose still not distinct enough | Units set once (Settings or setup) and applied everywhere, cups convert in metric; plan removed; You / other cook / Together labels (0.24.0) | See entry |
 | 2026-10-11 | Cooking screens review: "what does fold mean" isn't relevant; Ask on the left; no way to log a change mid-recipe; steps hard to scan. Plus the open severity 3s (the other cook's steps, overview, nutrition for what was made) and library filtering | Suggested questions per step, change log per cook with servings and nutrition, bold actions and amounts, scroll focus, two-chef plan and reminders, library search, sort, and filters (0.23.0) | See entry |
 | 2026-10-11 | Heuristic evaluation, round 1 (Library, Add a recipe, Stats, Settings): crowded cards, add button out of reach and limited, cluttered import, list-heavy stats, slow kitchen list, no permanent delete, odd Sign out placement, meaningless build code | Fixed in 0.22.0 | See entry |
@@ -40,6 +41,56 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Text density pass
+
+**Finding.** From an exploratory walkthrough: "I feel like you got to stop
+working on the functionality and start working on the aesthetics because I
+feel like it looks like a bunch of big blocks of text."
+
+**Decision.** Erin split the feedback in two. The density of text is a
+hierarchy problem that can be fixed inside the plain theme now; the
+visual identity (type, color, motion) moves to Figma as its own phase, as
+planned when the plain theme was chosen. The plain phase ends here on
+purpose: every open severity 3 is built and the core flows have held for
+several rounds, so further testing would start reacting to the look.
+
+**Change (version 0.25.0).**
+
+- Tab bar: an icon over each label; "Import" is now "Add", matching the
+  page title "Add a recipe".
+- Recipe page: average rating, times made, prep and cook time, and cuisine
+  in one row with icons, instead of two text lines; each cook's own rating
+  moved to the rating section. Start cooking and Two chefs sit side by
+  side with icons. Nutrition shows four numbers (calories, protein, carbs,
+  fat per serving), with portions and the per-ingredient breakdown in one
+  collapsed section. The cook log drops its explanation line, and each day
+  reads "Oct 12, 2026 · Erin".
+- Cooking modes: "Screen stays on" only appears when it can't; the step's
+  time is part of its heading; "Changes this time" and "Ask" show a note
+  only after something happens.
+- Shorter hints throughout (servings, the scaling note, the edit form,
+  Stats, Settings).
+
+**Measured.** Visible words on each page, same sample data, before and
+after:
+
+| Page | Before | After | Change |
+| --- | --- | --- | --- |
+| Library | 103 | 103 | +0% |
+| Recipe | 379 | 289 | -24% |
+| Cooking mode | 199 | 169 | -15% |
+| Two-chef mode | 292 | 261 | -11% |
+| Add a recipe | 55 | 55 | +0% |
+| Stats | 243 | 225 | -7% |
+| Settings | 156 | 148 | -5% |
+| Edit recipe | 156 | 106 | -32% |
+
+Recipe text itself (steps and ingredients) is unchanged; the cuts are in
+the app's own copy. No accessibility violations (axe) after the changes.
+
+**Next.** Visual design in Figma: the current screens and the plain
+theme's tokens go into a Figma file as the starting point.
 
 ## 2026-10-11: Units that do something, and whose step is whose
 

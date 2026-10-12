@@ -454,8 +454,8 @@ export default function TwoChef() {
         {[
           timeSummary(recipe),
           left != null && `about ${formatMinutes(left)} left`,
-          wakeLock === 'on' && 'Screen stays on',
-          !live && 'Not connected, so progress stays on this phone',
+          (wakeLock === 'failed' || wakeLock === 'unsupported') && "Screen may dim; tap it now and then",
+          !live && 'Offline: progress stays on this phone',
         ]
           .filter(Boolean)
           .join(' · ')}
@@ -464,7 +464,7 @@ export default function TwoChef() {
         servings={servings}
         base={recipe.base_servings}
         onChange={changeServings}
-        note={live ? 'Both phones use these servings.' : null}
+        note={live ? 'Same on both phones.' : null}
       />
       <div className="row-between">
         <p style={{ margin: 0 }}>
@@ -505,11 +505,11 @@ export default function TwoChef() {
               <h2 id="next-heading" className="cook-count">
                 Step {next.state.number} of {steps.length}
                 {next.state.track === 'both' ? ' · together' : side === 'all' ? ` · ${names[next.state.track]}` : ''}
+                {minutesOf(next.state) && ` · about ${formatMinutes(minutesOf(next.state))}`}
               </h2>
               <p className="cook-step">
                 <StepText text={next.state.step.text} ingredients={ingredients} factor={factor} system={system} />
               </p>
-              {minutesOf(next.state) && <p className="hint">About {formatMinutes(minutesOf(next.state))}</p>}
               {unchecked.length > 0 && (
                 <p>
                   {live ? otherName : 'The other cook'} hasn't checked off step{unchecked.length === 1 ? '' : 's'}{' '}

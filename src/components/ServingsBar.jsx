@@ -23,7 +23,7 @@ export default function ServingsBar({ servings, base, onChange, note }) {
       </div>
       {recipeMakes && recipeMakes !== servings ? (
         <p className="hint" style={{ margin: 0 }}>
-          The recipe makes {recipeMakes}, so amounts are scaled.{' '}
+          Written for {recipeMakes}.{' '}
           <button className="link-btn" type="button" onClick={() => onChange(recipeMakes)}>
             Make {recipeMakes}
           </button>

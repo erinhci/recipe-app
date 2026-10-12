@@ -8,12 +8,13 @@ import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, r
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 import { useOnline } from '../lib/useOnline'
-import { formatMinutes, groupMeals, ratingIsStale, recipeRatings, timeSummary } from '../lib/stats'
+import { groupMeals, ratingIsStale, recipeRatings, timeSummary } from '../lib/stats'
 import StarPicker from '../components/StarPicker'
 import StepText from '../components/StepText'
 import NutritionPanel from '../components/NutritionPanel'
 import { AddPhoto, PhotoImg, PhotoThumb } from '../components/MealPhotos'
 import MealDetails from '../components/MealDetails'
+import Icon from '../components/Icon'
 import { newestFirst, removeMealPhotos } from '../lib/photos'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -197,30 +198,36 @@ export default function RecipeView() {
           <PhotoImg photo={photos[0]} alt={`${recipe.title} as you made it on ${formatDay(photos[0].cooked_on)}`} />
           <figcaption className="hint">
             {formatDay(photos[0].cooked_on)} · {photoBy(photos[0])}
-            {photos.length > 1 && ` · ${photos.length} photos in the cook log`}
           </figcaption>
         </figure>
       )}
-      {(recipe.cuisine || recipe.meal_type || timeSummary(recipe)) && (
-        <p className="hint">
-          {[recipe.cuisine, recipe.meal_type, timeSummary(recipe)]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      )}
-
-      {(ratedMembers.length > 0 || meals.length > 0) && (
-        <p>
-          {ratedMembers.length > 0 && (
-            <>
-              <strong>{stars(Math.round(summary.average * 10) / 10)}</strong> average (
-              {ratedMembers.map((m) => `${nameFor(m)} ${stars(summary.byMember[m])}`).join(', ')})
-            </>
-          )}
-          {ratedMembers.length > 0 && meals.length > 0 && ' · '}
-          {meals.length > 0 && `made ${meals.length} ${meals.length === 1 ? 'time' : 'times'}`}
-        </p>
-      )}
+      <ul className="facts">
+        {ratedMembers.length > 0 && (
+          <li>
+            <Icon name="star" size={18} />
+            <strong>{Math.round(summary.average * 10) / 10}</strong>
+            <span className="sr-only"> average rating</span>
+          </li>
+        )}
+        {meals.length > 0 && (
+          <li>
+            <Icon name="repeat" size={18} />
+            Made {meals.length}×
+          </li>
+        )}
+        {timeSummary(recipe) && (
+          <li>
+            <Icon name="clock" size={18} />
+            {timeSummary(recipe)}
+          </li>
+        )}
+        {(recipe.cuisine || recipe.meal_type) && (
+          <li>
+            <Icon name="globe" size={18} />
+            {[recipe.cuisine, recipe.meal_type].filter(Boolean).join(' · ')}
+          </li>
+        )}
+      </ul>
 
       <section aria-labelledby="servings-heading">
         <h2 id="servings-heading" className="sr-only">
@@ -252,7 +259,7 @@ export default function RecipeView() {
         </div>
         {recipe.base_servings && Number(recipe.base_servings) !== servings && (
           <p className="hint" style={{ margin: 0 }}>
-            The recipe as written makes {recipe.base_servings}.{' '}
+            Written for {recipe.base_servings}.{' '}
             <button className="link-btn" type="button" onClick={() => setServings(Number(recipe.base_servings))}>
               Make {recipe.base_servings}
             </button>
@@ -261,16 +268,18 @@ export default function RecipeView() {
       </section>
 
       {steps.length > 0 && (
-        <p className="actions">
+        <div className="cook-actions">
           <Link className="btn" to={`/recipe/${recipe.id}/cook?servings=${shownServings}`}>
+            <Icon name="play" size={18} />
             Start cooking
-          </Link>{' '}
+          </Link>
           {steps.length > 1 && (
             <Link className="btn btn-secondary" to={`/recipe/${recipe.id}/two-chef?servings=${shownServings}`}>
-              Cook with two chefs
+              <Icon name="users" size={18} />
+              Two chefs
             </Link>
           )}
-        </p>
+        </div>
       )}
 
       <section aria-labelledby="ingredients-heading">
@@ -307,7 +316,7 @@ export default function RecipeView() {
         )}
         {factor !== 1 && (
           <p className="hint">
-            Amounts in the steps are scaled to match the ingredients. Times and pan sizes don't scale. For baked dishes, a smaller pan may be needed.
+            Amounts are scaled. Times and pan sizes aren't.
           </p>
         )}
       </section>
@@ -317,7 +326,7 @@ export default function RecipeView() {
           {finishedCooking ? 'How was it?' : 'Your rating'}
         </h2>
         {meals.length === 0 ? (
-          <p className="hint">Rate it after the first time you make it. Log that below.</p>
+          <p className="hint">Rate it once you've made it.</p>
         ) : myStars === undefined || changingRating ? (
           <>
             <StarPicker
@@ -353,7 +362,15 @@ export default function RecipeView() {
         ) : (
           <div className="row-between">
             <p style={{ margin: 0 }}>
-              You gave it <strong>{stars(myStars)}</strong>
+              You <strong>{stars(myStars)}</strong>
+              {ratedMembers
+                .filter((m) => m !== member.user_id)
+                .map((m) => (
+                  <span key={m} className="hint">
+                    {' '}
+                    · {nameFor(m)} {stars(summary.byMember[m])}
+                  </span>
+                ))}
             </p>
             <button className="link-btn" type="button" onClick={() => setChangingRating(true)}>
               Change rating
@@ -378,16 +395,11 @@ export default function RecipeView() {
         )}
 
         <h3 className="subheading">Cook log</h3>
-        <p className="hint" style={{ marginTop: 0 }}>
-          {recipe.total_time_minutes > 0 ? (
-            `Each time you log it adds ${formatMinutes(recipe.total_time_minutes)} to your time cooking together.`
-          ) : (
-            <>
-              This recipe has no total time, so logging it doesn't add to your time cooking together.{' '}
-              <Link to={`/recipe/${recipe.id}/edit`}>Add a total time</Link>
-            </>
-          )}
-        </p>
+        {!(recipe.total_time_minutes > 0) && (
+          <p className="hint" style={{ marginTop: 0 }}>
+            No total time, so it won't count toward time together. <Link to={`/recipe/${recipe.id}/edit`}>Add one</Link>
+          </p>
+        )}
         <form onSubmit={handleLogMeal}>
           {meals.length === 0 && <StarPicker legend="Your rating (optional)" value={logStars} onChange={setLogStars} />}
           <div className="inline-form">
@@ -429,9 +441,8 @@ export default function RecipeView() {
             {history.map((meal) => (
               <li key={meal.key}>
                 <span>
-                  <span style={{ display: 'block' }}>{formatDay(meal.cooked_on)}</span>
-                  <span className="hint" style={{ display: 'block' }}>
-                    Logged by {loggedByNames(meal)}
+                  <span style={{ display: 'block', fontWeight: 600 }}>
+                    {formatDay(meal.cooked_on)} <span className="hint" style={{ fontWeight: 400 }}>· {loggedByNames(meal)}</span>
                   </span>
                   <MealDetails recipe={recipe} meal={meal} changes={notes.filter((n) => n.cooked_on === meal.cooked_on)} online={online} />
                   <span className="meal-photos">
@@ -464,7 +475,7 @@ export default function RecipeView() {
       <section aria-labelledby="notes-heading">
         <h2 id="notes-heading">Notes</h2>
         {notes.length === 0 ? (
-          <p className="hint">No notes yet. Leave one for next time, like what you'd change.</p>
+          <p className="hint">No notes yet.</p>
         ) : (
           <ul className="comments">
             {notes.map((note) => {

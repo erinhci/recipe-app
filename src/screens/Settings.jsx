@@ -123,7 +123,7 @@ export default function Settings() {
             <option value="metric">Metric (grams, milliliters)</option>
           </select>
           <span className="hint">
-            {online ? 'Every recipe and cooking mode shows amounts this way. Spoon measures stay spoons.' : 'Connect to the internet to change this.'}
+            {online ? 'Used everywhere. Spoons stay spoons.' : 'Connect to change this.'}
           </span>
         </div>
       </section>

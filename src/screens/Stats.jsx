@@ -227,11 +227,11 @@ export default function Stats() {
           Totals
         </h2>
         <Tiles stats={stats} />
-        <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-          Time counts each recipe's total time once per meal.
-          {stats.mealsWithoutTime > 0 &&
-            ` ${stats.mealsWithoutTime} ${stats.mealsWithoutTime === 1 ? "meal doesn't" : "meals don't"} count because the recipe has no total time.`}
-        </p>
+        {stats.mealsWithoutTime > 0 && (
+          <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
+            {stats.mealsWithoutTime} {stats.mealsWithoutTime === 1 ? 'meal has' : 'meals have'} no recipe time, so {stats.mealsWithoutTime === 1 ? "it isn't" : "they aren't"} counted.
+          </p>
+        )}
       </section>
 
       <section aria-labelledby="badges-heading">
@@ -297,7 +297,7 @@ export default function Stats() {
               </li>
             ))}
           </ul>
-          <p className="hint">How many meals each was in, leaving out salt, pepper, and water.</p>
+          <p className="hint">Meals each was in.</p>
         </section>
       )}
     </Page>

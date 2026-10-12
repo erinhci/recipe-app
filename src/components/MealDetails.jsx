@@ -58,10 +58,8 @@ export default function MealDetails({ recipe, meal, changes, online }) {
 
       {totals ? (
         <span className="meal-nutrition">
-          About {formatNutrient('calories', totals.total.calories)} cal and {formatNutrient('protein_g', totals.total.protein_g)} protein in
-          all, {formatNutrient('calories', totals.perServing.calories)} cal and {formatNutrient('protein_g', totals.perServing.protein_g)}{' '}
-          per serving
-          {changeTexts.length > 0 && estimated && ', with your changes'}.
+          {formatNutrient('calories', totals.perServing.calories)} cal, {formatNutrient('protein_g', totals.perServing.protein_g)} protein per serving
+          {changeTexts.length > 0 && estimated && ' (with changes)'}
         </span>
       ) : (
         servings &&
