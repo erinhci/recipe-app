@@ -107,3 +107,4 @@ notes in Settings, in the update banner, and once after updating.
 | `supabase/migrations/` | Database schema, security rules, and stats views |
 | `api/keepalive.js` | Daily route that keeps the free Supabase project awake |
 | `vercel.json` | Daily cron schedule and app routing |
+| `motion/` | Headless render engine for motion studies: HTML scene to MP4, frame by frame (see `motion/README.md`) |

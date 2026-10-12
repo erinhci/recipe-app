@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Next step</title>
+<!-- The app's real stylesheet, so a motion study uses the same tokens and type. -->
+<link rel="stylesheet" href="../../src/index.css">
+<style>
+  /* A study of cooking mode's "Next step": the finished step leaves upward,
+     the next one arrives from below, the counter ticks, and the focus rule
+     moves to the new first "coming up" step. */
+  body { margin: 0; background: var(--color-bg); }
+  .phone { box-sizing: border-box; width: 390px; height: 844px; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-6); overflow: hidden; }
+  h1 { margin: var(--space-2) 0 0; }
+  .stage { position: relative; height: 200px; }
+  .step { position: absolute; inset: 0; margin: 0; }
+  .count { margin: 0 0 var(--space-3); }
+  .upcoming { overflow: hidden; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-4); font-size: 1.25rem; line-height: 1.45; }
+  .upcoming li { padding-left: var(--space-3); border-left: 3px solid transparent; }
+  .upcoming li.focus { border-left-color: var(--color-accent); }
+  .nav { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+  .nav .btn { min-height: 56px; font-size: 1.125rem; }
+
+  /* Timeline (one place to tune it):
+     0.00–0.45 s  hold on step 1
+     0.45–0.60 s  Next step is pressed
+     0.60–0.80 s  step 1 leaves: up 24 px and fades, ease-in
+     0.80–1.08 s  step 2 arrives: up from 24 px below, ease-out
+     0.80–1.08 s  coming-up list shifts up one row; its first step fades
+                  (it is now the current step), and the focus rule follows */
+  .press { animation: press 150ms ease-out 450ms both; }
+  @keyframes press { 50% { transform: scale(0.97); } 100% { transform: scale(1); } }
+  .leave { animation: leave 200ms cubic-bezier(0.4, 0, 1, 1) 600ms both; }
+  @keyframes leave { to { opacity: 0; transform: translateY(-24px); } }
+  .arrive { animation: arrive 280ms cubic-bezier(0, 0, 0.2, 1) 800ms both; }
+  @keyframes arrive { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .shift { animation: shift 280ms cubic-bezier(0, 0, 0.2, 1) 800ms both; }
+  @keyframes shift { to { transform: translateY(calc(-1 * var(--row))); } }
+  .gone { animation: gone 200ms cubic-bezier(0.4, 0, 1, 1) 800ms both; }
+  @keyframes gone { to { opacity: 0; transform: translateY(calc(-1 * var(--row))); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .press, .leave, .arrive, .shift, .gone { animation-duration: 1ms; }
+  }
+</style>
+<script>
+  // Settings the renderer reads. The command line can override them.
+  window.MOTION = { fps: 60, duration: 1.6, width: 390, height: 844 }
+</script>
+</head>
+<body>
+<main class="phone">
+  <h1>Egg Bites</h1>
+  <section>
+    <h2 class="cook-count count" aria-live="polite">Step <span id="n">1</span> of 6</h2>
+    <div class="stage">
+      <p class="cook-step step leave"><strong>Preheat</strong> your oven to <strong>350°F</strong> (<strong>175°C</strong>). Generously grease <strong>6 cups</strong> of a muffin tin with oil.</p>
+      <p class="cook-step step arrive"><strong>Thaw</strong> the frozen bell peppers in the microwave for <strong>15 seconds</strong>. <strong>Press</strong> firmly between paper towels.</p>
+    </div>
+  </section>
+  <section>
+    <h2>Coming up</h2>
+    <ol class="upcoming" id="upcoming">
+      <li class="focus"><strong>Thaw</strong> the frozen bell peppers in the microwave for <strong>15 seconds</strong>.</li>
+      <li>In a bowl, <strong>whisk</strong> <strong>1 1/3</strong> large eggs and <strong>2 tsp</strong> water.</li>
+      <li><strong>Toss</strong> together <strong>4 3/4 tsp</strong> diced chicken and <strong>4 tsp</strong> broccoli.</li>
+      <li><strong>Pour</strong> the egg mixture over the fillings. <strong>Bake</strong> for <strong>18–20 minutes</strong>.</li>
+    </ol>
+  </section>
+  <nav class="nav" aria-label="Steps">
+    <button class="btn btn-secondary" type="button">Previous</button>
+    <button class="btn press" type="button">Next step</button>
+  </nav>
+</main>
+<script>
+  // Script-driven parts run on the renderer's clock like everything else:
+  // the counter ticks with a timer, and the list's row height is measured.
+  const list = document.getElementById('upcoming')
+  const first = list.children[0]
+  const second = list.children[1]
+  const row = second.getBoundingClientRect().top - first.getBoundingClientRect().top
+  list.style.setProperty('--row', `${row}px`)
+  first.classList.add('gone')
+  for (const li of [...list.children].slice(1)) li.classList.add('shift')
+  setTimeout(() => {
+    document.getElementById('n').textContent = '2'
+  }, 800)
+  setTimeout(() => {
+    first.classList.remove('focus')
+    second.classList.add('focus')
+  }, 940)
+</script>
+</body>
+</html>
