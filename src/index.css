@@ -913,16 +913,7 @@ ul + h3,
 .chip-btn:disabled { opacity: 0.6; cursor: progress; }
 .small-link { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; flex: none; }
 
-/* Two-chef plan and reminders */
-.plan summary { font-weight: 600; }
-.plan-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; }
-.plan-list > li { display: flex; gap: var(--space-2); align-items: baseline; padding: var(--space-1) 0; margin: 0; }
-.plan-list > li + li { margin-top: 0; border-top: 1px solid var(--color-divider); }
-.plan-number { flex: none; width: 1.5rem; color: var(--color-text-muted); }
-.plan-text { flex: 1; min-width: 0; }
-.plan-min { flex: none; color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; }
-.plan-theirs { color: var(--color-text-muted); font-size: var(--text-sm); padding-left: 2rem !important; }
-.plan-list > li.is-done .plan-text { text-decoration: line-through; color: var(--color-text-muted); }
+/* Two-chef reminders */
 .two-chef-steps > li.is-reminder { padding: var(--space-2) 0; }
 .step-reminder { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

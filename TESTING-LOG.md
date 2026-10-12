@@ -11,7 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
-| 2026-10-11 | Exploratory walkthrough: "it looks like a bunch of big blocks of text" | Text density pass: shorter copy, icon tab bar and facts row, compact nutrition (0.25.0); visual design moves to Figma | See entry |
+| 2026-10-11 | Exploratory walkthrough: "it looks like a bunch of big blocks of text" | Text density pass: shorter copy, icon tab bar and facts row, compact nutrition (0.25.0); all eight screens moved to Figma, light and dark, bound to the theme's tokens | See entry |
 | 2026-10-11 | US/Metric toggle and the Units setting changed nothing; the two-chef plan felt redundant; whose step is whose still not distinct enough | Units set once (Settings or setup) and applied everywhere, cups convert in metric; plan removed; You / other cook / Together labels (0.24.0) | See entry |
 | 2026-10-11 | Cooking screens review: "what does fold mean" isn't relevant; Ask on the left; no way to log a change mid-recipe; steps hard to scan. Plus the open severity 3s (the other cook's steps, overview, nutrition for what was made) and library filtering | Suggested questions per step, change log per cook with servings and nutrition, bold actions and amounts, scroll focus, two-chef plan and reminders, library search, sort, and filters (0.23.0) | See entry |
 | 2026-10-11 | Heuristic evaluation, round 1 (Library, Add a recipe, Stats, Settings): crowded cards, add button out of reach and limited, cluttered import, list-heavy stats, slow kitchen list, no permanent delete, odd Sign out placement, meaningless build code | Fixed in 0.22.0 | See entry |
@@ -89,8 +89,19 @@ after:
 Recipe text itself (steps and ingredients) is unchanged; the cuts are in
 the app's own copy. No accessibility violations (axe) after the changes.
 
-**Next.** Visual design in Figma: the current screens and the plain
-theme's tokens go into a Figma file as the starting point.
+**Handoff to Figma.** The eight main screens (Library, Recipe, Cooking
+mode, Two chefs, Add a recipe, Stats, Settings, Edit recipe) are in a
+Figma file, light and dark, 390 px wide, built from the 0.25.0 build with
+the same sample data. Every color, the corner radius, and the text sizes
+are bound to variables named after the CSS tokens (for example
+`light/accent` and `dark/accent` both map to `var(--color-accent)`), so a
+change to a token changes every screen. Light and dark are two groups of
+variables because the Figma Starter plan allows one mode per collection.
+Photos are grey placeholders. Layers are positioned to match the app, not
+auto-layout, so they can be moved freely while exploring.
+
+**Next.** Visual identity in Figma (type, color, motion), starting from
+that file.
 
 ## 2026-10-11: Units that do something, and whose step is whose
 
