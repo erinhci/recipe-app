@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-12 | Reviewing all screens side by side in Figma: main buttons still on the left (Save recipe, Sort it, Choose files, Estimate again, Stop cooking); Restore and Delete forever too close | Main actions on the right; ways out and deletes on the far left of the same row; Stop cooking stays left with space above, away from Log it (0.25.1) | `601b604` |
 | 2026-10-11 | Exploratory walkthrough: "it looks like a bunch of big blocks of text" | Text density pass: shorter copy, icon tab bar and facts row, compact nutrition (0.25.0); all eight screens moved to Figma, light and dark, bound to the theme's tokens | See entry |
 | 2026-10-11 | US/Metric toggle and the Units setting changed nothing; the two-chef plan felt redundant; whose step is whose still not distinct enough | Units set once (Settings or setup) and applied everywhere, cups convert in metric; plan removed; You / other cook / Together labels (0.24.0) | See entry |
 | 2026-10-11 | Cooking screens review: "what does fold mean" isn't relevant; Ask on the left; no way to log a change mid-recipe; steps hard to scan. Plus the open severity 3s (the other cook's steps, overview, nutrition for what was made) and library filtering | Suggested questions per step, change log per cook with servings and nutrition, bold actions and amounts, scroll focus, two-chef plan and reminders, library search, sort, and filters (0.23.0) | See entry |
@@ -41,6 +42,33 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-12: Button placement across screens
+
+**Finding.** Looking at all eight screens side by side in Figma, Erin saw
+that several main buttons still sat on the left, out of thumb reach: Save
+recipe and Cancel, Sort it, Choose files, Estimate again, and Stop cooking.
+Restore and Delete forever in Recently Deleted were stacked right next to
+each other. Moving Stop cooking to the right would have put it directly
+under Log it.
+
+**Reasoning.** Two separate problems. Reach: the main action on a phone
+is fastest to hit on the right, near the thumb (Fitts's law, distance to
+the target). Mis-taps: a rare or destructive action placed next to a
+frequent one gets hit by accident. That is error prevention (Nielsen's
+heuristic 5), and the fix is distance between the two.
+
+**Change (version 0.25.1).** One rule for every action row:
+
+- The main action sits on the right: Save recipe, Sort it, Choose files,
+  Estimate again, Sync now, Edit, Restore.
+- When a row has a way out or a delete, it goes to the far left of the
+  same row: Cancel, Delete, Delete forever.
+- Stop cooking stays on the left by itself, with extra space above it,
+  so it isn't under Log it. The close button at the top does the same
+  thing.
+
+**Commit.** `601b604`
 
 ## 2026-10-11: Text density pass
 
