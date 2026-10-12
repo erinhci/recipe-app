@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.22.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Library: bigger recipe cards you can tap anywhere, and an Add recipe button near your thumb that opens every way to add one",
+      "Add a recipe: choosing a screenshot, photo, or PDF reads it right away, and pasting a link does too. Typing a recipe in has its own button",
+      "Stats: headline numbers, badges for milestones, and a chart of meals by week",
+      "Settings: your kitchen shows instantly, Recently Deleted can delete a recipe forever, and Sign out is at the bottom"
+    ]
+  },
+  {
     "version": "0.21.0",
     "date": "2026-10-11",
     "notes": [

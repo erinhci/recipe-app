@@ -46,6 +46,10 @@ function fakeServer() {
         delete: () => ({
           eq: async (_col, id) => {
             table(name).delete(id)
+            // Like the schema's "on delete cascade" from recipes.
+            if (name === 'recipes') {
+              for (const rows of tables.values()) for (const [key, row] of rows) if (row.recipe_id === id) rows.delete(key)
+            }
             return { error: null }
           },
         }),
@@ -265,4 +269,23 @@ test('before the photos migration, a photo waits on this phone without blocking 
   await syncNow()
   assert.ok(server.files.has(photo.path))
   assert.equal(server.table('meal_photos').size, 1)
+})
+
+test('deleting forever removes the recipe, its rows, and its photo files', async () => {
+  const { deleteRecipeForever, logMeal } = await import('./data.js')
+  const id = await saveRecipe(structuredClone(sample), member)
+  await addNote(id, 'Less salt', member)
+  await logMeal({ recipeId: id, cookedOn: '2026-10-11' }, member)
+  const photo = await saveMealPhoto({ recipeId: id, cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await syncNow()
+  assert.ok(server.files.has(photo.path))
+  await deleteRecipeForever(id)
+  await syncNow()
+  assert.equal(server.table('recipes').has(id), false)
+  assert.equal(server.files.size, 0)
+  assert.equal(await db.recipes.count(), 0)
+  assert.equal(await db.steps.count(), 0)
+  assert.equal(await db.notes.count(), 0)
+  assert.equal(await db.cook_log.count(), 0)
+  assert.equal(await db.meal_photos.count(), 0)
 })

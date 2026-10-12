@@ -102,7 +102,24 @@ function countBy(items, keyFor) {
   return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-export function computeStats({ recipes, ingredients, cookLog, ratings }) {
+// Meals per week for the last `count` weeks, oldest first. Weeks start on
+// Monday. today is a YYYY-MM-DD string (this phone's date).
+export function mealsByWeek(meals, today, count = 8) {
+  const day = (iso) => new Date(`${iso}T12:00:00`)
+  const start = day(today)
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7)) // back to Monday
+  const weeks = []
+  for (let i = count - 1; i >= 0; i--) {
+    const from = new Date(start)
+    from.setDate(start.getDate() - i * 7)
+    const to = new Date(from)
+    to.setDate(from.getDate() + 7)
+    weeks.push({ start: from, count: meals.filter((m) => day(m.cooked_on) >= from && day(m.cooked_on) < to).length })
+  }
+  return weeks
+}
+
+export function computeStats({ recipes, ingredients, cookLog, ratings, today = null }) {
   const recipeById = new Map(recipes.map((r) => [r.id, r]))
   // Meals whose recipe was deleted for good aren't on the phone anymore.
   const entries = cookLog.filter((c) => recipeById.has(c.recipe_id))
@@ -157,6 +174,7 @@ export function computeStats({ recipes, ingredients, cookLog, ratings }) {
   }).filter(Boolean)
 
   return {
+    weeks: today ? mealsByWeek(meals, today) : [],
     mealsLogged: meals.length,
     recipesCooked: new Set(meals.map((c) => c.recipe_id)).size,
     hours,

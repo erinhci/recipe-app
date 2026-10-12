@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | Heuristic evaluation, round 1 (Library, Add a recipe, Stats, Settings): crowded cards, add button out of reach and limited, cluttered import, list-heavy stats, slow kitchen list, no permanent delete, odd Sign out placement, meaningless build code | Fixed in 0.22.0 | See entry |
 | 2026-10-11 | Erin: add photos now, limited so storage can't fill by accident, and both cooks can see and add them | Built: one photo per cook per meal, shrunk to about 300 KB, 500 per kitchen, synced (0.21.0) | See entry |
 | 2026-10-11 | Severity 3: the shared step waits for check-offs that Partner skips with dirty hands | One tap catches up earlier steps; shared steps no longer lock (0.20.0) | See entry |
 | 2026-10-11 | Nine open findings rated on Nielsen's severity scale | Four rated 3 (major) and fixed first; then the same tasks are tested again with Partner | See entry |
@@ -37,6 +38,36 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Heuristic evaluation, round 1
+
+**Method.** Erin went through the app page by page on her phone (dark
+mode) and noted problems, then the matching fixes were built. Her
+screenshots from 8:00 PM, before the changes, are the "before" set. The
+heuristic column names the Nielsen heuristic (or principle) each problem
+falls under.
+
+| Page | What Erin found | Heuristic | Change (0.22.0) |
+| --- | --- | --- | --- |
+| Library | "Add recipe" sat at the top, out of the thumb zone, and went straight to typing from scratch, "already an import option and the least efficient" | Flexibility and efficiency of use; thumb reach (Fitts's law) | A rounded "+ Add recipe" button sits bottom right, above the tab bar, and opens every way to add a recipe |
+| Library | Cards were small, "to the point of looking crowded and overwhelming" | Aesthetic and minimalist design | Larger cards with more space between them; the whole card is the link (no underlined title); every card has an 80 px picture, the newest photo or the recipe's first letter, so rows line up |
+| Add a recipe | "Cluttered and overwhelming"; choosing a file still needed a "Read recipe" button on every card | Aesthetic and minimalist design; flexibility and efficiency | Screenshots, photos, and PDFs share one card with a "Choose files" button, and reading starts when files are chosen; the card says so first, per WCAG 3.2.2 (On Input). Pasting a link starts reading too; a typed link uses a short Go button. Labels are the card headings, so each card has less text |
+| Add a recipe | Typing from scratch was a small link here but had its own button on the Library | Consistency and standards | "Type it in yourself" is a full-width button at the bottom |
+| Stats | Bullet lists and equal bars read as "clutter and overwhelm"; asked for charts and badges to make it feel like a game | Aesthetic and minimalist design; recognition rather than recall | Three stat tiles (meals, time together, cuisines); milestones as badges, earned ones filled and the next one per track outlined with a progress meter; a column chart of meals by week (last 8 weeks, with a table for screen readers); shares of all meals as thin meters with counts and percents; top ingredients as chips |
+| Settings | "Your kitchen" took a second to show who's in it, though it rarely changes | Visibility of system status | Read from the phone's synced copy, so it shows at once and offline |
+| Settings | Recently Deleted had no way to delete for good | User control and freedom | "Delete forever" under Restore, with a confirmation that lists what goes with it; photo files are removed from storage too |
+| Settings | Sign out sat on the left between Sync and Version | Consistency and standards (where people expect it) | Sign out is the last thing on the page, aligned right |
+| Settings | "build c0a5608" means nothing to users | Match between system and the real world | Only the version number and release date show |
+
+**How it was checked.** Automated tests for the weekly counts and for
+deleting forever (rows and photo files). Both color schemes screenshotted
+at phone size against a fake server, with no accessibility violations
+(axe) on any of the four pages. Choosing a file and pasting a link each
+went straight to the review screen.
+
+**Open.** Recipes that sit in Recently Deleted for 30 days are removed by
+the daily cleanup, but their photo files stay in storage. Deleting forever
+from the app removes them.
 
 ## 2026-10-11: Photos of finished dishes
 

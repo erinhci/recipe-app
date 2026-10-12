@@ -115,3 +115,13 @@ test('time summary shows prep, cook, and a total that differs', () => {
   assert.equal(timeSummary({ total_time_minutes: 40 }), 'About 40 min')
   assert.equal(timeSummary({}), '')
 })
+
+test('meals per week, Monday to Sunday, oldest first', async () => {
+  const { mealsByWeek } = await import('./stats.js')
+  // Sunday Oct 11, 2026: that week started Monday Oct 5.
+  const meals = [{ cooked_on: '2026-10-11' }, { cooked_on: '2026-10-05' }, { cooked_on: '2026-10-04' }, { cooked_on: '2026-08-01' }]
+  const weeks = mealsByWeek(meals, '2026-10-11', 3)
+  assert.deepEqual(weeks.map((w) => w.count), [0, 1, 2])
+  assert.equal(weeks[2].start.getDate(), 5)
+  assert.equal(weeks[1].start.getDate(), 28)
+})

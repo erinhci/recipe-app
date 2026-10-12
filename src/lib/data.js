@@ -1,6 +1,7 @@
 import { db } from './db.js'
 import { enqueue, syncNow } from './sync.js'
 import { groupMeals } from './stats.js'
+import { removeMealPhotos } from './photos.js'
 
 // All writes go through here: save on this phone first, queue the change
 // for Supabase, then try to send it. Works the same offline; the queue
@@ -169,6 +170,26 @@ export async function deleteRecipe(recipeId, member) {
 
 export async function restoreRecipe(recipeId) {
   await setDeleted(recipeId, { deleted_at: null, deleted_by: null })
+}
+
+// Deletes a recipe for good, with everything that belongs to it: its
+// ingredients, steps, notes, cook log, ratings, and photos. The database
+// removes the related rows with the recipe; photo files are removed from
+// storage first so they don't linger. Can't be undone.
+export async function deleteRecipeForever(recipeId) {
+  const photos = await db.meal_photos.where('recipe_id').equals(recipeId).toArray()
+  await removeMealPhotos(photos)
+  const logIds = await db.cook_log.where('recipe_id').equals(recipeId).primaryKeys()
+  const tables = [db.recipes, db.ingredients, db.steps, db.notes, db.recipe_versions, db.cook_log, db.ratings, db.outbox]
+  await db.transaction('rw', tables, async () => {
+    await db.ratings.where('cook_log_id').anyOf(logIds).delete()
+    for (const table of [db.ingredients, db.steps, db.notes, db.recipe_versions, db.cook_log]) {
+      await table.where('recipe_id').equals(recipeId).delete()
+    }
+    await db.recipes.delete(recipeId)
+    await enqueue('recipes', 'delete', { id: recipeId })
+  })
+  afterWrite()
 }
 
 // Saves a two-chef split: track names on the recipe and a track on each

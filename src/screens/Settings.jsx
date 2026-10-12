@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useOnline } from '../lib/useOnline'
 import { syncNow, useSyncStatus } from '../lib/sync'
+import { db } from '../lib/db'
 import { current, releaseDate, releases } from '../lib/releases'
 import RecentlyDeleted from '../components/RecentlyDeleted'
 
@@ -34,22 +36,19 @@ function SyncStatus() {
 export default function Settings() {
   const { member, refreshMember, signOut } = useAuth()
   const online = useOnline()
-  const [cooks, setCooks] = useState([])
   const [inviteLink, setInviteLink] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  const loadCooks = useCallback(async () => {
-    const { data } = await supabase
-      .from('members')
-      .select('user_id, display_name')
-      .is('removed_at', null)
-    setCooks(data ?? [])
-  }, [])
-
-  useEffect(() => {
-    if (online) loadCooks()
-  }, [online, loadCooks])
+  // From this phone's copy of the kitchen, so it shows at once (and
+  // offline). Sync keeps it current when someone joins or leaves.
+  const cooks =
+    useLiveQuery(async () => {
+      const rows = await db.members.filter((m) => !m.removed_at).toArray()
+      const byUser = new Map(rows.map((m) => [m.user_id, m]))
+      // You first.
+      return [...byUser.values()].sort((a, b) => (b.user_id === member.user_id) - (a.user_id === member.user_id))
+    }, [member.user_id]) ?? []
 
   async function removeCook(cook) {
     const isMe = cook.user_id === member.user_id
@@ -71,15 +70,12 @@ export default function Settings() {
     }
     setInviteLink('')
     setMessage(`${cook.display_name} was removed. You can invite someone with a new link.`)
-    await loadCooks()
+    syncNow()
   }
 
   async function changeUnits(event) {
     const unit_pref = event.target.value
-    const { error: updateError } = await supabase
-      .from('members')
-      .update({ unit_pref })
-      .eq('user_id', member.user_id)
+    const { error: updateError } = await supabase.from('members').update({ unit_pref }).eq('user_id', member.user_id)
     if (updateError) setError(updateError.message)
     else await refreshMember()
   }
@@ -151,13 +147,14 @@ export default function Settings() {
                     {cook.display_name}
                     {isMe && <span className="hint"> (you)</span>}
                   </span>
-                  <button
-                    className="btn btn-secondary"
-                    type="button"
-                    onClick={() => removeCook(cook)}
-                    disabled={!online}
-                  >
-                    {isMe ? 'Leave kitchen' : <>Remove<span className="sr-only"> {cook.display_name}</span></>}
+                  <button className="btn btn-secondary" type="button" onClick={() => removeCook(cook)} disabled={!online}>
+                    {isMe ? (
+                      'Leave kitchen'
+                    ) : (
+                      <>
+                        Remove<span className="sr-only"> {cook.display_name}</span>
+                      </>
+                    )}
                   </button>
                 </li>
               )
@@ -193,15 +190,9 @@ export default function Settings() {
 
       <SyncStatus />
 
-      <button className="btn btn-secondary" type="button" onClick={signOut}>
-        Sign out
-      </button>
-
-      <section aria-labelledby="version-heading" className="card" style={{ marginTop: 'var(--space-6)' }}>
+      <section aria-labelledby="version-heading" className="card">
         <h2 id="version-heading">Version {current.version}</h2>
-        <p className="hint">
-          Released {releaseDate(current)} · build {__BUILD_COMMIT__}
-        </p>
+        <p className="hint">Released {releaseDate(current)}</p>
         <h3 style={{ fontSize: '1rem' }}>What's new</h3>
         <ul>
           {current.notes.map((note) => (
@@ -209,9 +200,7 @@ export default function Settings() {
           ))}
         </ul>
         <details>
-          <summary>
-            Earlier versions
-          </summary>
+          <summary>Earlier versions</summary>
           {releases.slice(1).map((release) => (
             <div key={release.version} style={{ marginBottom: 'var(--space-3)' }}>
               <p style={{ margin: 0, fontWeight: 600 }}>
@@ -226,6 +215,12 @@ export default function Settings() {
           ))}
         </details>
       </section>
+
+      <p className="page-end-actions">
+        <button className="btn btn-secondary" type="button" onClick={signOut}>
+          Sign out
+        </button>
+      </p>
     </Page>
   )
 }
