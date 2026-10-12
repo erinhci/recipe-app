@@ -48,7 +48,7 @@ export default function CookingMode() {
   const wakeLock = useWakeLock()
 
   const servings = Number(params.get('servings')) || DEFAULT_SERVINGS
-  const system = params.get('units') === 'metric' ? 'metric' : 'us'
+  const system = member.unit_pref === 'metric' ? 'metric' : 'us'
 
   const data = useLiveQuery(async () => {
     const recipe = await db.recipes.get(id)
@@ -122,7 +122,7 @@ export default function CookingMode() {
   }
 
   function changeServings(n) {
-    setParams({ servings: String(n), units: system }, { replace: true })
+    setParams({ servings: String(n) }, { replace: true })
   }
 
   return (
@@ -130,7 +130,6 @@ export default function CookingMode() {
       <p className="hint" style={{ marginBottom: 0 }}>
         {[
           timeSummary(recipe),
-          system === 'metric' ? 'Metric units' : 'US units',
           wakeLock === 'on' ? 'Screen stays on' : wakeLock === 'checking' ? '' : "This phone can't keep the screen on; tap it now and then",
         ]
           .filter(Boolean)

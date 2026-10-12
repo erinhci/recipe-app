@@ -54,7 +54,8 @@ export default function RecipeView() {
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
-  const [system, setSystem] = useState(member.unit_pref ?? 'us')
+  // Units come from Settings (chosen when setting up).
+  const system = member.unit_pref === 'metric' ? 'metric' : 'us'
   const [noteText, setNoteText] = useState('')
   const online = useOnline()
   const location = useLocation()
@@ -223,7 +224,7 @@ export default function RecipeView() {
 
       <section aria-labelledby="servings-heading">
         <h2 id="servings-heading" className="sr-only">
-          Servings and units
+          Servings
         </h2>
         <div className="row-between">
           <div className="stepper">
@@ -248,24 +249,6 @@ export default function RecipeView() {
               +
             </button>
           </div>
-          <fieldset className="choices">
-            <legend className="sr-only">Units</legend>
-            {[
-              ['us', 'US'],
-              ['metric', 'Metric'],
-            ].map(([value, label]) => (
-              <label key={value} className="choice">
-                <input
-                  type="radio"
-                  name="units"
-                  value={value}
-                  checked={system === value}
-                  onChange={() => setSystem(value)}
-                />
-                {label}
-              </label>
-            ))}
-          </fieldset>
         </div>
         {recipe.base_servings && Number(recipe.base_servings) !== servings && (
           <p className="hint" style={{ margin: 0 }}>
@@ -279,11 +262,11 @@ export default function RecipeView() {
 
       {steps.length > 0 && (
         <p className="actions">
-          <Link className="btn" to={`/recipe/${recipe.id}/cook?servings=${shownServings}&units=${system}`}>
+          <Link className="btn" to={`/recipe/${recipe.id}/cook?servings=${shownServings}`}>
             Start cooking
           </Link>{' '}
           {steps.length > 1 && (
-            <Link className="btn btn-secondary" to={`/recipe/${recipe.id}/two-chef?servings=${shownServings}&units=${system}`}>
+            <Link className="btn btn-secondary" to={`/recipe/${recipe.id}/two-chef?servings=${shownServings}`}>
               Cook with two chefs
             </Link>
           )}

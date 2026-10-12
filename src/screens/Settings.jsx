@@ -122,7 +122,9 @@ export default function Settings() {
             <option value="us">US (cups, tablespoons, ounces)</option>
             <option value="metric">Metric (grams, milliliters)</option>
           </select>
-          {!online && <span className="hint">Connect to the internet to change this.</span>}
+          <span className="hint">
+            {online ? 'Every recipe and cooking mode shows amounts this way. Spoon measures stay spoons.' : 'Connect to the internet to change this.'}
+          </span>
         </div>
       </section>
 

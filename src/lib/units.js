@@ -209,12 +209,14 @@ function usVolume(tsp) {
 }
 
 function metricVolume(tsp, originalUnit) {
-  // Measuring spoons are used everywhere, so spoon amounts stay spoons.
-  if (originalUnit === 'tsp' || originalUnit === 'tbsp' || tsp < 3 * 4) return usVolume(tsp)
+  // Measuring spoons are used everywhere, so amounts written in spoons
+  // stay spoons. Cups and fluid ounces become milliliters at any size
+  // (a quarter cup scaled down is "20 ml", not "4 tsp").
+  if (originalUnit === 'tsp' || originalUnit === 'tbsp') return usVolume(tsp)
   const ml = tsp * 4.92892
   if (ml >= 1000) return { quantity: Math.round(ml / 100) / 10, unit: 'l' }
-  const step = ml >= 100 ? 10 : 5
-  return { quantity: Math.round(ml / step) * step, unit: 'ml' }
+  const step = ml >= 100 ? 10 : ml >= 20 ? 5 : 1
+  return { quantity: Math.max(1, Math.round(ml / step) * step), unit: 'ml' }
 }
 
 function usWeight(g) {

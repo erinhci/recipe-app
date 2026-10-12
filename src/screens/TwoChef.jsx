@@ -57,7 +57,7 @@ export default function TwoChef() {
   const online = useOnline()
   const wakeLock = useWakeLock()
   const urlServings = Number(params.get('servings')) || DEFAULT_SERVINGS
-  const system = params.get('units') === 'metric' ? 'metric' : 'us'
+  const system = member.unit_pref === 'metric' ? 'metric' : 'us'
 
   const data = useLiveQuery(async () => {
     const recipe = await db.recipes.get(id)
@@ -184,7 +184,7 @@ export default function TwoChef() {
 
   const { recipe, ingredients, steps, members } = data
   const backToRecipe = `/recipe/${id}`
-  const soloLink = `/recipe/${id}/cook?servings=${urlServings}&units=${system}`
+  const soloLink = `/recipe/${id}/cook?servings=${urlServings}`
   const me = member.user_id
   const partner = members.find((m) => m.user_id !== me && !m.removed_at)
   const nameFor = (userId) => (userId === me ? 'You' : members.find((m) => m.user_id === userId)?.display_name ?? 'The other cook')
@@ -270,6 +270,20 @@ export default function TwoChef() {
   // The server's assignment wins; this phone's own pick covers offline.
   const side = local.side === 'all' ? 'all' : liveSide ?? local.side ?? null
   const factor = scaleFactor(recipe.base_servings, servings)
+  // Who a step belongs to, as a label: a filled "You", an outlined name
+  // for the other cook, or "Together". Shape and fill carry the
+  // difference, not color.
+  const Owner = ({ state, here }) => {
+    if (state.track === 'both') return <span className="owner-pill is-together">Together</span>
+    const mine = side === 'all' || state.track === side
+    if (side === 'all') return <span className="owner-pill is-you">{names[state.track]}</span>
+    return (
+      <>
+        <span className={`owner-pill ${mine ? 'is-you' : 'is-theirs'}`}>{mine ? 'You' : here ? `${otherName} is here` : otherName}</span>
+        {names[state.track]}
+      </>
+    )
+  }
   const whoHas = (track) => {
     if (track === 'both') return 'Together'
     if (side === 'all') return names[track]
@@ -413,22 +427,6 @@ export default function TwoChef() {
   // the card says what's unchecked and leaves the timing to the cooks.
   const unchecked = next.kind === 'step' && next.state.track === 'both' && side !== 'all' ? next.state.waitingOn : []
 
-  // The overview: your steps (and shared ones) with their times; runs of
-  // the other cook's steps fold into one line.
-  const mineOrShared = (state) => side === 'all' || state.track === side || state.track === 'both'
-  const plan = { rows: [], count: 0, minutes: 0 }
-  for (const state of states) {
-    if (mineOrShared(state)) {
-      plan.rows.push({ kind: 'mine', key: state.step.id, state })
-      plan.count += 1
-      plan.minutes += minutesOf(state) ?? 0
-    } else {
-      const last = plan.rows[plan.rows.length - 1]
-      if (last?.kind === 'theirs') last.numbers.push(state.number)
-      else plan.rows.push({ kind: 'theirs', key: state.step.id, numbers: [state.number] })
-    }
-  }
-
   // Shown while waiting on the other cook: where you meet, and what to tidy.
   const whileWaiting = (
     <>
@@ -456,7 +454,6 @@ export default function TwoChef() {
         {[
           timeSummary(recipe),
           left != null && `about ${formatMinutes(left)} left`,
-          system === 'metric' ? 'Metric units' : 'US units',
           wakeLock === 'on' && 'Screen stays on',
           !live && 'Not connected, so progress stays on this phone',
         ]
@@ -500,31 +497,6 @@ export default function TwoChef() {
           {problem}
         </p>
       )}
-
-      <details className="card plan" open={states.every((s) => !s.done)}>
-        <summary>
-          {side === 'all' ? 'The plan' : 'Your plan'}: {plan.count} {plan.count === 1 ? 'step' : 'steps'}
-          {plan.minutes > 0 && ` · about ${formatMinutes(plan.minutes)}`}
-        </summary>
-        <ol className="plan-list">
-          {plan.rows.map((row) =>
-            row.kind === 'theirs' ? (
-              <li key={row.key} className="plan-theirs">
-                {otherName === 'You' ? 'The other cook' : otherName}: {row.numbers.length === 1 ? 'step' : 'steps'} {listNumbers(row.numbers)}
-              </li>
-            ) : (
-              <li key={row.key} className={row.state.done ? 'is-done' : ''}>
-                <span className="plan-number">{row.state.number}.</span>
-                <span className="plan-text">
-                  {row.state.track === 'both' && side !== 'all' && <strong>Together: </strong>}
-                  {shortStep(row.state.step.text)}
-                </span>
-                {minutesOf(row.state) && <span className="plan-min">{formatMinutes(minutesOf(row.state))}</span>}
-              </li>
-            ),
-          )}
-        </ol>
-      </details>
 
       <section aria-labelledby="next-heading" className="two-chef-next">
         <div aria-live="polite" aria-atomic="true">
@@ -623,10 +595,14 @@ export default function TwoChef() {
             const yours = side === 'all' || state.track === side || state.track === 'both'
             if (!yours && !showTheirs) {
               return (
-                <li key={state.step.id} className={['theirs', 'is-reminder', state.done ? 'is-done' : ''].join(' ')}>
+                <li
+                  key={state.step.id}
+                  className={['theirs', 'is-reminder', state.done ? 'is-done' : '', otherOn?.step.id === state.step.id ? 'is-their-current' : '']
+                    .join(' ')
+                    .trim()}
+                >
                   <p className="step-owner">
-                    {otherOn && otherOn.step.id === state.step.id && `${otherName} is here · `}
-                    {whoHas(state.track)}
+                    <Owner state={state} here={otherOn?.step.id === state.step.id} />
                     {state.done && ' · done'}
                   </p>
                   <p className="step-reminder">{shortStep(state.step.text)}</p>
@@ -636,13 +612,19 @@ export default function TwoChef() {
             return (
               <li
                 key={state.step.id}
-                className={[yours ? '' : 'theirs', state.done ? 'is-done' : '', isNext(state) ? 'is-next' : ''].join(' ').trim()}
+                className={[
+                  yours ? '' : 'theirs',
+                  state.done ? 'is-done' : '',
+                  isNext(state) ? 'is-next' : '',
+                  !yours && otherOn?.step.id === state.step.id ? 'is-their-current' : '',
+                ]
+                  .join(' ')
+                  .trim()}
                 aria-current={isNext(state) ? 'step' : undefined}
               >
                 <p className="step-owner">
-                  {isNext(state) && 'Your next step · '}
-                  {!yours && otherOn && otherOn.step.id === state.step.id && `${otherName} is here · `}
-                  {whoHas(state.track)}
+                  {isNext(state) && <span className="next-label">Your next step</span>}
+                  <Owner state={state} here={!yours && otherOn?.step.id === state.step.id} />
                   {minutesOf(state) && ` · about ${formatMinutes(minutesOf(state))}`}
                 </p>
                 <p className="step-text">

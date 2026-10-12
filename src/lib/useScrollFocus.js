@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 
 // Marks the item of a list nearest the middle of the screen with
 // .in-focus as the page scrolls, so the step being read stands out.
-// The styling lives in CSS (and drops the motion for reduced motion).
+// Items marked .theirs (the other cook's steps) are skipped. The styling
+// lives in CSS (and drops the motion for reduced motion).
 export function useScrollFocus(ref, deps = []) {
   useEffect(() => {
     const list = ref.current
@@ -14,6 +15,8 @@ export function useScrollFocus(ref, deps = []) {
       let best = null
       let distance = Infinity
       for (const item of list.children) {
+        // The other cook's steps never take focus; yours do.
+        if (item.classList.contains('theirs')) continue
         const box = item.getBoundingClientRect()
         if (box.bottom < 0 || box.top > window.innerHeight) continue
         const d = box.top <= middle && box.bottom >= middle ? 0 : Math.min(Math.abs(box.top - middle), Math.abs(box.bottom - middle))

@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.24.0",
+    "date": "2026-10-11",
+    "notes": [
+      "Units are set once, in Settings (or when you set up), and every recipe and cooking mode follows them. In metric, cup amounts show in milliliters at any size; spoon measures stay spoons",
+      "Two chefs: the plan at the top is gone, since the step list already shows your steps in full and the other cook's as reminders",
+      "Two chefs: steps are labeled You (filled), the other cook (dashed), or Together, and the other cook's current step has a dashed outline"
+    ]
+  },
+  {
     "version": "0.23.0",
     "date": "2026-10-11",
     "notes": [

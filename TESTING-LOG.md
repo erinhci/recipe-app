@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-11 | US/Metric toggle and the Units setting changed nothing; the two-chef plan felt redundant; whose step is whose still not distinct enough | Units set once (Settings or setup) and applied everywhere, cups convert in metric; plan removed; You / other cook / Together labels (0.24.0) | See entry |
 | 2026-10-11 | Cooking screens review: "what does fold mean" isn't relevant; Ask on the left; no way to log a change mid-recipe; steps hard to scan. Plus the open severity 3s (the other cook's steps, overview, nutrition for what was made) and library filtering | Suggested questions per step, change log per cook with servings and nutrition, bold actions and amounts, scroll focus, two-chef plan and reminders, library search, sort, and filters (0.23.0) | See entry |
 | 2026-10-11 | Heuristic evaluation, round 1 (Library, Add a recipe, Stats, Settings): crowded cards, add button out of reach and limited, cluttered import, list-heavy stats, slow kitchen list, no permanent delete, odd Sign out placement, meaningless build code | Fixed in 0.22.0 | See entry |
 | 2026-10-11 | Erin: add photos now, limited so storage can't fill by accident, and both cooks can see and add them | Built: one photo per cook per meal, shrunk to about 300 KB, 500 per kitchen, synced (0.21.0) | See entry |
@@ -39,6 +40,45 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-11: Units that do something, and whose step is whose
+
+**What Erin found** (cooking egg bites in two-chef mode with Partner):
+
+- The US and Metric buttons on the recipe page didn't change any amounts,
+  and neither did Units in Settings: "it's a useless button." Units are
+  standard for a person, so they belong in Settings only, possibly chosen
+  during onboarding with your name.
+- "The whole recipe at the top is too much and redundant": the step list,
+  with your part in full and the other cook's condensed, already gives the
+  overview.
+- "The distinction between Brian's and my next steps still doesn't feel
+  distinct enough."
+- She was given the pan steps instead of the egg mixture; after a refresh
+  it was right. Not reproduced. A step handed over with "Give this step"
+  stays with the other cook for the rest of that cook (until Finish, or 6
+  hours), which would look like this.
+
+**Cause of the units bug.** Metric kept spoon measures as spoons, and also
+turned any small amount into spoons. At 2 servings every amount in the egg
+bites was small, so switching changed nothing.
+
+**Change (version 0.24.0).**
+
+| Finding | Change |
+| --- | --- |
+| Units buttons did nothing | In metric, amounts written in cups or fluid ounces show in milliliters at any size (a quarter cup at 2 of 6 servings is "20 ml", not "4 tsp"); weights show in grams. Spoon measures stay spoons, since they're the same everywhere |
+| Units in two places | The toggle is gone from the recipe page; Settings decides for every recipe and both cooking modes, with a hint saying so |
+| Onboarding | Setting up or joining a kitchen asks for measurements with your name, defaulting to US on US English phones and metric elsewhere |
+| Redundant plan | "Your plan" removed from two-chef mode |
+| Whose step is whose | Each step starts with a label: a filled "You", a dashed outline with the other cook's name, or "Together". The other cook's steps sit indented behind a dashed rule, and the step they're on has a dashed outline with "Brian is here" in the label. The step-in-view highlight only applies to your steps. Shape and fill carry the difference, not color |
+
+**How it was checked.** Unit tests for metric milliliters at small sizes.
+Two phones against a fake server: the plan card is gone, labels read
+"You", "Brian is here", and "Together", one dashed outline for the other
+cook's step, and no accessibility violations (axe). With metric set in
+Settings, the recipe page showed "225 g spaghetti" and had no units
+toggle.
 
 ## 2026-10-11: Cooking screens and the open severity 3s
 

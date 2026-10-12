@@ -11,6 +11,8 @@ export default function Setup() {
   const inviteCode = readPendingInvite()
   const [displayName, setDisplayName] = useState('')
   const [kitchenName, setKitchenName] = useState('Our Kitchen')
+  // US for US English phones, metric elsewhere; changeable in Settings.
+  const [units, setUnits] = useState(() => (/^en-US$/i.test(navigator.language || 'en-US') ? 'us' : 'metric'))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,6 +30,10 @@ export default function Setup() {
       return
     }
     clearPendingInvite()
+    if (units !== 'us') {
+      const { data: auth } = await supabase.auth.getUser()
+      await supabase.from('members').update({ unit_pref: units }).eq('user_id', auth.user.id)
+    }
     await refreshMember()
   }
 
@@ -65,6 +71,20 @@ export default function Setup() {
             />
           </div>
         )}
+
+        <fieldset className="field">
+          <legend>Measurements</legend>
+          {[
+            ['us', 'US (cups, ounces)'],
+            ['metric', 'Metric (milliliters, grams)'],
+          ].map(([value, label]) => (
+            <label key={value} className="choice" style={{ display: 'flex' }}>
+              <input type="radio" name="units" value={value} checked={units === value} onChange={() => setUnits(value)} />
+              {label}
+            </label>
+          ))}
+          <span className="hint">Every recipe shows amounts this way. You can change it in Settings.</span>
+        </fieldset>
 
         {error && (
           <p className="error" role="alert">

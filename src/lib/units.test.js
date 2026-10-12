@@ -63,6 +63,9 @@ test('converts between US and metric', () => {
   assert.equal(show(500, 'ml', 'milk', 1, 'us'), '2 cups')
   // spoons stay spoons in metric
   assert.equal(show(1, 'tbsp', 'oil', 1, 'metric'), '1 tbsp')
+  // a scaled-down cup amount is milliliters, not teaspoons
+  assert.equal(show(0.25, 'cup', 'broccoli', 1 / 3, 'metric'), '20 ml')
+  assert.equal(show(0.25, 'cup', 'broccoli', 1 / 3, 'us'), '4 tsp')
 })
 
 test('count items keep their words and use friendly fractions', () => {
