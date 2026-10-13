@@ -17,7 +17,7 @@ import { AddPhoto, PhotoThumb } from '../components/MealPhotos'
 import PhotoCarousel from '../components/PhotoCarousel'
 import MealDetails from '../components/MealDetails'
 import Icon from '../components/Icon'
-import { newestFirst, RECIPE_PHOTO_LIMIT, removeMealPhotos } from '../lib/photos'
+import { newestFirst, PHOTOS_PER_COOK, removeMealPhotos } from '../lib/photos'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 // cooked_on is a calendar date; read it as local noon so it never shifts a day.
@@ -204,8 +204,10 @@ export default function RecipeView() {
   const loggedByNames = (meal) => [...new Set(meal.entries.map((e) => nameFor(e.created_by)))].join(' and ')
   const stars = (n) => `${n}★`
 
-  // The Add photo slide adds to the latest meal, up to 20 photos per recipe.
-  const addPhotoDay = photos.length < RECIPE_PHOTO_LIMIT ? (meals[0]?.cooked_on ?? null) : null
+  // Each cook can add 3 photos to a recipe. The Add photo slide adds to the
+  // latest meal and says how many you have left.
+  const photosLeft = PHOTOS_PER_COOK - photos.filter((p) => p.added_by === member.user_id).length
+  const addPhotoDay = meals[0]?.cooked_on ?? null
   const ratingNote = [
     ...ratedMembers.map((m) => `${m === member.user_id ? 'You' : nameFor(m)} ${stars(summary.byMember[m])}`),
     meals.length > 0 ? `made ${meals.length}×` : 'not made yet',
@@ -244,6 +246,7 @@ export default function RecipeView() {
         photos={photos}
         photoBy={photoBy}
         addDay={addPhotoDay}
+        photosLeft={photosLeft}
         member={member}
         onStatus={setPhotoStatus}
       />
@@ -429,7 +432,7 @@ export default function RecipeView() {
           {ratingStatus}
         </p>
 
-        {finishedCooking && !myPhotoOn(finishedCooking.day) && photos.length < RECIPE_PHOTO_LIMIT && (
+        {finishedCooking && !myPhotoOn(finishedCooking.day) && photosLeft > 0 && (
           <div className="photo-prompt">
             <AddPhoto
               recipeId={recipe.id}
@@ -497,7 +500,7 @@ export default function RecipeView() {
                     {photosFor(meal.cooked_on).map((photo) => (
                       <PhotoThumb key={photo.id} photo={photo} recipeTitle={recipe.title} byName={photoBy(photo)} onStatus={setPhotoStatus} />
                     ))}
-                    {photos.length < RECIPE_PHOTO_LIMIT && (
+                    {photosLeft > 0 && (
                       <AddPhoto recipeId={recipe.id} cookedOn={meal.cooked_on} member={member} label="Add photo" onStatus={setPhotoStatus} />
                     )}
                   </span>

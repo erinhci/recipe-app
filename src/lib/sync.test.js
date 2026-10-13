@@ -241,11 +241,16 @@ test('replacing a photo swaps it out and keeps its meal', async () => {
   assert.equal(await db.photo_files.count(), 1)
 })
 
-test('a recipe keeps at most 20 photos', async () => {
-  const { RECIPE_PHOTO_LIMIT } = await import('./photos.js')
+test('each cook can add 3 photos to a recipe', async () => {
+  const { PHOTOS_PER_COOK } = await import('./photos.js')
   setOnline(false)
-  for (let i = 0; i < RECIPE_PHOTO_LIMIT; i++) await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
-  await assert.rejects(saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member), /20 photos/)
+  for (let i = 0; i < PHOTOS_PER_COOK; i++) await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await assert.rejects(saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-12', blob: jpeg() }, member), /3 photos/)
+  // The other cook still has their own 3.
+  await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, brianMember)
+  // Replacing doesn't need a free slot.
+  const [mine] = await db.meal_photos.where('recipe_id').equals('r1').filter((p) => p.added_by === member.user_id).toArray()
+  await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg(), replacing: mine }, member)
 })
 
 test('a photo removed before it was sent never reaches the server', async () => {

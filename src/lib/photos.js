@@ -4,13 +4,13 @@ import { enqueue, PHOTO_BUCKET, syncNow } from './sync.js'
 import { supabase } from './supabase.js'
 
 // Photos of finished dishes, each tied to a meal (a recipe on a date).
-// Anyone in the kitchen can add several, up to 20 per recipe and 500 per
-// kitchen. Photos are shrunk on the phone before saving, so the free 1 GB
+// Each cook can add up to 3 per recipe (so a recipe has at most 6, and
+// both cooks get the same share), and the kitchen keeps at most 500. Photos are shrunk on the phone before saving, so the free 1 GB
 // of storage holds the kitchen's limit many times over. The database
 // enforces the same limits (migration 0013).
 
 export const PHOTO_LIMIT = 500
-export const RECIPE_PHOTO_LIMIT = 20
+export const PHOTOS_PER_COOK = 3
 export const TARGET_BYTES = 300 * 1024
 export const MAX_BYTES = 500 * 1000
 const LONG_EDGE = 1280
@@ -81,18 +81,23 @@ export async function shrinkPhoto(file) {
 // Adds a photo of a meal. replacing: a photo to swap out (it keeps its
 // meal date and doesn't count against the limits).
 export async function addMealPhoto({ recipeId, cookedOn, file, replacing = null }, member) {
-  await checkLimit(recipeId, replacing)
+  await checkLimit(recipeId, member, replacing)
   const shrunk = await shrinkPhoto(file)
   return saveMealPhoto({ recipeId, cookedOn: replacing?.cooked_on ?? cookedOn, replacing, ...shrunk }, member)
 }
 
-// How many photos a recipe has, for the 20-per-recipe limit.
-export const recipePhotoCount = (recipeId) => db.meal_photos.where('recipe_id').equals(recipeId).count()
+// How many photos this cook has on a recipe, for the 3-per-cook limit.
+export const myPhotoCount = (recipeId, member) =>
+  db.meal_photos
+    .where('recipe_id')
+    .equals(recipeId)
+    .filter((p) => p.added_by === member.user_id)
+    .count()
 
-async function checkLimit(recipeId, replacing) {
+async function checkLimit(recipeId, member, replacing) {
   const freed = replacing ? 1 : 0
-  if ((await recipePhotoCount(recipeId)) - freed >= RECIPE_PHOTO_LIMIT) {
-    throw new Error(`This recipe has ${RECIPE_PHOTO_LIMIT} photos, the most it can keep. Remove one to add another.`)
+  if ((await myPhotoCount(recipeId, member)) - freed >= PHOTOS_PER_COOK) {
+    throw new Error(`You have ${PHOTOS_PER_COOK} photos on this recipe, the most each cook can add. Remove one to add another.`)
   }
   if ((await db.meal_photos.count()) - freed >= PHOTO_LIMIT) {
     throw new Error(`Your kitchen has ${PHOTO_LIMIT} photos, the most it can keep. Remove some to add more.`)
@@ -101,7 +106,7 @@ async function checkLimit(recipeId, replacing) {
 
 // Saves an already shrunk photo on this phone and queues it to send.
 export async function saveMealPhoto({ recipeId, cookedOn, blob, width = null, height = null, replacing = null }, member) {
-  await checkLimit(recipeId, replacing)
+  await checkLimit(recipeId, member, replacing)
   const id = crypto.randomUUID()
   const row = {
     id,

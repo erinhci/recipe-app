@@ -1312,3 +1312,5 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
   font-weight: 600;
 }
 .card .ingredient-section:first-of-type { margin-top: var(--space-2); }
+.carousel-add-note { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-muted); }
+.carousel-add.is-full { cursor: default; text-align: center; padding: 0 var(--space-6); }
