@@ -4,7 +4,7 @@ import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
 import { loadRecipe, saveRecipe } from '../lib/data'
 import OriginalPanel from '../components/OriginalPanel'
-import { ingredientToLine, ingredientsToText, parseIngredientText, parseSteps } from '../lib/ingredients'
+import { groupBySection, ingredientToLine, ingredientsToText, parseIngredientText, parseSteps } from '../lib/ingredients'
 import { CUISINES, MEAL_TYPES } from '../lib/constants'
 
 const SOURCE_TYPES = { images: 'photo', pdf: 'pdf', url: 'url', text: 'text' }
@@ -260,23 +260,22 @@ export default function RecipeEdit() {
                 {flagged === 1 ? 'it' : 'them'} before saving.
               </p>
             )}
-            <ul>
-              {parsed.map((ing, i) => (
-                <li
-                  key={i}
-                  className={ing.needs_review ? 'flagged' : undefined}
-                >
-                  {ing.section && (i === 0 || parsed[i - 1].section !== ing.section) && (
-                    <strong style={{ display: 'block', marginTop: i ? 'var(--space-2)' : 0 }}>{ing.section}</strong>
-                  )}
-                  {ing.quantity != null ? <strong>{ingredientToLine({ ...ing, item: '', prep_note: null }).trim()}</strong> : <em>no amount</em>}
-                  {' · '}
-                  {ing.item}
-                  {ing.prep_note ? ` (${ing.prep_note})` : ''}
-                  {ing.needs_review && <span className="sr-only"> (needs a look)</span>}
-                </li>
-              ))}
-            </ul>
+            {groupBySection(parsed).map((group, g) => (
+              <div key={g}>
+                {group.section && <h3 className="ingredient-section">{group.section}</h3>}
+                <ul>
+                  {group.items.map((ing, i) => (
+                    <li key={i} className={ing.needs_review ? 'flagged' : undefined}>
+                      {ing.quantity != null ? <strong>{ingredientToLine({ ...ing, item: '', prep_note: null }).trim()}</strong> : <em>no amount</em>}
+                      {' · '}
+                      {ing.item}
+                      {ing.prep_note ? ` (${ing.prep_note})` : ''}
+                      {ing.needs_review && <span className="sr-only"> (needs a look)</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </section>
         )}
 

@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.27.1",
+    "date": "2026-10-13",
+    "notes": [
+      "Recipe photos: tap a photo to see it with its options. Your own photos show an Edit tag and can be replaced or removed there. The last slide always says Add photo, for the latest meal you haven't added one to",
+      "Checking a recipe: section names like \"Sauce\" show as headings in \"How the ingredients were read\", not as bullet points"
+    ]
+  },
+  {
     "version": "0.27.0",
     "date": "2026-10-13",
     "notes": [

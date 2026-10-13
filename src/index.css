@@ -1296,3 +1296,19 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .badge-row { display: block; margin-top: var(--space-3); padding: var(--space-4) var(--space-2); border-radius: var(--radius); background: var(--color-subtle); color: var(--color-text); text-decoration: none; }
 .badge-row:hover { background: var(--color-subtle-hover); }
 .badge-row .meter { background: var(--color-bg); }
+
+/* Photos open for options; your own show an Edit tag */
+.carousel-open { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.carousel-open:focus-visible { outline-offset: -3px; }
+.carousel-edit {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.65);
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.card .ingredient-section:first-of-type { margin-top: var(--space-2); }

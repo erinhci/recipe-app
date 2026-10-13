@@ -204,7 +204,9 @@ export default function RecipeView() {
   const loggedByNames = (meal) => [...new Set(meal.entries.map((e) => nameFor(e.created_by)))].join(' and ')
   const stars = (n) => `${n}★`
 
-  const latestDay = meals[0]?.cooked_on ?? null
+  // The Add photo slide goes to the latest meal you haven't added a photo
+  // to. Your existing photos are changed by tapping them.
+  const addPhotoDay = meals.find((m) => !myPhotoOn(m.cooked_on))?.cooked_on ?? null
   const ratingNote = [
     ...ratedMembers.map((m) => `${m === member.user_id ? 'You' : nameFor(m)} ${stars(summary.byMember[m])}`),
     meals.length > 0 ? `made ${meals.length}×` : 'not made yet',
@@ -242,8 +244,7 @@ export default function RecipeView() {
         recipe={recipe}
         photos={photos}
         photoBy={photoBy}
-        addDay={latestDay}
-        addLabel={latestDay && myPhotoOn(latestDay) ? 'Replace your photo' : 'Add photo'}
+        addDay={addPhotoDay}
         member={member}
         onStatus={setPhotoStatus}
       />
