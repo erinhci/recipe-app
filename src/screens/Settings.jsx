@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
+import Icon from '../components/Icon'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useOnline } from '../lib/useOnline'
@@ -11,27 +12,47 @@ import RecentlyDeleted from '../components/RecentlyDeleted'
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
 
+// Sync sits on the title row: when it last synced, and a button to sync
+// now. Problems show in words under the title.
 function SyncStatus() {
-  const { state, error, lastSyncedAt } = useSyncStatus()
+  const { state, lastSyncedAt } = useSyncStatus()
   const text = {
-    idle: lastSyncedAt ? `Up to date as of ${timeFormat.format(new Date(lastSyncedAt))}.` : 'Not synced yet.',
+    idle: lastSyncedAt ? `Synced ${timeFormat.format(new Date(lastSyncedAt))}` : 'Not synced yet',
     syncing: 'Syncing…',
-    offline: "Offline. Changes are saved on this phone and sync when you're back online.",
-    error: /fetch|network|load failed/i.test(String(error))
-      ? "Couldn't reach the server. Changes are saved on this phone and will sync when the connection is back."
-      : "Some changes didn't sync. Try Sync now; if it keeps happening, the details are below.",
+    offline: 'Offline',
+    error: "Didn't sync",
   }[state]
   return (
-    <section className="card" aria-labelledby="sync-heading">
-      <h2 id="sync-heading">Sync</h2>
-      <p role="status">{text}</p>
-      {error && !/fetch|network|load failed/i.test(String(error)) && <p className="hint">Details: {String(error)}</p>}
-      <div className="actions">
-        <button className="btn btn-secondary" type="button" onClick={() => syncNow()} disabled={state === 'syncing'}>
-          Sync now
-        </button>
-      </div>
-    </section>
+    <div className="sync-status">
+      <span role="status" className="hint">
+        {text}
+      </span>
+      <button
+        className="btn btn-secondary icon-btn"
+        type="button"
+        aria-label="Sync now"
+        onClick={() => syncNow()}
+        disabled={state === 'syncing'}
+      >
+        <Icon name="sync" size={22} />
+      </button>
+    </div>
+  )
+}
+
+function SyncProblem() {
+  const { state, error } = useSyncStatus()
+  if (state === 'offline') {
+    return <p className="hint">Changes are saved on this phone and sync when you're back online.</p>
+  }
+  if (state !== 'error') return null
+  const network = /fetch|network|load failed/i.test(String(error))
+  return (
+    <p className="notice-line notice" style={{ padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius)' }}>
+      {network
+        ? "Couldn't reach the server. Changes are saved on this phone and will sync when the connection is back."
+        : `Some changes didn't sync. Try the sync button; if it keeps happening, tell us this: ${String(error)}`}
+    </p>
   )
 }
 
@@ -114,113 +135,118 @@ export default function Settings() {
   const kitchenFull = cooks.length >= 2
 
   return (
-    <Page title="Settings">
-      <section className="card" aria-labelledby="you-heading">
-        <h2 id="you-heading">You</h2>
-        <p>{member.display_name}</p>
-        <div className="field">
+    <Page title="Settings" aside={<SyncStatus />}>
+      <SyncProblem />
+      <ul className="settings-list plain-list">
+        <li className="settings-row-static">
+          <span>Name</span>
+          <span className="row-value">{member.display_name}</span>
+        </li>
+        <li className="settings-row-static">
           <label htmlFor="units">Units</label>
-          <select id="units" value={member.unit_pref} onChange={changeUnits} disabled={!online}>
-            <option value="us">US (cups, tablespoons, ounces)</option>
-            <option value="metric">Metric (grams, milliliters)</option>
+          <select id="units" className="row-select" value={member.unit_pref} onChange={changeUnits} disabled={!online}>
+            <option value="us">US</option>
+            <option value="metric">Metric</option>
           </select>
-          <span className="hint">
-            {online ? 'Used everywhere. Spoons stay spoons.' : 'Connect to change this.'}
-          </span>
-        </div>
-      </section>
+        </li>
+      </ul>
+      {!online && <p className="hint">Connect to change units.</p>}
 
-      <section className="card" aria-labelledby="kitchen-heading">
-        <h2 id="kitchen-heading">Your kitchen</h2>
-        {cooks.length > 0 && (
-          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-4)' }}>
-            {cooks.map((cook) => {
-              const isMe = cook.user_id === member.user_id
-              return (
-                <li
-                  key={cook.user_id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 'var(--space-3)',
-                    padding: 'var(--space-2) 0',
-                  }}
-                >
-                  <span>
-                    {cook.display_name}
-                    {isMe && <span className="hint"> (you)</span>}
-                  </span>
-                  <button className="btn btn-secondary" type="button" onClick={() => removeCook(cook)} disabled={!online}>
-                    {isMe ? (
-                      'Leave kitchen'
-                    ) : (
-                      <>
-                        Remove<span className="sr-only"> {cook.display_name}</span>
-                      </>
-                    )}
+      <details className="settings-row">
+        <summary>
+          <span>Kitchen</span>
+          <span className="row-value">
+            {cooks.map((c) => c.display_name).join(', ')}
+            <span className="chev" aria-hidden="true">
+              <Icon name="chevron" size={20} />
+            </span>
+          </span>
+        </summary>
+        <div className="row-body">
+          <ul className="plain-list divided" style={{ marginTop: 0 }}>
+            {cooks.map((cook) => (
+              <li key={cook.user_id}>
+                <span>
+                  {cook.display_name}
+                  {cook.user_id === member.user_id && <span className="hint"> (you)</span>}
+                </span>
+                {cook.user_id !== member.user_id && (
+                  <button className="link-btn" type="button" onClick={() => removeCook(cook)} disabled={!online}>
+                    Remove<span className="sr-only"> {cook.display_name}</span>
                   </button>
-                </li>
-              )
-            })}
+                )}
+              </li>
+            ))}
           </ul>
-        )}
-        {!kitchenFull && (
-          <>
-            <p>Invite the second cook with a one-time link. It works for 7 days.</p>
-            <button className="btn" type="button" onClick={makeInvite} disabled={!online}>
-              Create invite link
-            </button>
-            {inviteLink && (
-              <div className="field" style={{ marginTop: 'var(--space-4)' }}>
-                <label htmlFor="invite-link">Invite link</label>
-                <input id="invite-link" readOnly value={inviteLink} onFocus={(e) => e.target.select()} />
-                <button className="btn btn-secondary" type="button" onClick={copyInvite}>
-                  Copy link
-                </button>
-              </div>
-            )}
-          </>
-        )}
-        <p role="status">{message}</p>
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-      </section>
+          {!kitchenFull && (
+            <>
+              <p>Invite the second cook with a one-time link. It works for 7 days.</p>
+              <button className="btn" type="button" onClick={makeInvite} disabled={!online}>
+                Create invite link
+              </button>
+              {inviteLink && (
+                <div className="field" style={{ marginTop: 'var(--space-4)' }}>
+                  <label htmlFor="invite-link">Invite link</label>
+                  <input id="invite-link" readOnly value={inviteLink} onFocus={(e) => e.target.select()} />
+                  <button className="btn btn-secondary" type="button" onClick={copyInvite}>
+                    Copy link
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </details>
 
       <RecentlyDeleted />
 
-      <SyncStatus />
+      <details className="settings-row">
+        <summary>
+          <span>What's new</span>
+          <span className="row-value">
+            {current.version}
+            <span className="chev" aria-hidden="true">
+              <Icon name="chevron" size={20} />
+            </span>
+          </span>
+        </summary>
+        <div className="row-body">
+          <p className="hint">Released {releaseDate(current)}</p>
+          <ul>
+            {current.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+          <details>
+            <summary>Earlier versions</summary>
+            {releases.slice(1).map((release) => (
+              <div key={release.version} style={{ marginBottom: 'var(--space-3)' }}>
+                <p style={{ margin: 0, fontWeight: 600 }}>
+                  {release.version} <span className="hint">· {releaseDate(release)}</span>
+                </p>
+                <ul style={{ paddingLeft: 'var(--space-6)', margin: 'var(--space-1) 0 0' }}>
+                  {release.notes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </details>
+        </div>
+      </details>
 
-      <section aria-labelledby="version-heading" className="card">
-        <h2 id="version-heading">Version {current.version}</h2>
-        <p className="hint">Released {releaseDate(current)}</p>
-        <h3 style={{ fontSize: '1rem' }}>What's new</h3>
-        <ul>
-          {current.notes.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
-        <details>
-          <summary>Earlier versions</summary>
-          {releases.slice(1).map((release) => (
-            <div key={release.version} style={{ marginBottom: 'var(--space-3)' }}>
-              <p style={{ margin: 0, fontWeight: 600 }}>
-                {release.version} <span className="hint">· {releaseDate(release)}</span>
-              </p>
-              <ul style={{ paddingLeft: 'var(--space-6)', margin: 'var(--space-1) 0 0' }}>
-                {release.notes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </details>
-      </section>
+      <p role="status">{message}</p>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
 
-      <p className="page-end-actions">
+      {/* Ways out at the bottom: leaving the kitchen far left, away from Sign out. */}
+      <p className="actions settings-end">
+        <button className="link-btn" type="button" onClick={() => removeCook(cooks.find((c) => c.user_id === member.user_id) ?? member)} disabled={!online}>
+          Leave kitchen
+        </button>
         <button className="btn btn-secondary" type="button" onClick={signOut}>
           Sign out
         </button>

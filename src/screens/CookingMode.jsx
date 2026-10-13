@@ -12,7 +12,9 @@ import { db } from '../lib/db'
 import { localDate, logMeal } from '../lib/data'
 import { timeSummary } from '../lib/stats'
 import { scaleFactor } from '../lib/units'
-import { ingredientLine, ingredientsForStep } from '../lib/cooking'
+import { ingredientsForStep } from '../lib/cooking'
+import { useStepTimers } from '../lib/stepTimer'
+import { AllIngredients, NutritionPeek, OtherTimers, StepNeeds, StepTimer } from '../components/CookParts'
 import { useWakeLock } from '../lib/useWakeLock'
 import { useOnline } from '../lib/useOnline'
 import { DEFAULT_SERVINGS } from '../lib/constants'
@@ -46,6 +48,7 @@ export default function CookingMode() {
   const { member } = useAuth()
   const online = useOnline()
   const wakeLock = useWakeLock()
+  const timers = useStepTimers()
 
   const servings = Number(params.get('servings')) || DEFAULT_SERVINGS
   const system = member.unit_pref === 'metric' ? 'metric' : 'us'
@@ -136,7 +139,13 @@ export default function CookingMode() {
           .filter(Boolean)
           .join(' · ')}
       </p>
+      <NutritionPeek recipe={recipe} ingredients={ingredients} />
       <ServingsBar servings={servings} base={recipe.base_servings} onChange={changeServings} />
+      <OtherTimers
+        timers={timers}
+        currentId={step?.id}
+        onGoTo={(stepId) => setStepIndex(Math.max(0, steps.findIndex((s) => s.id === stepId)))}
+      />
 
       {steps.length === 0 ? (
         <>
@@ -152,21 +161,15 @@ export default function CookingMode() {
               <h2 id="step-heading" className="cook-count">
                 Step {current + 1} of {steps.length}
               </h2>
-              <p className="cook-step">
+            </div>
+            {/* What you need first, then what to do: the order people prep in. */}
+            <StepNeeds needed={needed} factor={factor} system={system} />
+            <div aria-live="polite" aria-atomic="true">
+              <p className={needed.length > 0 ? 'cook-step follows-needs' : 'cook-step'}>
                 <StepText text={step.text} ingredients={ingredients} factor={factor} system={system} />
               </p>
             </div>
-
-            {needed.length > 0 && (
-              <>
-                <h3>You'll need</h3>
-                <ul className="cook-needs">
-                  {needed.map((ing) => (
-                    <li key={ing.id}>{ingredientLine(ing, factor, system)}</li>
-                  ))}
-                </ul>
-              </>
-            )}
+            <StepTimer key={step.id} stepId={step.id} text={step.text} timers={timers} />
           </section>
 
           {/* The rest of the recipe stays readable without tapping, for
@@ -198,18 +201,7 @@ export default function CookingMode() {
             </details>
           )}
 
-          <details className="card">
-            <summary>
-              All ingredients
-            </summary>
-            <ul>
-              {ingredients.map((ing) => (
-                <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
-                  {ingredientLine(ing, factor, system)}
-                </li>
-              ))}
-            </ul>
-          </details>
+          <AllIngredients ingredients={ingredients} factor={factor} system={system} />
 
           <AskStep
             recipe={recipe}
@@ -224,7 +216,7 @@ export default function CookingMode() {
 
           <ChangeLog recipeId={recipe.id} member={member} />
 
-          <p className="actions start">
+          <p className="actions center">
             <button className="btn btn-secondary" type="button" onClick={() => finish(false)}>
               Stop cooking
             </button>

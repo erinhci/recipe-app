@@ -95,12 +95,3 @@ test('where the two parts meet next', async () => {
   assert.equal(meetAt(stepStates(steps, cook(['s1', 's2', 's3', 's4']))), null)
 })
 
-test('time left counts the longer part plus shared steps', async () => {
-  const { minutesLeft } = await import('./twoChef.js')
-  const timing = [{ minutes: 10 }, { minutes: 12 }, { minutes: 15 }, { minutes: 3 }, { minutes: 2 }]
-  // Pasta 10 + 12 + 2 = 24, sauce 15, together 3 -> 27
-  assert.equal(minutesLeft(stepStates(steps, cook()), timing), 27)
-  // After boiling: pasta 12 + 2 = 14, sauce 15, together 3 -> 18
-  assert.equal(minutesLeft(stepStates(steps, cook(['s1'])), timing), 18)
-  assert.equal(minutesLeft(stepStates(steps, cook()), undefined), null)
-})

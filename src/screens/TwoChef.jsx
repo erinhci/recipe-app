@@ -12,13 +12,16 @@ import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { localDate, logMeal, saveChefSplit } from '../lib/data'
 import { formatMinutes, timeSummary } from '../lib/stats'
+import Icon from '../components/Icon'
+import { AllIngredients, NutritionPeek, OtherTimers, StepNeeds, StepTimer } from '../components/CookParts'
+import { useStepTimers } from '../lib/stepTimer'
 import { scaleFactor } from '../lib/units'
-import { ingredientLine, ingredientsForStep } from '../lib/cooking'
+import { ingredientsForStep } from '../lib/cooking'
 import { invokeFunction } from '../lib/functions'
 import { useOnline } from '../lib/useOnline'
 import { useWakeLock } from '../lib/useWakeLock'
 import { DEFAULT_SERVINGS } from '../lib/constants'
-import { catchUpIds, currentOn, listNumbers, meetAt, minutesLeft, nextFor, otherSide, sideOf, splitIsCurrent, stepStates } from '../lib/twoChef'
+import { catchUpIds, currentOn, listNumbers, meetAt, nextFor, otherSide, sideOf, splitIsCurrent, stepStates } from '../lib/twoChef'
 import { claimChef, endCook, fetchCook, moveStep, setServings, setStepsDone, startCook, swapChefs, watchCook } from '../lib/twoChefLive'
 
 // How often to re-read the shared cook as a backup to live updates.
@@ -56,6 +59,7 @@ export default function TwoChef() {
   const { member } = useAuth()
   const online = useOnline()
   const wakeLock = useWakeLock()
+  const timers = useStepTimers()
   const urlServings = Number(params.get('servings')) || DEFAULT_SERVINGS
   const system = member.unit_pref === 'metric' ? 'metric' : 'us'
 
@@ -417,8 +421,8 @@ export default function TwoChef() {
   const next = nextFor(states, side)
   const otherOn = side !== 'all' ? currentOn(states, otherSide(side)) : null
   const otherName = live ? nameFor(side === 'a' ? cook.chef_b : cook.chef_a) : 'The other cook'
+  const myName = members.find((m) => m.user_id === me)?.display_name ?? member.display_name ?? 'You'
   const meet = meetAt(states)
-  const left = minutesLeft(states, timing)
   const minutesOf = (state) => timing?.[state.number - 1]?.minutes ?? null
   const cleanup = side !== 'all' ? names.while_waiting?.[side] ?? [] : []
   const isNext = (state) => next.kind === 'step' && next.state.step.id === state.step.id
@@ -459,10 +463,17 @@ export default function TwoChef() {
 
   return (
     <Page title={`${recipe.title}: two chefs`} close={{ label: 'Leave two-chef mode', onClick: leave }}>
+      <p className="mode-band">
+        <strong>
+          <Icon name="users" size={20} />
+          Two-chef mode
+        </strong>
+        {live && side !== 'all' && <span>{`${myName} and ${otherName}`}</span>}
+        {side === 'all' && <span>Both parts on this phone</span>}
+      </p>
       <p className="hint" style={{ marginBottom: 0 }}>
         {[
           timeSummary(recipe),
-          left != null && `about ${formatMinutes(left)} left`,
           wakeLock === 'failed' && 'Screen may dim. Tap anywhere to keep it on',
           wakeLock === 'unsupported' && "Screen may dim; this browser can't keep it on",
           !live && 'Offline: progress stays on this phone',
@@ -476,6 +487,8 @@ export default function TwoChef() {
         onChange={changeServings}
         note={live ? 'Same on both phones.' : null}
       />
+      <NutritionPeek recipe={recipe} ingredients={ingredients} />
+      <OtherTimers timers={timers} currentId={next.kind === 'step' ? next.state.step.id : null} />
       <div className="row-between">
         <p style={{ margin: 0 }}>
           {side === 'all' ? (
@@ -517,7 +530,9 @@ export default function TwoChef() {
                 {next.state.track === 'both' ? ' · together' : side === 'all' ? ` · ${names[next.state.track]}` : ''}
                 {minutesOf(next.state) && ` · about ${formatMinutes(minutesOf(next.state))}`}
               </h2>
-              <p className="cook-step">
+              {/* What you need first, then what to do: the order people prep in. */}
+              <StepNeeds needed={needed} factor={factor} system={system} />
+              <p className={needed.length > 0 ? 'cook-step follows-needs' : 'cook-step'}>
                 <StepText text={next.state.step.text} ingredients={ingredients} factor={factor} system={system} />
               </p>
               {unchecked.length > 0 && (
@@ -551,16 +566,7 @@ export default function TwoChef() {
         </div>
         {next.kind === 'step' && (
           <>
-            {needed.length > 0 && (
-              <>
-                <h3>You'll need</h3>
-                <ul className="cook-needs">
-                  {needed.map((ing) => (
-                    <li key={ing.id}>{ingredientLine(ing, factor, system)}</li>
-                  ))}
-                </ul>
-              </>
-            )}
+            <StepTimer key={next.state.step.id} stepId={next.state.step.id} text={next.state.step.text} timers={timers} />
             <button className="btn btn-large" type="button" onClick={() => toggleDone(next.state)}>
               Done with step {next.state.number}
             </button>
@@ -611,11 +617,26 @@ export default function TwoChef() {
                     .join(' ')
                     .trim()}
                 >
-                  <p className="step-owner">
-                    <Owner state={state} here={otherOn?.step.id === state.step.id} />
-                    {state.done && ' · done'}
-                  </p>
-                  <p className="step-reminder">{shortStep(state.step.text)}</p>
+                  {/* Tap to read the whole step without showing all of them. */}
+                  <details className="partner-step">
+                    <summary>
+                      <span className="step-owner">
+                        <span>
+                          <Owner state={state} here={otherOn?.step.id === state.step.id} />
+                          {state.done && ' · done'}
+                        </span>
+                        <span className="chev" aria-hidden="true">
+                          <Icon name="chevron" size={18} />
+                        </span>
+                      </span>
+                      <span className="step-reminder" style={{ display: 'block' }}>
+                        {shortStep(state.step.text)}
+                      </span>
+                    </summary>
+                    <p className="step-text">
+                      <StepText text={state.step.text} ingredients={ingredients} factor={factor} system={system} />
+                    </p>
+                  </details>
                 </li>
               )
             }
@@ -658,16 +679,7 @@ export default function TwoChef() {
         </ol>
       </section>
 
-      <details className="card">
-        <summary>All ingredients</summary>
-        <ul>
-          {ingredients.map((ing) => (
-            <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
-              {ingredientLine(ing, factor, system)}
-            </li>
-          ))}
-        </ul>
-      </details>
+      <AllIngredients ingredients={ingredients} factor={factor} system={system} />
 
       {askIndex != null && (
         <AskStep

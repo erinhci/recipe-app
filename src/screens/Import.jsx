@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Page from '../components/Page'
+import Icon from '../components/Icon'
 import Working from '../components/Working'
 import { useOnline } from '../lib/useOnline'
 import { draftToForm, importImages, importPdf, importUrl, prepareImages, textToForm } from '../lib/importRecipe'
@@ -20,7 +21,6 @@ export default function Import() {
   const online = useOnline()
 
   const [files, setFiles] = useState(null) // { kind: 'images' | 'pdf', list }
-  const [url, setUrl] = useState('')
   const [pasted, setPasted] = useState('')
   const [busy, setBusy] = useState('') // which source is working
   const [status, setStatus] = useState('')
@@ -53,7 +53,7 @@ export default function Import() {
         throw Object.assign(new Error(result.ok ? 'No recipe was found in that PDF.' : result.message), result)
       }
       if (source === 'url') {
-        const address = (chosen ?? url).trim()
+        const address = String(chosen ?? '').trim()
         const result = await importUrl(address)
         if (result.ok && hasRecipe(result.draft)) {
           return review(draftToForm(result.draft), { kind: 'url', url: address }, result.method)
@@ -112,19 +112,28 @@ export default function Import() {
     else readOnPhone(chosen)
   }
 
-  const validUrl = (text) => /^https?:\/\/\S+\.\S+/.test(text.trim())
+  const validUrl = (text) => /^https?:\/\/\S+\.\S+$/.test(text.trim())
 
-  // A pasted address is read right away; a typed one waits for Go.
-  function pasteUrl(event) {
+  // One field for both: a link is read by Gemini, anything else is sorted
+  // on the phone. A pasted link is read right away; typed text waits for
+  // the arrow.
+  function pasteIntoField(event) {
     const text = event.clipboardData?.getData('text') ?? ''
-    if (!validUrl(text) || !online || busy) return
+    if (!validUrl(text) || !online || busy || pasted.trim()) return
     event.preventDefault()
-    setUrl(text.trim())
+    setPasted(text.trim())
     readWithGemini('url', text.trim())
   }
 
-  function sortPasted(event) {
+  function submitField(event) {
     event.preventDefault()
+    const text = pasted.trim()
+    if (!text) return
+    if (validUrl(text)) {
+      if (online) readWithGemini('url', text)
+      else setFailure({ source: 'url', message: 'Links need a connection. Paste the recipe text instead, or try again online.' })
+      return
+    }
     review(textToForm(pasted), { kind: 'text' }, 'pasted')
   }
 
@@ -145,6 +154,9 @@ export default function Import() {
 
   return (
     <Page title="Add a recipe">
+      <p className="meta" style={{ fontSize: 'var(--text-md)' }}>
+        Bring it in however you have it. You check it before it's saved.
+      </p>
       {!online && (
         <p className="hint">
           You're offline. Links and Gemini need a connection, but this phone can still read screenshots and text PDFs, and you can paste or
@@ -156,91 +168,71 @@ export default function Import() {
         <Working label={status} typical={busy === 'url' ? 'a few seconds' : '5 to 15 seconds'} detail={progress} slowAfter={30} />
       )}
 
-      <section className="card import-card" aria-labelledby="file-heading">
-        <h2 id="file-heading">Screenshot, photo, or PDF</h2>
-        <p className="hint" id="file-hint">
-          Reading starts as soon as you choose. Up to 6 images in order, or one PDF.
-        </p>
-        <div className="actions">
-          <label htmlFor="files" className={`btn file-pick${busy ? ' is-busy' : ''}`} aria-disabled={busy ? true : undefined}>
-            <input
-              id="files"
-              className="sr-only"
-              type="file"
-              accept="image/*,application/pdf"
-              multiple
-              aria-describedby="file-hint"
-              disabled={!!busy}
-              onChange={chooseFiles}
-            />
-            {busy === 'file' ? `Reading ${chosenText}…` : 'Choose files'}
-          </label>
+      <form className="smart-add" onSubmit={submitField}>
+        <label htmlFor="pasted" className="smart-label">
+          Paste a link or the recipe
+        </label>
+        <div className="smart-field">
+          <textarea
+            id="pasted"
+            rows={4}
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+            onPaste={pasteIntoField}
+            aria-describedby="pasted-hint"
+            placeholder="https://… or the whole recipe"
+          />
+          <button className="smart-go" type="submit" aria-label={busy === 'url' ? 'Reading' : 'Read recipe'} disabled={!pasted.trim() || !!busy}>
+            <Icon name="arrow" size={22} />
+          </button>
         </div>
+        <p id="pasted-hint" className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
+          {online ? 'Links read right away. Pasted text works offline.' : 'Pasted text works offline. Links need a connection.'}
+        </p>
+        {failureBlock('url')}
+      </form>
+
+      <section aria-labelledby="from-heading" className="add-from">
+        <h2 id="from-heading" className="hint" style={{ fontSize: 'var(--text-sm)', margin: '0 0 var(--space-2)' }}>
+          Or add from
+        </h2>
+        <p className="sr-only" id="file-hint">
+          Reading starts as soon as you choose.
+        </p>
+        <div className="source-tiles">
+          {[
+            { id: 'camera', icon: 'camera', name: 'Camera', note: 'Snap the page', accept: 'image/*', capture: 'environment' },
+            { id: 'photos', icon: 'image', name: 'Photos', note: 'Up to 6', accept: 'image/*', multiple: true },
+            { id: 'pdf', icon: 'file', name: 'PDF', note: 'One file', accept: 'application/pdf' },
+          ].map((source) => (
+            <label key={source.id} className={`source-tile${busy ? ' is-busy' : ''}`} aria-disabled={busy ? true : undefined}>
+              <input
+                className="sr-only"
+                type="file"
+                accept={source.accept}
+                capture={source.capture}
+                multiple={source.multiple}
+                aria-describedby="file-hint"
+                disabled={!!busy}
+                onChange={chooseFiles}
+              />
+              <Icon name={source.icon} size={26} />
+              <span className="source-text">
+                <span className="source-name">{source.name}</span>
+                <span className="source-note">{source.note}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {busy === 'file' && <p className="hint">Reading {chosenText}…</p>}
         {failureBlock('file')}
       </section>
 
-      <section className="card import-card" aria-labelledby="link-heading">
-        <h2 id="link-heading">
-          <label htmlFor="url">Link</label>
-        </h2>
-        <form
-          className="inline-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            readWithGemini('url', url)
-          }}
-        >
-          <div className="field">
-            <input
-              id="url"
-              type="url"
-              inputMode="url"
-              placeholder="https://"
-              aria-describedby="url-hint"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onPaste={pasteUrl}
-            />
-          </div>
-          <button className="btn" type="submit" disabled={!validUrl(url) || !online || !!busy}>
-            {busy === 'url' ? 'Reading…' : 'Go'}
-          </button>
-        </form>
-        <p className="hint" id="url-hint" style={{ margin: 'var(--space-2) 0 0' }}>
-          {online ? 'Paste a recipe page and it reads right away.' : 'Links need a connection.'}
-        </p>
-        {failureBlock('url')}
-      </section>
-
-      <section className="card import-card" aria-labelledby="paste-heading">
-        <h2 id="paste-heading">
-          <label htmlFor="pasted">Paste the text</label>
-        </h2>
-        <form onSubmit={sortPasted}>
-          <div className="field" style={{ margin: 0 }}>
-            <textarea
-              id="pasted"
-              rows={4}
-              value={pasted}
-              onChange={(e) => setPasted(e.target.value)}
-              aria-describedby="pasted-hint"
-              placeholder="Paste the whole recipe here"
-            />
-          </div>
-          <p id="pasted-hint" className="hint" style={{ margin: 'var(--space-2) 0 var(--space-3)' }}>
-            The app sorts it for you to check. Works offline.
-          </p>
-          <div className="actions" style={{ marginBottom: 0 }}>
-            <button className="btn" type="submit" disabled={!pasted.trim()}>
-              Sort it
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <Link className="btn btn-secondary btn-block" to="/recipe/new">
-        Type it in yourself
-      </Link>
+      <p className="actions center">
+        <Link className="link-btn" to="/recipe/new" style={{ display: 'inline-flex', alignItems: 'center' }}>
+          Type it in yourself
+        </Link>
+      </p>
     </Page>
   )
 }

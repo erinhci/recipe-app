@@ -9,6 +9,10 @@
     error text 5.8 / 7.5 · button text 11.4 / 12.2 (on hover)
   Dividers between items (#d4d4d4 / #3d3d3d) are decorative and carry no
   meaning, so they're exempt.
+  Grouped areas use a soft gray fill (subtle) instead of an outline.
+  Inputs keep their 2px border so they can be found (1.4.11). Secondary
+  buttons and chips are a gray fill; their label or icon identifies them.
+  Muted text on the gray fill: 7.0 / 7.0.
   Red is used only for errors, always with words, never as the only signal.
 */
 :root {
@@ -16,7 +20,8 @@
 
   --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-subtle: #f2f2f2;       /* notices and hover fills */
+  --color-subtle: #f2f2f2;       /* grouped areas, secondary buttons, notices */
+  --color-subtle-hover: #e6e6e6;
   --color-text: #111111;
   --color-text-muted: #525252;
   --color-accent: #111111;       /* primary buttons, links, selected states */
@@ -32,7 +37,7 @@
   --text-sm: 0.9375rem;
   --text-md: 1.0625rem;
   --text-lg: 1.375rem;
-  --text-xl: 1.75rem;
+  --text-xl: 1.875rem;
   --text-cook: 1.75rem;          /* cooking mode step text */
 
   --space-1: 0.25rem;
@@ -44,7 +49,8 @@
   --space-8: 2rem;
   --space-10: 2.5rem;
 
-  --radius: 0.5rem;
+  --radius: 1rem;                /* cards, grouped areas, tiles, sheets */
+  --radius-sm: 0.75rem;          /* buttons and inputs */
   --target: 44px;                /* minimum touch target */
   --nav-height: 64px;
   --cook-nav-height: 80px;
@@ -56,6 +62,7 @@
     --color-bg: #121212;
     --color-surface: #1c1c1c;
     --color-subtle: #262626;
+    --color-subtle-hover: #333333;
     --color-text: #f2f2f2;
     --color-text-muted: #b0b0b0;
     --color-accent: #f2f2f2;
@@ -161,7 +168,7 @@ textarea {
   min-height: var(--target);
   min-width: var(--target);
   padding: 0 var(--space-4);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   border: 2px solid var(--color-accent);
   background: var(--color-accent);
   color: var(--color-accent-text);
@@ -174,13 +181,19 @@ textarea {
   border-color: var(--color-accent-hover);
 }
 .btn-secondary {
-  background: transparent;
-  color: var(--color-accent);
+  /* A soft gray fill with no outline. The label or icon identifies it,
+     and the hit area stays at least 44px. */
+  background: var(--color-subtle);
+  border-color: transparent;
+  color: var(--color-text);
 }
 .btn-secondary:hover:not(:disabled) {
-  background: var(--color-subtle);
-  border-color: var(--color-accent);
+  background: var(--color-subtle-hover);
+  border-color: transparent;
 }
+/* On a gray area, secondary controls sit on the page color instead. */
+:is(.card, .notice, .working, .flagged, .cook-needs-card) :is(.btn-secondary, .chip-btn) { background: var(--color-bg); }
+:is(.card, .notice, .working, .flagged, .cook-needs-card) :is(.btn-secondary, .chip-btn):hover:not(:disabled) { background: var(--color-subtle-hover); }
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -214,7 +227,7 @@ textarea {
 .meta { color: var(--color-text-muted); font-size: var(--text-sm); margin: 0 0 var(--space-3); }
 .notice {
   background: var(--color-subtle);
-  border: 1px solid var(--color-border);
+  border: 0;
 }
 
 .field {
@@ -232,7 +245,7 @@ textarea {
   min-height: var(--target);
   padding: var(--space-2) var(--space-3);
   border: 2px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
 }
 .field input:focus,
@@ -274,8 +287,8 @@ textarea {
 .page > .card + section.card { margin-top: var(--space-4); }
 
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-divider);
+  background: var(--color-subtle);
+  border: 0;
   border-radius: var(--radius);
   padding: var(--space-4) var(--space-5);
   margin: 0 0 var(--space-3);
@@ -321,7 +334,7 @@ textarea {
   height: calc(var(--nav-height) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-divider);
   z-index: 10;
 }
 .bottom-nav ul {
@@ -399,7 +412,7 @@ textarea {
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
   background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-divider);
   z-index: 10;
 }
 .cook-nav .btn {
@@ -461,7 +474,7 @@ textarea {
   margin: var(--space-3) 0;
   border-radius: var(--radius);
   background: var(--color-subtle);
-  border: 1px solid var(--color-divider);
+  border: 0;
 }
 .spinner {
   flex: none;
@@ -561,7 +574,7 @@ textarea {
   min-height: var(--target);
   padding: var(--space-2) var(--space-3);
   border: 2px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   resize: vertical;
 }
@@ -667,15 +680,15 @@ ul + h3,
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
+  border: 0;
   border-radius: 50%;
-  background: var(--color-bg);
+  background: var(--color-subtle);
   color: var(--color-text);
   font-size: 1.75rem;
   line-height: 1;
   cursor: pointer;
 }
-.close-btn:hover { border-color: var(--color-text); }
+.close-btn:hover { background: var(--color-subtle-hover); }
 .servings-bar { display: flex; flex-direction: column; gap: var(--space-1); margin: var(--space-2) 0; }
 .scaled-amount { font-weight: 700; }
 
@@ -736,7 +749,7 @@ ul + h3,
   width: 56px;
   height: 56px;
   padding: 0;
-  border: 1px solid var(--color-divider);
+  border: 0;
   border-radius: calc(var(--radius) / 2);
   overflow: hidden;
   background: var(--color-subtle);
@@ -764,14 +777,14 @@ ul + h3,
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3);
-  border: 1px solid var(--color-divider);
+  border: 0;
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-subtle);
   color: var(--color-text);
   text-decoration: none;
   min-height: 104px;
 }
-.recipe-card:hover { border-color: var(--color-border); }
+.recipe-card:hover { background: var(--color-subtle-hover); }
 .recipe-card-photo {
   flex: none;
   width: 80px;
@@ -783,7 +796,7 @@ ul + h3,
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-subtle);
+  background: var(--color-bg);
   color: var(--color-text-muted);
   font-size: 1.75rem;
   font-weight: 600;
@@ -824,9 +837,9 @@ ul + h3,
   flex-direction: column;
   gap: 2px;
   padding: var(--space-3);
-  border: 1px solid var(--color-divider);
+  border: 0;
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-subtle);
   min-width: 0;
 }
 .stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
@@ -876,7 +889,8 @@ ul + h3,
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-divider);
+  border: 0;
+  background: var(--color-subtle);
   border-radius: 999px;
   font-size: var(--text-sm);
 }
@@ -908,15 +922,15 @@ ul + h3,
   width: 100%;
   min-height: var(--target);
   padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle);
   color: var(--color-text);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
-.chip-btn:hover:not(:disabled) { background: var(--color-subtle); }
+.chip-btn:hover:not(:disabled) { background: var(--color-subtle-hover); }
 .chip-btn:disabled { opacity: 0.6; cursor: progress; }
 .small-link { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; flex: none; }
 
@@ -926,14 +940,14 @@ ul + h3,
 
 /* One cook in the log */
 .meal-details { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-1); font-size: var(--text-sm); }
-.meal-servings select { width: auto; min-height: var(--target); padding: 0 var(--space-2); font: inherit; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: calc(var(--radius) / 2); }
+.meal-servings select { width: auto; min-height: var(--target); padding: 0 var(--space-2); font: inherit; color: var(--color-text); background: var(--color-surface); border: 2px solid var(--color-border); border-radius: var(--radius-sm); }
 .meal-changes { list-style: disc; margin: 0; padding-left: var(--space-5); }
 .meal-changes > li + li { margin-top: var(--space-1); }
 .meal-nutrition { color: var(--color-text-muted); }
 .meal-details .link-btn { align-self: flex-start; }
 
 /* Library search, sort, and filters */
-.library-tools { display: flex; gap: var(--space-2); align-items: stretch; }
+.library-tools { display: flex; gap: var(--space-2); align-items: stretch; margin-bottom: var(--space-4); }
 .library-tools .field { margin: 0; }
 .library-tools .field:first-child { flex: 1; min-width: 0; }
 .library-sort select { width: auto; max-width: 10rem; }
@@ -950,9 +964,9 @@ ul + h3,
 .filter-chip {
   min-height: var(--target);
   padding: 0 var(--space-4);
-  border: 1px solid var(--color-border);
+  border: 0;
   border-radius: 999px;
-  background: var(--color-surface);
+  background: var(--color-subtle);
   color: var(--color-text);
   font: inherit;
   font-size: var(--text-sm);
@@ -1003,7 +1017,215 @@ fieldset.field legend { font-weight: 600; padding: 0; margin-bottom: var(--space
 .heading-note { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-muted); margin-left: var(--space-1); }
 .notice-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
 .nutrient-tiles { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
-.nutrient-tiles > li { margin: 0; display: flex; flex-direction: column; padding: var(--space-3) var(--space-2); border: 1px solid var(--color-divider); border-radius: var(--radius); text-align: center; }
+.nutrient-tiles > li { margin: 0; display: flex; flex-direction: column; padding: var(--space-3) var(--space-2); border: 0; border-radius: var(--radius-sm); background: var(--color-subtle); text-align: center; }
 .nutrient-value { font-size: 1.25rem; font-weight: 700; }
 .nutrient-label { font-size: 0.8125rem; color: var(--color-text-muted); }
 .cook-actions .btn { padding-left: var(--space-3); padding-right: var(--space-3); white-space: nowrap; }
+
+/* Tiles inside a gray area sit on the page color so they don't disappear */
+:is(.card, .notice, .cook-needs-card, .nut-peek) :is(.nutrient-tiles > li, .stat-tile) { background: var(--color-bg); }
+
+/* Cook modes: the step's ingredients, nutrition at a glance, timers */
+.cook-needs-card {
+  background: var(--color-subtle);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  margin: var(--space-3) 0 var(--space-4);
+}
+.needs-heading { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--text-md); }
+.cook-needs-card .cook-needs { padding: 0; margin: var(--space-2) 0 var(--space-1); }
+.cook-needs-card .cook-needs > li { padding: var(--space-2) 0; margin: 0; border-bottom: 1px solid var(--color-divider); }
+.cook-needs-card .cook-needs > li:last-child { border-bottom: 0; }
+.cook-needs-card .small-link { display: inline-flex; align-items: center; min-height: var(--target); }
+.cook-step.follows-needs { margin-top: 0; }
+
+.nut-peek { background: var(--color-subtle); border-radius: var(--radius); margin: var(--space-3) 0; }
+.nut-peek > summary { justify-content: space-between; gap: var(--space-3); min-height: 48px; padding: 0 var(--space-4); font-weight: 400; font-size: var(--text-sm); list-style: none; }
+.nut-peek > summary::-webkit-details-marker { display: none; }
+.nut-peek .muted { color: var(--color-text-muted); white-space: nowrap; }
+.nut-peek .chev { display: flex; color: var(--color-text-muted); transition: transform 160ms ease; }
+.nut-peek[open] .chev { transform: rotate(180deg); }
+.nut-body { padding: 0 var(--space-4) var(--space-3); }
+.nut-body .nutrient-tiles { margin-bottom: var(--space-2); }
+
+.step-timer { margin: 0 0 var(--space-4); }
+.timer-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-subtle);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: left;
+}
+button.timer-pill { cursor: pointer; padding-right: var(--space-5); }
+button.timer-pill:hover { background: var(--color-subtle-hover); }
+.timer-length { margin-left: auto; font-variant-numeric: tabular-nums; }
+.timer-clock { font-size: 1.75rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.timer-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--color-divider); overflow: hidden; }
+.timer-bar > span { display: block; height: 100%; background: var(--color-accent); }
+.timer-inner-btn {
+  flex: none;
+  min-height: var(--target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.timer-pill.is-done { background: var(--color-accent); color: var(--color-accent-text); }
+.timer-pill.is-done .timer-done-text { flex: 1; }
+.timer-pill.is-done .timer-inner-btn { background: transparent; color: var(--color-accent-text); border: 2px solid var(--color-accent-text); }
+.timer-note { margin: var(--space-1) 0 0 var(--space-4); font-size: var(--text-sm); color: var(--color-text-muted); }
+.other-timers { margin: var(--space-3) 0 0; }
+.other-timers > li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-1) var(--space-4); border-radius: var(--radius); background: var(--color-subtle); }
+.other-timers > li + li { margin-top: var(--space-2); }
+.other-timers > li.is-done { background: var(--color-accent); color: var(--color-accent-text); }
+.other-timers > li.is-done .link-btn { color: var(--color-accent-text); }
+
+/* Two-chef mode: a band so the mode is obvious at a glance */
+.mode-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--target);
+  margin: 0 0 var(--space-3);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+.mode-band strong { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; }
+.mode-band { flex-wrap: wrap; padding-top: var(--space-1); padding-bottom: var(--space-1); }
+
+/* The other cook's steps, shortened: tap one to read it in full */
+.partner-step > summary { display: block; min-height: var(--target); font-weight: 400; list-style: none; }
+.partner-step > summary::-webkit-details-marker { display: none; }
+.partner-step .step-owner { display: flex; align-items: center; gap: var(--space-1); }
+.partner-step .chev { display: flex; margin-left: auto; color: var(--color-text-muted); transition: transform 160ms ease; }
+.partner-step[open] .chev { transform: rotate(180deg); }
+.partner-step[open] .step-reminder { display: none; }
+.partner-step .step-text { color: var(--color-text); }
+.actions.center { justify-content: center; margin-top: var(--space-8); }
+
+/* Library: icon buttons for filter and sort, filters in a bottom sheet */
+.icon-btn { position: relative; width: var(--target); min-width: var(--target); padding: 0; flex: none; }
+.icon-btn-count {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 999px; background: var(--color-accent); color: var(--color-accent-text);
+  font-size: 0.75rem; line-height: 20px; text-align: center;
+}
+.icon-select select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+.icon-select:has(select:focus-visible) { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.library-count:empty { display: none; }
+.sheet {
+  width: 100%;
+  max-width: var(--page-width);
+  max-height: 85dvh;
+  margin: auto auto 0;
+  padding: var(--space-5) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.sheet::backdrop { background: rgb(0 0 0 / 0.5); }
+.sheet .sheet-close { position: static; }
+.sheet-group { margin-top: var(--space-5); }
+.sheet-group h3 { margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
+.filter-chips.in-sheet { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
+.sheet .actions { margin-top: var(--space-6); }
+
+/* Settings: one plain list of rows; longer ones open in place */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.page-head h1 { margin: 0; }
+.sync-status { display: flex; align-items: center; gap: var(--space-2); }
+.settings-list { margin: 0; }
+.settings-row-static,
+.settings-row > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 56px;
+  margin: 0;
+  border-bottom: 1px solid var(--color-divider);
+  font-weight: 600;
+}
+.settings-row-static label { font-weight: 600; }
+.settings-row { margin: 0; }
+.page > details.settings-row { margin-top: 0; }
+.settings-row > summary { list-style: none; }
+.settings-row > summary::-webkit-details-marker { display: none; }
+.row-value { display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm); font-weight: 400; text-align: right; }
+.settings-row .chev { display: flex; transition: transform 160ms ease; }
+.settings-row[open] > summary .chev { transform: rotate(180deg); }
+.settings-row[open] > summary { border-bottom: 0; }
+.row-body { padding: 0 0 var(--space-4); border-bottom: 1px solid var(--color-divider); }
+.row-select { min-height: var(--target); padding: 0 var(--space-3); border: 2px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-weight: 400; }
+.settings-end { margin-top: var(--space-10); }
+
+/* Add a recipe: one smart field, then sources as tiles */
+.smart-label { display: block; font-weight: 600; margin-bottom: var(--space-2); }
+.smart-field { position: relative; }
+.smart-field textarea {
+  display: block;
+  width: 100%;
+  min-height: 132px;
+  padding: var(--space-3) 64px var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  resize: vertical;
+}
+.smart-field textarea:focus { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.smart-go {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target);
+  height: var(--target);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  cursor: pointer;
+}
+.smart-go:disabled { opacity: 0.45; cursor: not-allowed; }
+.page > section.add-from { margin-top: var(--space-6); }
+.source-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.source-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 112px;
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--color-subtle);
+  cursor: pointer;
+}
+.source-tile:hover { background: var(--color-subtle-hover); }
+.source-tile:focus-within { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.source-tile.is-busy { cursor: progress; opacity: 0.7; }
+.source-text { display: flex; flex-direction: column; gap: 2px; }
+.source-name { font-weight: 600; line-height: 1.25; }
+.source-note { font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.3; }
+.row-body .divided > li:last-child { border-bottom: 0; }
+.page > details.nut-peek { margin-top: var(--space-3); }

@@ -49,6 +49,26 @@ const PATHS = {
       <path d="M16 14.2a5 5 0 0 1 5.5 4.8" />
     </>
   ),
+  meals: <path d="M9 3v7a2 2 0 0 0 4 0V3M11 10v11M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9" />,
+  chevron: <path d="M6 9l6 6 6-6" />,
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+  filter: <path d="M4 6h16M7 12h10M10 18h4" />,
+  sort: <path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5" />,
+  sync: <path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18.5 3v4.2h-4.2M5.5 21v-4.2h4.2" />,
+  camera: (
+    <>
+      <path d="M4 8.5h3.2l1.8-2.8h6l1.8 2.8H20V19H4z" />
+      <circle cx="12" cy="13.2" r="3.6" />
+    </>
+  ),
+  image: (
+    <>
+      <path d="M4 5h16v14H4zM4 16l5-5 4 4 2.5-2.5L20 17" />
+      <circle cx="15.5" cy="9" r="1.6" />
+    </>
+  ),
+  file: <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />,
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
 }
 
 export default function Icon({ name, size = 20 }) {

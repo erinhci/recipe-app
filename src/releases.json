@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.26.0",
+    "date": "2026-10-13",
+    "notes": [
+      "A cleaner look: softer corners, gray fills instead of outlines, and quieter secondary buttons",
+      "Cooking: the step's ingredients now sit in their own card above the step, nutrition is one tap away, and steps that wait 3 minutes or more have a timer that keeps running when you move on",
+      "Two-chef mode has a band at the top so it's clear which mode you're in, the other cook's steps open with a tap, and the time-left estimate is gone",
+      "Library: filter and sort are two buttons next to search; filters open in a sheet",
+      "Add a recipe: one field for a link or pasted text, then Camera, Photos and PDF",
+      "Settings is one short list; Kitchen, Recently deleted and What's new open in place, and sync is a button by the title"
+    ]
+  },
+  {
     "version": "0.25.2",
     "date": "2026-10-13",
     "notes": [

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
+import Icon from '../components/Icon'
 import { db } from '../lib/db'
 import { groupMeals, recipeRatings } from '../lib/stats'
 import { newestFirst } from '../lib/photos'
@@ -9,6 +10,11 @@ import { PhotoImg } from '../components/MealPhotos'
 import { SORTS, filterAndSort, filterOptions } from '../lib/library'
 
 const oneDecimal = (n) => Math.round(n * 10) / 10
+const GROUPS = [
+  { group: 'made', label: 'Status' },
+  { group: 'meal', label: 'Meal' },
+  { group: 'cuisine', label: 'Cuisine' },
+]
 
 // The search, sort, and chips are remembered on this phone.
 const VIEW_KEY = 'library-view'
@@ -70,6 +76,17 @@ export default function Library() {
   const narrowed = Boolean(view.query.trim() || filters.length)
   const toggle = (key) =>
     setView((v) => ({ ...v, filters: v.filters.includes(key) ? v.filters.filter((k) => k !== key) : [...v.filters, key] }))
+  const sortLabel = SORTS.find((s) => s.value === view.sort)?.label ?? SORTS[0].label
+
+  // Filters live in a sheet, opened from the filter button, so the list
+  // starts higher. A native dialog keeps focus inside and closes on Escape.
+  const sheet = useRef(null)
+  const filterButton = useRef(null)
+  const openSheet = () => sheet.current?.showModal()
+  const closeSheet = () => {
+    sheet.current?.close()
+    filterButton.current?.focus()
+  }
 
   return (
     <Page title="Library">
@@ -97,47 +114,92 @@ export default function Library() {
                 onChange={(e) => setView((v) => ({ ...v, query: e.target.value }))}
               />
             </div>
-            <div className="field library-sort">
-              <label htmlFor="library-sort" className="sr-only">
-                Sort by
-              </label>
-              <select id="library-sort" value={view.sort} onChange={(e) => setView((v) => ({ ...v, sort: e.target.value }))}>
+            {options.length > 1 && (
+              <button
+                ref={filterButton}
+                type="button"
+                className="btn btn-secondary icon-btn"
+                aria-haspopup="dialog"
+                aria-label={filters.length ? `Filter recipes, ${filters.length} on` : 'Filter recipes'}
+                onClick={openSheet}
+              >
+                <Icon name="filter" size={22} />
+                {filters.length > 0 && (
+                  <span className="icon-btn-count" aria-hidden="true">
+                    {filters.length}
+                  </span>
+                )}
+              </button>
+            )}
+            {/* A native picker behind the sort icon: the phone's own list. */}
+            <span className="btn btn-secondary icon-btn icon-select">
+              <Icon name="sort" size={22} />
+              <select
+                aria-label={`Sort: ${sortLabel}`}
+                value={view.sort}
+                onChange={(e) => setView((v) => ({ ...v, sort: e.target.value }))}
+              >
                 {SORTS.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
                   </option>
                 ))}
               </select>
-            </div>
+            </span>
           </div>
-          {options.length > 1 && (
-            <ul className="filter-chips" aria-label="Filters">
-              {options.map((option) => (
-                <li key={option.key}>
-                  <button
-                    type="button"
-                    className="filter-chip"
-                    aria-pressed={filters.includes(option.key)}
-                    onClick={() => toggle(option.key)}
-                  >
-                    {option.label}
-                    <span className="chip-count"> {option.count}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* Only when narrowed: how many show, and a way back to all. */}
           <p className="hint library-count" role="status">
-            {narrowed ? `${shown.length} of ${recipes.length} recipes` : `${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}`}
             {narrowed && (
               <>
-                {' · '}
+                {shown.length} of {recipes.length} recipes ·{' '}
                 <button className="link-btn" type="button" onClick={() => setView((v) => ({ ...v, query: '', filters: [] }))}>
                   Clear
                 </button>
               </>
             )}
           </p>
+          <dialog ref={sheet} className="sheet" aria-labelledby="filter-title" onClick={(e) => e.target === sheet.current && closeSheet()}>
+            <div className="row-between">
+              <h2 id="filter-title" style={{ margin: 0 }}>
+                Filter recipes
+              </h2>
+              <button className="close-btn sheet-close" type="button" aria-label="Close filters" onClick={closeSheet}>
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+            {GROUPS.map(({ group, label }) => {
+              const inGroup = options.filter((o) => o.group === group)
+              if (inGroup.length === 0) return null
+              return (
+                <div key={group} role="group" aria-labelledby={`filter-${group}`} className="sheet-group">
+                  <h3 id={`filter-${group}`}>{label}</h3>
+                  <ul className="filter-chips in-sheet">
+                    {inGroup.map((option) => (
+                      <li key={option.key}>
+                        <button
+                          type="button"
+                          className="filter-chip"
+                          aria-pressed={filters.includes(option.key)}
+                          onClick={() => toggle(option.key)}
+                        >
+                          {option.label}
+                          <span className="chip-count"> {option.count}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+            <div className="actions">
+              <button className="btn btn-secondary" type="button" onClick={() => setView((v) => ({ ...v, filters: [] }))} disabled={!filters.length}>
+                Clear all
+              </button>
+              <button className="btn" type="button" onClick={closeSheet}>
+                Show {shown.length} {shown.length === 1 ? 'recipe' : 'recipes'}
+              </button>
+            </div>
+          </dialog>
           {shown.length === 0 && <p>No recipes match. Try fewer filters or another word.</p>}
           <ul className="recipe-list">
             {shown.map((recipe) => (
