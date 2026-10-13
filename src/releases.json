@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.29.0",
+    "date": "2026-10-13",
+    "notes": [
+      "Avatars: each cook has one, shown together in a scene at the top of Settings. Tap it to change outfits, hats, the scene and your pose together",
+      "Badges unlock new outfits, hats, scenes and poses. The Badges page says what each one unlocks and what's next",
+      "Pick your own color in Settings. It marks your steps in two-chef mode, with your avatar's face on each step",
+      "Notes can be liked and replied to",
+      "New welcome, sign-in and setup screens, one question at a time",
+      "Needs the newest database update (migration 0014) for colors, avatars, likes and replies to sync"
+    ]
+  },
+  {
     "version": "0.28.2",
     "date": "2026-10-13",
     "notes": [

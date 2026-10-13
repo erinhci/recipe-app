@@ -42,6 +42,13 @@ db.version(5).stores({
   photo_files: 'id',
 })
 
+// The kitchen itself (its name and shared scene) and likes on notes
+// (migration 0014).
+db.version(6).stores({
+  kitchens: 'id',
+  note_likes: 'id, note_id',
+})
+
 export async function getMeta(key) {
   const row = await db.meta.get(key)
   return row?.value

@@ -20,6 +20,7 @@ export function setSyncClientForTests(fake) {
 // offline, whichever change reaches Supabase last wins.
 
 export const SYNCED_TABLES = [
+  'kitchens',
   'members',
   'recipes',
   'ingredients',
@@ -29,6 +30,7 @@ export const SYNCED_TABLES = [
   'cook_log',
   'ratings',
   'meal_photos',
+  'note_likes',
 ]
 
 export const PHOTO_BUCKET = 'meal-photos'
@@ -126,12 +128,17 @@ async function pushOutbox() {
     // 'insert' is for insert-only tables such as notes: the database allows
     // adding rows there but not changing them, so a resend after a dropped
     // connection skips rows that already arrived instead of updating them.
+    // 'update' is for rows that can be changed but never added from the
+    // app, such as the kitchen and a cook's own member row.
+    const { id: rowId, ...fields } = entry.payload
     const { error } =
       entry.op === 'delete'
         ? await query.delete().eq('id', entry.payload.id)
         : entry.op === 'insert'
           ? await query.upsert(entry.payload, { ignoreDuplicates: true })
-          : await query.upsert(entry.payload)
+          : entry.op === 'update'
+            ? await query.update(fields).eq('id', rowId)
+            : await query.upsert(entry.payload)
     if (error) {
       if (isNetworkError(error)) throw error
       // A table or column from a migration that hasn't been run yet: keep

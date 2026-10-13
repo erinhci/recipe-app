@@ -8,7 +8,7 @@ import UpdateBanner from './components/UpdateBanner'
 import WhatsNew from './components/WhatsNew'
 import Page from './components/Page'
 import SignIn from './screens/SignIn'
-import Setup from './screens/Setup'
+import Setup, { setupPending } from './screens/Setup'
 import Join from './screens/Join'
 import Library from './screens/Library'
 import Settings from './screens/Settings'
@@ -19,6 +19,7 @@ import RecipeEdit from './screens/RecipeEdit'
 import CookingMode from './screens/CookingMode'
 import TwoChef from './screens/TwoChef'
 import Stats, { BadgesPage } from './screens/Stats'
+import Closet from './screens/Closet'
 import NoteEdit from './screens/NoteEdit'
 import { startSync } from './lib/sync'
 
@@ -68,7 +69,9 @@ function Shell() {
     )
   }
 
-  if (!member) {
+  // No kitchen yet, or part-way through setup (the kitchen is made at step
+  // 2, and the last steps still follow).
+  if (!member || setupPending(session.user.id)) {
     return (
       <Routes>
         {joinRoute}
@@ -97,6 +100,7 @@ function Shell() {
         <Route path="/recipe/:id/note/:noteId" element={<NoteEdit />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/badges" element={<BadgesPage />} />
+        <Route path="/avatar" element={<Closet />} />
         <Route path="/settings" element={<Settings />} />
         <Route
           path="*"

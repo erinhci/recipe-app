@@ -5,7 +5,9 @@ import Page from '../components/Page'
 import { groupBySection } from '../lib/ingredients'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
-import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, rateRecipe } from '../lib/data'
+import { deleteMealLog, deleteRecipe, localDate, logMeal, rateRecipe } from '../lib/data'
+import Notes, { notesSummary } from '../components/Notes'
+import { useKitchenPeople } from '../lib/useKitchen'
 import { displayIngredient, scaleFactor } from '../lib/units'
 import { DEFAULT_SERVINGS } from '../lib/constants'
 import { useOnline } from '../lib/useOnline'
@@ -31,7 +33,6 @@ const siteName = (url) => {
     return 'Original source'
   }
 }
-const shortDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
 
 // One part of the recipe page that opens and closes. The heading sits in
 // the summary, so the outline still reads Ingredients, Nutrition, Steps.
@@ -58,6 +59,7 @@ export default function RecipeView() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { member } = useAuth()
+  const people = useKitchenPeople(member.user_id)
 
   const data = useLiveQuery(async () => {
     const recipe = await db.recipes.get(id)
@@ -74,13 +76,13 @@ export default function RecipeView() {
     const ratings = await db.ratings.where('cook_log_id').anyOf(cookLog.map((c) => c.id)).toArray()
     // Short records of which notes changed this recipe (no recipe copies).
     const changeRecords = await db.recipe_versions.where('recipe_id').equals(id).toArray()
-    return { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords, photos: newestFirst(photos) }
+    const likes = await db.note_likes.where('note_id').anyOf(notes.map((n) => n.id)).toArray()
+    return { recipe, ingredients, steps, notes, likes, members, cookLog, ratings, changeRecords, photos: newestFirst(photos) }
   }, [id])
 
   const [servings, setServings] = useState(DEFAULT_SERVINGS)
   // Units come from Settings (chosen when setting up).
   const system = member.unit_pref === 'metric' ? 'metric' : 'us'
-  const [noteText, setNoteText] = useState('')
   const online = useOnline()
   const location = useLocation()
   // Set when cooking mode's Finish just logged today's meal.
@@ -131,7 +133,7 @@ export default function RecipeView() {
     )
   }
 
-  const { recipe, ingredients, steps, notes, members, cookLog, ratings, changeRecords, photos } = data
+  const { recipe, ingredients, steps, notes, likes, members, cookLog, ratings, changeRecords, photos } = data
   // Which notes led to a recipe change (kept with the version saved then).
   const changesFromNote = new Map()
   for (const version of changeRecords) {
@@ -212,19 +214,11 @@ export default function RecipeView() {
     ...ratedMembers.map((m) => `${m === member.user_id ? 'You' : nameFor(m)} ${stars(summary.byMember[m])}`),
     meals.length > 0 ? `made ${meals.length}×` : 'not made yet',
   ].join(' · ')
-  const noteCount = notes.length
   const nutritionNote = (() => {
     if (!recipe.nutrition?.items?.length) return null
     const per = (key) => recipe.nutrition.items.reduce((sum, item) => sum + (Number(item[key]) || 0), 0) / (Number(recipe.base_servings) || 1)
     return `${Math.round(per('calories'))} cal · ${Math.round(per('protein_g'))} g protein per serving`
   })()
-
-  async function handleAddNote(event) {
-    event.preventDefault()
-    if (!noteText.trim()) return
-    await addNote(recipe.id, noteText, member)
-    setNoteText('')
-  }
 
   return (
     <Page
@@ -519,93 +513,17 @@ export default function RecipeView() {
         )}
       </Section>
 
-      <Section id="notes" title="Notes" note={noteCount ? `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : null} open>
-        {notes.length === 0 ? (
-          <p className="hint">No notes yet.</p>
-        ) : (
-          <ul className="comments">
-            {notes.map((note) => {
-              const mine = note.author_id === member.user_id
-              const used = changesFromNote.get(note.id)
-              // Notes the app used to post after a change ("Changed the recipe
-              // from ..."). They describe a change already made, so they get
-              // no "Turn into a recipe change".
-              const appNote = /^Changed the recipe from .+'s note:/.test(note.body)
-              const name = nameFor(note.author_id)
-              const deleteButton = mine && (
-                <button
-                  className="link-btn"
-                  type="button"
-                  onClick={async () => {
-                    if (window.confirm('Delete this note?')) await deleteNote(note.id)
-                  }}
-                >
-                  Delete<span className="sr-only"> this note</span>
-                </button>
-              )
-              if (appNote) {
-                return (
-                  <li key={note.id} className="comment comment-app">
-                    <p className="hint" style={{ margin: 0 }}>
-                      {note.body.replace(/^Changed the recipe from .+?'s note: /, 'Recipe updated: ')} ·{' '}
-                      {shortDate.format(new Date(note.created_at))}
-                    </p>
-                    {deleteButton && <div className="comment-actions">{deleteButton}</div>}
-                  </li>
-                )
-              }
-              return (
-                <li key={note.id} className="comment">
-                  <span className="avatar" aria-hidden="true">
-                    {name.slice(0, 1).toUpperCase()}
-                  </span>
-                  <div className="comment-body">
-                    <p className="comment-meta">
-                      <strong>{name}</strong> <span className="hint">{shortDate.format(new Date(note.created_at))}</span>
-                      {note.cooked_on && <span className="hint"> · changed while cooking</span>}
-                    </p>
-                    <p style={{ margin: 0 }}>{note.body}</p>
-                    {used && (
-                      <p className="hint" style={{ margin: 'var(--space-1) 0 0' }}>
-                        ✓ Used to change the recipe{used.summary ? `: ${used.summary}` : ''} ({nameFor(used.version.created_by)},{' '}
-                        {shortDate.format(new Date(used.version.created_at))})
-                      </p>
-                    )}
-                    <div className="comment-actions">
-                      {!used && (
-                        <button
-                          className="link-btn"
-                          type="button"
-                          disabled={!online}
-                          onClick={() => navigate(`/recipe/${recipe.id}/note/${note.id}`)}
-                        >
-                          Turn into a recipe change
-                        </button>
-                      )}
-                      {deleteButton}
-                    </div>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-        {!online && notes.length > 0 && <p className="hint">Turning a note into a recipe change needs the internet.</p>}
-        <form onSubmit={handleAddNote} className="comment-form">
-          <label htmlFor="note" className="sr-only">
-            Add a note
-          </label>
-          <textarea
-            id="note"
-            rows={2}
-            placeholder="Add a note…"
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-          />
-          <button className="btn" type="submit" disabled={!noteText.trim()}>
-            Post
-          </button>
-        </form>
+      <Section id="notes" title="Notes" note={notesSummary(notes)} open>
+        <Notes
+          recipe={recipe}
+          notes={notes}
+          likes={likes}
+          member={member}
+          people={people}
+          nameFor={nameFor}
+          changesFromNote={changesFromNote}
+          online={online}
+        />
       </Section>
 
       {(recipe.source_name || recipe.source_url) && (

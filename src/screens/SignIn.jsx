@@ -1,45 +1,104 @@
-import { useState } from 'react'
-import Page from '../components/Page'
+import { useEffect, useRef, useState } from 'react'
+import Icon from '../components/Icon'
+import Scene from '../components/Scene'
 import { supabase } from '../lib/supabase'
 import { readPendingInvite } from '../lib/invite'
 
-// Email and password sign-in. No email is sent, so it works without a
-// custom email sender and stays inside the home-screen app on iPhone.
-// New sign-ups are turned off in Supabase once both cooks have accounts.
+// The screens before an account: a welcome with two ways in, then
+// create an account or sign in (email and password; no email is sent, so
+// it works inside the home-screen app on iPhone). The main button sits at
+// the bottom, in thumb reach. New sign-ups are turned off in Supabase once
+// both cooks have accounts.
 export default function SignIn() {
   const invited = Boolean(readPendingInvite())
-  // Someone arriving from an invite link most likely needs a new account.
-  const [mode, setMode] = useState(invited ? 'signup' : 'signin') // signin | signup
+  const [screen, setScreen] = useState('welcome') // welcome | signup | signin
+  const headingRef = useRef(null)
+
+  useEffect(() => {
+    document.title = `${{ welcome: 'Welcome', signup: 'Create your account', signin: 'Sign in' }[screen]} · Our Kitchen`
+    // Like every screen: focus starts on the heading, so a screen reader
+    // says where you are.
+    headingRef.current?.focus()
+  }, [screen])
+
+  if (screen === 'welcome') {
+    return (
+      <main id="main" className="page flow-page">
+        <div className="flow-intro">
+          <p className="eyebrow">Our Kitchen</p>
+          <h1 ref={headingRef} tabIndex={-1}>
+            Recipes you cook together
+          </h1>
+          <p className="flow-lede">Save recipes from anywhere, split the steps between two cooks, and keep notes on what you changed.</p>
+        </div>
+        <Scene cooks={[{ name: 'One cook' }, { name: 'another' }]} pose="wave" caption={false} />
+        <div className="flow-foot">
+          <button className="btn btn-large" type="button" onClick={() => setScreen('signup')}>
+            Create an account
+          </button>
+          <button className="btn btn-secondary btn-large" type="button" onClick={() => setScreen('signin')}>
+            Sign in
+          </button>
+          <p className="hint flow-note">
+            {invited
+              ? "You've been invited to a shared kitchen. Create an account or sign in to join it."
+              : 'Got an invite from your partner? Open their link to join their kitchen.'}
+          </p>
+        </div>
+      </main>
+    )
+  }
+
+  return <AccountForm mode={screen} headingRef={headingRef} onSwitch={setScreen} onBack={() => setScreen('welcome')} />
+}
+
+function AccountForm({ mode, headingRef, onSwitch, onBack }) {
+  const isSignUp = mode === 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const isSignUp = mode === 'signup'
+  const [error, setError] = useState({ field: null, text: '' })
 
   async function handleSubmit(event) {
     event.preventDefault()
     setBusy(true)
-    setError('')
+    setError({ field: null, text: '' })
     const credentials = { email: email.trim(), password }
     const { error: authError } = isSignUp
       ? await supabase.auth.signUp(credentials)
       : await supabase.auth.signInWithPassword(credentials)
     setBusy(false)
-    if (authError) setError(authError.message)
+    // Errors show under the field they're about.
+    if (authError) {
+      const field = /password/i.test(authError.message) && !/invalid login/i.test(authError.message) ? 'password' : 'email'
+      setError({ field, text: authError.message })
+    }
     // On success, AuthProvider picks up the new session automatically.
   }
 
-  function switchMode() {
-    setMode(isSignUp ? 'signin' : 'signup')
-    setError('')
-  }
+  const errorFor = (field) =>
+    error.field === field && (
+      <span id={`${field}-error`} className="error field-error" role="alert">
+        {error.text}
+      </span>
+    )
 
   return (
-    <Page title={isSignUp ? 'Create your account' : 'Sign in'}>
-      {invited && <p>You've been invited to a shared kitchen. Sign in or create an account to join it.</p>}
-
-      <form onSubmit={handleSubmit} noValidate>
+    <main id="main" className="page flow-page">
+      <button className="back-link" type="button" onClick={onBack}>
+        <span className="back-chev">
+          <Icon name="chevron" size={20} />
+        </span>
+        Back
+      </button>
+      <div className="flow-intro">
+        <h1 ref={headingRef} tabIndex={-1}>
+          {isSignUp ? 'Create your account' : 'Welcome back'}
+        </h1>
+        <p className="flow-lede">{isSignUp ? 'Then a few quick questions to set up your kitchen.' : 'Sign in to your kitchen.'}</p>
+      </div>
+      <form onSubmit={handleSubmit} noValidate className="flow-form">
         <div className="field">
           <label htmlFor="email">Email</label>
           <input
@@ -50,9 +109,11 @@ export default function SignIn() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={error.field === 'email' || undefined}
+            aria-describedby={error.field === 'email' ? 'email-error' : undefined}
           />
+          {errorFor('email')}
         </div>
-
         <div className="field">
           <label htmlFor="password">Password</label>
           <input
@@ -63,46 +124,32 @@ export default function SignIn() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            aria-describedby={isSignUp ? 'password-hint' : undefined}
+            aria-invalid={error.field === 'password' || undefined}
+            aria-describedby={[isSignUp ? 'password-hint' : null, error.field === 'password' ? 'password-error' : null].filter(Boolean).join(' ') || undefined}
           />
           {isSignUp && (
             <span id="password-hint" className="hint">
-              At least 8 characters. Your phone can save it for you.
+              At least 8 characters.
             </span>
           )}
-          <label style={{ fontWeight: 400, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minHeight: 'var(--target)' }}>
-            <input
-              type="checkbox"
-              checked={showPassword}
-              onChange={(e) => setShowPassword(e.target.checked)}
-             
-            />
+          {errorFor('password')}
+          <label className="check-row">
+            <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
             Show password
           </label>
         </div>
-
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="actions">
-          <button
-            className="btn"
-            type="submit"
-            disabled={busy || !email.trim() || password.length < (isSignUp ? 8 : 1)}
-          >
+        <div className="flow-foot">
+          <button className="btn btn-large" type="submit" disabled={busy || !email.trim() || password.length < (isSignUp ? 8 : 1)}>
             {busy ? 'One moment…' : isSignUp ? 'Create account' : 'Sign in'}
           </button>
+          <p className="flow-switch">
+            {isSignUp ? 'Have an account?' : 'New here?'}{' '}
+            <button className="link-btn" type="button" onClick={() => onSwitch(isSignUp ? 'signin' : 'signup')}>
+              {isSignUp ? 'Sign in' : 'Create an account'}
+            </button>
+          </p>
         </div>
       </form>
-
-      <p style={{ marginTop: 'var(--space-6)' }}>
-        <button className="btn btn-secondary" type="button" onClick={switchMode}>
-          {isSignUp ? 'I already have an account' : 'Create an account'}
-        </button>
-      </p>
-    </Page>
+    </main>
   )
 }

@@ -71,16 +71,20 @@ const PATHS = {
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  heart: <path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z" />,
+  reply: <path d="M10 7L5 12l5 5M5 12h9a5 5 0 0 1 5 5v1" />,
+  link: <path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7l-1 1M13.5 10.5a4 4 0 0 0-5.7 0L5 13.3a4 4 0 0 0 5.7 5.7l1-1" />,
 }
 
-export default function Icon({ name, size = 20 }) {
+// filled: a solid shape (a liked heart), for icons drawn as one closed path.
+export default function Icon({ name, size = 20, filled = false }) {
   return (
     <svg
       className="icon"
       viewBox="0 0 24 24"
       width={size}
       height={size}
-      fill="none"
+      fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth="1.75"
       strokeLinecap="round"

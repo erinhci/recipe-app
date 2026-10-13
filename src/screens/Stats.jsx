@@ -6,6 +6,8 @@ import Page from '../components/Page'
 import { db } from '../lib/db'
 import { localDate } from '../lib/data'
 import { computeStats, MILESTONES } from '../lib/stats'
+import { rewardFor } from '../lib/avatars'
+import Avatar from '../components/Avatar'
 
 const timeText = (hours) => {
   if (hours < 1) return { value: Math.round(hours * 60), unit: 'min' }
@@ -118,7 +120,17 @@ const ICONS = {
     </>
   ),
 }
-const UNIT = { meals: 'meals', cuisines: 'cuisines', hours: 'hours' }
+ICONS.joined = <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />
+ICONS.rated = ICONS.joined
+ICONS.together = (
+  <>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <circle cx="17" cy="9" r="2.5" />
+    <path d="M16 14.2a5 5 0 0 1 5.5 4.8" />
+  </>
+)
+const UNIT = { joined: '', meals: 'meals', cuisines: 'cuisines', hours: 'hours', together: 'two-chef cooks', rated: 'recipes rated' }
 
 // Earned milestones as filled badges; the next one on each track as an
 // outlined badge with how close you are.
@@ -142,7 +154,8 @@ function badgeRow(stats) {
   return [...earned, ...next]
 }
 
-export function Badges({ badges }) {
+// showRewards: add what each badge unlocks for the avatars (Badges page).
+export function Badges({ badges, showRewards = false }) {
   return (
     <ul className="badges">
       {badges.map((badge) => {
@@ -168,6 +181,12 @@ export function Badges({ badges }) {
               <span className="sr-only">{badge.earned ? 'Earned: ' : 'Next: '}</span>
               {badge.label}
             </span>
+            {showRewards && rewardFor(badge) && (
+              <span className="badge-reward">
+                {badge.earned ? 'Unlocked: ' : 'Unlocks: '}
+                {rewardFor(badge).label}
+              </span>
+            )}
             {!badge.earned && (
               <>
                 <span className="meter" aria-hidden="true">
@@ -268,7 +287,8 @@ function MissingTime({ stats }) {
   )
 }
 
-// Every badge, earned and next, opened from the row on Stats.
+// Every badge, earned and next, opened from the row on Stats. The closest
+// badge with a reward leads, with a preview of what it unlocks.
 export function BadgesPage() {
   const stats = useLiveQuery(async () => {
     const [recipes, ingredients, cookLog, ratings] = await Promise.all([
@@ -280,25 +300,48 @@ export function BadgesPage() {
     return computeStats({ recipes, ingredients, cookLog, ratings, today: localDate() })
   }, [])
   const all = stats ? allBadges(stats) : []
+  const earnedCount = all.filter((b) => b.earned).length
+  const nextUp = all
+    .filter((b) => !b.earned && rewardFor(b))
+    .sort((a, b) => b.current / b.threshold - a.current / a.threshold)[0]
   return (
-    <Page title="Badges">
-      <p className="meta">
-        <Link to="/stats">Back to Stats</Link>
-      </p>
+    <Page title="Badges" back={{ to: '/stats', label: 'Stats' }}>
       {stats === undefined ? (
         <p role="status">Loading…</p>
       ) : (
         <>
-          <p className="hint">
-            {all.filter((b) => b.earned).length} earned. Each one marks something you've cooked together.
-          </p>
+          <p className="hint">{earnedCount} earned. Badges unlock outfits, hats, poses and scenes for your avatars in Settings.</p>
+          {nextUp && <NextUp badge={nextUp} />}
           <h2>Earned</h2>
-          <Badges badges={all.filter((b) => b.earned)} />
+          <Badges badges={all.filter((b) => b.earned)} showRewards />
           <h2 className="subheading">Still to earn</h2>
-          <Badges badges={all.filter((b) => !b.earned)} />
+          <Badges badges={all.filter((b) => !b.earned)} showRewards />
         </>
       )}
     </Page>
+  )
+}
+
+// "Next up": how far to go, and a picture of the reward.
+function NextUp({ badge }) {
+  const reward = rewardFor(badge)
+  const left = badge.kind === 'hours' ? Math.ceil((badge.threshold - badge.current) * 10) / 10 : badge.threshold - badge.current
+  const unit = { meals: left === 1 ? 'meal' : 'meals', cuisines: left === 1 ? 'cuisine' : 'cuisines', hours: left === 1 ? 'hour' : 'hours', together: left === 1 ? 'two-chef cook' : 'two-chef cooks', rated: left === 1 ? 'recipe to rate' : 'recipes to rate' }[badge.kind]
+  const preview = { outfit: { outfit: reward.id }, hat: { hat: reward.id } }[reward.type]
+  return (
+    <section className="next-up" aria-labelledby="next-up-title">
+      <Badges badges={[badge]} />
+      <div className="next-up-text">
+        <span className="eyebrow">Next up</span>
+        <p id="next-up-title" className="next-up-title">
+          {left} more {unit}
+        </p>
+        <p className="next-up-reward">
+          {preview && <Avatar size={64} {...preview} />}
+          Unlocks the {reward.label.charAt(0).toLowerCase() + reward.label.slice(1)}
+        </p>
+      </div>
+    </section>
   )
 }
 

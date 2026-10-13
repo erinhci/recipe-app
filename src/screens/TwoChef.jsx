@@ -15,6 +15,8 @@ import { formatMinutes, timeSummary } from '../lib/stats'
 import Icon from '../components/Icon'
 import { AllIngredients, NutritionPeek, OtherTimers, StepNeeds, StepTimer } from '../components/CookParts'
 import { useStepTimers } from '../lib/stepTimer'
+import { useKitchenPeople } from '../lib/useKitchen'
+import { AvatarFace } from '../components/Avatar'
 import { scaleFactor } from '../lib/units'
 import { ingredientLine, ingredientsForStep } from '../lib/cooking'
 import { invokeFunction } from '../lib/functions'
@@ -60,6 +62,7 @@ export default function TwoChef() {
   const online = useOnline()
   const wakeLock = useWakeLock()
   const timers = useStepTimers()
+  const people = useKitchenPeople(member.user_id)
   const urlServings = Number(params.get('servings')) || DEFAULT_SERVINGS
   const system = member.unit_pref === 'metric' ? 'metric' : 'us'
 
@@ -285,16 +288,34 @@ export default function TwoChef() {
   // The server's assignment wins; this phone's own pick covers offline.
   const side = local.side === 'all' ? 'all' : liveSide ?? local.side ?? null
   const factor = scaleFactor(recipe.base_servings, servings)
-  // Who a step belongs to, as a label: a filled "You", an outlined name
-  // for the other cook, or "Together". Shape and fill carry the
-  // difference, not color.
+  // Who a step belongs to, as a label: "You" filled in your color, the
+  // other cook dashed in theirs, or "Together" outlined, each led by the
+  // cook's avatar face. Fill, line style and words carry the difference,
+  // not color alone.
+  const myCook = people?.me
+  const theirCook = people?.partner
+  const face = (cook) => cook && <AvatarFace look={cook.look} color={cook.color} />
+  const pillColor = (cook) => (cook ? { '--pill-color': `var(--cook-${cook.color})` } : undefined)
   const Owner = ({ state, here }) => {
-    if (state.track === 'both') return <span className="owner-pill is-together">Together</span>
+    if (state.track === 'both')
+      return (
+        <span className="owner-pill is-together">
+          <span className="owner-faces">
+            {face(myCook)}
+            {face(theirCook)}
+          </span>
+          Together
+        </span>
+      )
     const mine = side === 'all' || state.track === side
     if (side === 'all') return <span className="owner-pill is-you">{names[state.track]}</span>
+    const who = mine ? myCook : theirCook
     return (
       <>
-        <span className={`owner-pill ${mine ? 'is-you' : 'is-theirs'}`}>{mine ? 'You' : here ? `${otherName} is here` : otherName}</span>
+        <span className={`owner-pill ${mine ? 'is-you' : 'is-theirs'}`} style={pillColor(who)}>
+          {face(who)}
+          {mine ? 'You' : here ? `${otherName} is here` : otherName}
+        </span>
         {names[state.track]}
       </>
     )
@@ -375,7 +396,7 @@ export default function TwoChef() {
 
   async function finish() {
     const today = localDate()
-    const { alreadyLogged } = await logMeal({ recipeId: id, cookedOn: today, servings }, member)
+    const { alreadyLogged } = await logMeal({ recipeId: id, cookedOn: today, servings, twoChef: true }, member)
     if (live && cook.id) await endCook(cook.id)
     writeLocal(id, null)
     navigate(backToRecipe, { replace: true, state: { finishedCooking: { day: today, alreadyLogged } } })

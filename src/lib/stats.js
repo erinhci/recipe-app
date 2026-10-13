@@ -6,10 +6,14 @@ import { keyWords } from './cooking.js'
 // Staples that would top the ingredient list for every kitchen.
 const STAPLES = new Set(['salt', 'water', 'pepper', 'black pepper', 'kosher salt', 'ice'])
 
+// Badges, in the order they show. 'joined' is earned by setting up.
 export const MILESTONES = [
+  { kind: 'joined', thresholds: [1], label: () => 'Signed up' },
   { kind: 'meals', thresholds: [1, 5, 10, 25, 50, 100], label: (n) => (n === 1 ? 'First meal logged' : `${n} meals cooked`) },
   { kind: 'cuisines', thresholds: [3, 5, 10], label: (n) => `${n} cuisines tried` },
   { kind: 'hours', thresholds: [5, 10, 25, 50], label: (n) => `${n} hours cooking together` },
+  { kind: 'together', thresholds: [1, 5, 10], label: (n) => (n === 1 ? 'First two-chef cook' : `${n} two-chef cooks`) },
+  { kind: 'rated', thresholds: [10, 25], label: (n) => `${n} recipes rated` },
 ]
 
 // "Prep 10 min · Cook 20 min", plus the total when it isn't just the two
@@ -173,7 +177,11 @@ export function computeStats({ recipes, ingredients, cookLog, ratings, today = n
     untimed.set(recipe.id, entry)
   }
   const cuisinesTried = cuisines.filter((c) => c.name !== 'Other').length
-  const totals = { meals: meals.length, cuisines: cuisinesTried, hours }
+  // Meals cooked in two-chef mode, and recipes either cook has rated.
+  const together = meals.filter((m) => m.entries.some((e) => e.two_chef)).length
+  const loggedRecipe = new Map(entries.map((c) => [c.id, c.recipe_id]))
+  const rated = new Set(ratings.map((r) => loggedRecipe.get(r.cook_log_id)).filter(Boolean)).size
+  const totals = { joined: 1, meals: meals.length, cuisines: cuisinesTried, hours, together, rated }
 
   const milestones = MILESTONES.flatMap(({ kind, thresholds, label }) =>
     thresholds.map((n) => ({ kind, threshold: n, label: label(n), reached: totals[kind] >= n })),

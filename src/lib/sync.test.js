@@ -10,7 +10,8 @@ const setOnline = (value) => {
 
 const { db } = await import('./db.js')
 const { setSyncClientForTests, syncNow } = await import('./sync.js')
-const { saveRecipe, addNote, deleteRecipe, restoreRecipe, loadRecipe } = await import('./data.js')
+const { saveRecipe, addNote, deleteRecipe, restoreRecipe, loadRecipe, toggleLike, deleteNote } = await import('./data.js')
+const { saveMyMember, saveKitchen } = await import('./avatars.js')
 
 // A tiny stand-in for the Supabase client: tables are Maps keyed by id.
 function fakeServer() {
@@ -46,6 +47,13 @@ function fakeServer() {
           }
           return { error: null }
         },
+        // Changes an existing row only, like an update with no insert rights.
+        update: (fields) => ({
+          eq: async (_col, id) => {
+            if (table(name).has(id)) table(name).set(id, { ...table(name).get(id), ...structuredClone(fields) })
+            return { error: null }
+          },
+        }),
         delete: () => ({
           eq: async (_col, id) => {
             table(name).delete(id)
@@ -330,4 +338,37 @@ test('a change for a column the database lacks waits for the migration instead o
   await syncNow()
   assert.equal(server.table('cook_log').size, 1)
   assert.equal([...server.table('cook_log').values()][0].servings, 2)
+})
+
+test('a color, avatar and scene change update their rows without adding any', async () => {
+  server.table('members').set('m1', { id: 'm1', user_id: 'user-a', kitchen_id: 'kitchen-1', display_name: 'Erin' })
+  server.table('kitchens').set('kitchen-1', { id: 'kitchen-1', name: 'Our Kitchen', scene: 'home' })
+  await syncNow()
+  await saveMyMember('user-a', { color: 'green', avatar: { hat: 'chef' } })
+  await saveKitchen('kitchen-1', { scene: 'market' })
+  await syncNow()
+  assert.equal(server.table('members').get('m1').color, 'green')
+  assert.deepEqual(server.table('members').get('m1').avatar, { hat: 'chef' })
+  assert.equal(server.table('members').get('m1').display_name, 'Erin', 'other fields untouched')
+  assert.equal(server.table('kitchens').get('kitchen-1').scene, 'market')
+  assert.equal(server.table('kitchens').size, 1)
+})
+
+test('likes toggle, and replies go with the note they answer', async () => {
+  const id = await saveRecipe(structuredClone(sample), member)
+  await addNote(id, 'Needs salt', member)
+  await syncNow()
+  const note = (await db.notes.toArray())[0]
+  await addNote(id, 'Agreed', member, null, note.id)
+  await toggleLike(note.id, member)
+  await syncNow()
+  assert.equal(server.table('note_likes').size, 1)
+  assert.equal([...server.table('notes').values()].find((n) => n.body === 'Agreed').parent_id, note.id)
+  await toggleLike(note.id, member)
+  await syncNow()
+  assert.equal(server.table('note_likes').size, 0, 'liking again takes it back')
+  await toggleLike(note.id, member)
+  await deleteNote(note.id)
+  assert.equal(await db.notes.count(), 0, 'the reply goes too')
+  assert.equal(await db.note_likes.count(), 0, 'and the likes')
 })

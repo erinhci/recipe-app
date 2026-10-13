@@ -125,3 +125,22 @@ test('meals per week, Monday to Sunday, oldest first', async () => {
   assert.equal(weeks[2].start.getDate(), 5)
   assert.equal(weeks[1].start.getDate(), 28)
 })
+
+test('badges for signing up, two-chef cooks and rated recipes', () => {
+  const recipes = [{ id: 'r1', title: 'Mochi' }, { id: 'r2', title: 'Tacos' }]
+  const cookLog = [
+    { id: 'a', recipe_id: 'r1', cooked_on: '2026-10-01', two_chef: true },
+    { id: 'b', recipe_id: 'r1', cooked_on: '2026-10-01' }, // the other phone's entry for the same meal
+    { id: 'c', recipe_id: 'r2', cooked_on: '2026-10-02' },
+  ]
+  const ratings = [
+    { cook_log_id: 'a', member_id: 'erin', stars: 4 },
+    { cook_log_id: 'b', member_id: 'sam', stars: 5 },
+  ]
+  const stats = computeStats({ recipes, ingredients: [], cookLog, ratings })
+  const reached = (kind, n) => stats.milestones.find((m) => m.kind === kind && m.threshold === n).reached
+  assert.ok(reached('joined', 1))
+  assert.ok(reached('together', 1))
+  assert.ok(!reached('together', 5))
+  assert.deepEqual(stats.next.find((n) => n.kind === 'rated'), { kind: 'rated', threshold: 10, label: '10 recipes rated', current: 1 })
+})

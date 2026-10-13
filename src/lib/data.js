@@ -35,6 +35,8 @@ function pick(obj, fields) {
   // Sent only when set, so recipes without sections keep syncing even
   // before the section column exists (migration 0012).
   if (out.section == null) delete out.section
+  // Same for meals cooked in two-chef mode (migration 0014).
+  if (!out.two_chef) delete out.two_chef
   return out
 }
 
@@ -143,17 +145,39 @@ export async function saveRecipe({ recipe, ingredients, steps }, member, change 
   return id
 }
 
+// Deleting a note removes its replies and likes too (the database does
+// the same on its side).
 export async function deleteNote(noteId) {
-  await db.transaction('rw', [db.notes, db.outbox], async () => {
-    await db.notes.delete(noteId)
+  await db.transaction('rw', [db.notes, db.note_likes, db.outbox], async () => {
+    const replies = await db.notes.filter((n) => n.parent_id === noteId).primaryKeys()
+    await db.note_likes.where('note_id').anyOf([noteId, ...replies]).delete()
+    await db.notes.bulkDelete([noteId, ...replies])
     await enqueue('notes', 'delete', { id: noteId })
+  })
+  afterWrite()
+}
+
+// Likes a note, or takes the like back. One like per cook per note.
+export async function toggleLike(noteId, member) {
+  await db.transaction('rw', [db.note_likes, db.outbox], async () => {
+    const mine = await db.note_likes.where('note_id').equals(noteId).filter((l) => l.member_id === member.user_id).first()
+    if (mine) {
+      await db.note_likes.delete(mine.id)
+      await enqueue('note_likes', 'delete', { id: mine.id })
+    } else {
+      const like = { id: newId(), note_id: noteId, member_id: member.user_id, created_at: now() }
+      await db.note_likes.put(like)
+      await enqueue('note_likes', 'insert', like)
+    }
   })
   afterWrite()
 }
 
 // cookedOn marks a change made while cooking that day: it shows with
 // that day's cook in the log, and can still become a recipe change.
-export async function addNote(recipeId, body, member, cookedOn = null) {
+// parentId makes it a reply to that note (one level: replies to a reply go
+// to the note it answers).
+export async function addNote(recipeId, body, member, cookedOn = null, parentId = null) {
   const note = {
     id: newId(),
     recipe_id: recipeId,
@@ -161,6 +185,7 @@ export async function addNote(recipeId, body, member, cookedOn = null) {
     body: body.trim(),
     created_at: now(),
     ...(cookedOn ? { cooked_on: cookedOn } : {}),
+    ...(parentId ? { parent_id: parentId } : {}),
   }
   await db.transaction('rw', [db.notes, db.outbox], async () => {
     await db.notes.put(note)
@@ -186,9 +211,11 @@ export async function deleteRecipeForever(recipeId) {
   const photos = await db.meal_photos.where('recipe_id').equals(recipeId).toArray()
   await removeMealPhotos(photos)
   const logIds = await db.cook_log.where('recipe_id').equals(recipeId).primaryKeys()
-  const tables = [db.recipes, db.ingredients, db.steps, db.notes, db.recipe_versions, db.cook_log, db.ratings, db.outbox]
+  const noteIds = await db.notes.where('recipe_id').equals(recipeId).primaryKeys()
+  const tables = [db.recipes, db.ingredients, db.steps, db.notes, db.note_likes, db.recipe_versions, db.cook_log, db.ratings, db.outbox]
   await db.transaction('rw', tables, async () => {
     await db.ratings.where('cook_log_id').anyOf(logIds).delete()
+    await db.note_likes.where('note_id').anyOf(noteIds).delete()
     for (const table of [db.ingredients, db.steps, db.notes, db.recipe_versions, db.cook_log]) {
       await table.where('recipe_id').equals(recipeId).delete()
     }
@@ -255,7 +282,7 @@ async function setDeleted(recipeId, fields) {
 // The cook log and ratings
 // ---------------------------------------------------------------------------
 
-const LOG_FIELDS = ['id', 'recipe_id', 'cooked_on', 'created_by', 'created_at', 'servings', 'nutrition']
+const LOG_FIELDS = ['id', 'recipe_id', 'cooked_on', 'created_by', 'created_at', 'servings', 'nutrition', 'two_chef']
 const RATING_FIELDS = ['id', 'cook_log_id', 'member_id', 'stars', 'created_at']
 
 async function putAndQueue(table, row, fields) {
@@ -279,7 +306,8 @@ export function localDate(date = new Date()) {
 // phone), it's the same meal and nothing new is added.
 // A rating, if given, is this cook's rating of the recipe.
 // Returns { id, alreadyLogged }.
-export async function logMeal({ recipeId, cookedOn, stars = null, servings = null }, member) {
+// twoChef: cooked in two-chef mode (for the two-chef badges).
+export async function logMeal({ recipeId, cookedOn, stars = null, servings = null, twoChef = false }, member) {
   const day = cookedOn || localDate()
   const existing = await db.cook_log
     .where('recipe_id')
@@ -297,13 +325,19 @@ export async function logMeal({ recipeId, cookedOn, stars = null, servings = nul
         created_by: member.user_id,
         created_at: now(),
         ...(servings ? { servings: Number(servings) } : {}),
+        ...(twoChef ? { two_chef: true } : {}),
       },
       LOG_FIELDS,
     )
     id = entry.id
-  } else if (servings && Number(existing[0].servings) !== Number(servings)) {
-    // Already logged (the other cook's phone): record how much was made.
-    await putAndQueue('cook_log', { ...existing[0], servings: Number(servings) }, LOG_FIELDS)
+  } else if ((servings && Number(existing[0].servings) !== Number(servings)) || (twoChef && !existing[0].two_chef)) {
+    // Already logged (the other cook's phone): record how much was made,
+    // and that it was a two-chef cook.
+    await putAndQueue(
+      'cook_log',
+      { ...existing[0], ...(servings ? { servings: Number(servings) } : {}), ...(twoChef ? { two_chef: true } : {}) },
+      LOG_FIELDS,
+    )
   }
   if (stars) await rateRecipe(recipeId, stars, member)
   return { id, alreadyLogged: existing.length > 0 }

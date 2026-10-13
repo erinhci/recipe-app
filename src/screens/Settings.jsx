@@ -9,6 +9,11 @@ import { syncNow, useSyncStatus } from '../lib/sync'
 import { db } from '../lib/db'
 import { current, releaseDate, releases } from '../lib/releases'
 import RecentlyDeleted from '../components/RecentlyDeleted'
+import ColorPicker from '../components/ColorPicker'
+import Scene from '../components/Scene'
+import { Link } from 'react-router-dom'
+import { useKitchenPeople } from '../lib/useKitchen'
+import { saveMyMember } from '../lib/avatars'
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
 
@@ -133,15 +138,38 @@ export default function Settings() {
   }
 
   const kitchenFull = cooks.length >= 2
+  const people = useKitchenPeople(member.user_id)
+  const takenBy = people?.partner ? { [people.partner.color]: people.partner.name } : {}
+
+  async function changeColor(color) {
+    await saveMyMember(member.user_id, { color })
+    setMessage('Color saved.')
+  }
 
   return (
     <Page title="Settings" aside={<SyncStatus />}>
       <SyncProblem />
+      {people?.me && (
+        <Link className="scene-card" to="/avatar">
+          <Scene cooks={people.cooks} scene={people.scene} pose={people.pose} caption={false} />
+          <span className="scene-card-foot">
+            <span className="scene-card-text">
+              <span className="scene-card-name">{people.me.name}</span>
+              <span className="hint">Edit avatar, poses and scene</span>
+            </span>
+            <span className="chev-right" aria-hidden="true">
+              <Icon name="chevron" size={20} />
+            </span>
+          </span>
+        </Link>
+      )}
       <ul className="settings-list plain-list">
-        <li className="settings-row-static">
-          <span>Name</span>
-          <span className="row-value">{member.display_name}</span>
-        </li>
+        {people?.me && (
+          <li className="settings-row-static">
+            <span aria-hidden="true">Color</span>
+            <ColorPicker value={people.me.color} onChange={changeColor} takenBy={takenBy} name="my-color" />
+          </li>
+        )}
         <li className="settings-row-static">
           <label htmlFor="units">Units</label>
           <select id="units" className="row-select" value={member.unit_pref} onChange={changeUnits} disabled={!online}>
@@ -166,7 +194,8 @@ export default function Settings() {
           <ul className="plain-list divided" style={{ marginTop: 0 }}>
             {cooks.map((cook) => (
               <li key={cook.user_id}>
-                <span>
+                <span className="cook-name">
+                  <span className="cook-dot" aria-hidden="true" style={{ background: `var(--cook-${people?.byUser[cook.user_id]?.color ?? 'coral'})` }} />
                   {cook.display_name}
                   {cook.user_id === member.user_id && <span className="hint"> (you)</span>}
                 </span>
