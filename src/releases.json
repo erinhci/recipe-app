@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.25.2",
+    "date": "2026-10-13",
+    "notes": [
+      "\"You'll need\" lists the right ingredients: when a recipe lists something twice (water for the pudding and water for the syrup), each step shows only its own, and a passing mention like \"water droplets\" no longer counts",
+      "Keeping the screen on while cooking works on iPhone: if the phone refuses at first, your next tap turns it on"
+    ]
+  },
+  {
     "version": "0.25.1",
     "date": "2026-10-11",
     "notes": [

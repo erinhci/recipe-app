@@ -11,7 +11,8 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
-| 2026-10-12 | Two-chef mode: a step's ingredients were hard to spot on a scan; the tester left two-chef mode to check the ingredient list | Open. Redesign drawn on the design canvas (Oct 13): a "You'll need" card above the step text, with a checkbox per ingredient and a link to the full list | See entry |
+| 2026-10-13 | Cooking with the build: "You'll need" showed the wrong water or the same garlic twice, and listed water for a step that only covers the bowl; the screen didn't stay on | Duplicate ingredients resolved to one per step, whole-word matching, passing mentions skipped; wake lock asked again on the next tap (0.25.2) | See entry |
+| 2026-10-12 | Two-chef mode: a step's ingredients were hard to spot on a scan; the tester left two-chef mode to check the ingredient list | Open. Redesign drawn on the design canvas (Oct 13): a "You'll need" card above the step text, as a plain list with a link to the full list | See entry |
 | 2026-10-12 | Reviewing all screens side by side in Figma: main buttons still on the left (Save recipe, Sort it, Choose files, Estimate again, Stop cooking); Restore and Delete forever too close | Main actions on the right; ways out and deletes on the far left of the same row; Stop cooking stays left with space above, away from Log it (0.25.1) | `601b604` |
 | 2026-10-11 | Exploratory walkthrough: "it looks like a bunch of big blocks of text" | Text density pass: shorter copy, icon tab bar and facts row, compact nutrition (0.25.0); all eight screens moved to Figma, light and dark, bound to the theme's tokens | See entry |
 | 2026-10-11 | US/Metric toggle and the Units setting changed nothing; the two-chef plan felt redundant; whose step is whose still not distinct enough | Units set once (Settings or setup) and applied everywhere, cups convert in metric; plan removed; You / other cook / Together labels (0.24.0) | See entry |
@@ -43,6 +44,49 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-13: Wrong ingredients under a step, and the screen dimmed
+
+**Finding.** Feedback from a two-chef cook of tofu pudding with ginger syrup,
+with screenshots. The "You'll need" list under a step was often wrong:
+
+- The syrup step ("Combine the brown sugar, water, and sliced ginger") listed
+  both waters in the recipe, including the pudding's "1 tbsp water, to
+  dissolve the powders".
+- "Cover the bowl ... to prevent water droplets from dripping" listed both
+  waters, though the step uses none.
+- In another recipe, "Stir in 1 tsp minced garlic" listed "1 tsp minced
+  garlic" twice.
+
+Separately, the screen didn't stay on during cooking.
+
+**Cause.** The step matcher looked for each ingredient's name in the step
+and returned every match. A recipe with two parts often lists the same
+ingredient twice, so both copies matched. It also matched by substring, so
+"oil" could match "boil", and it had no way to tell a passing mention from
+an ingredient.
+
+The wake lock was asked for once when the screen opened and again when the
+app came back into view. Safari only grants it during a tap or key press,
+and drops it whenever the phone locks or the app is hidden, so the second
+request was always refused and the first often was too. The status still
+said the lock was on after Safari dropped it.
+
+**Change (0.25.2).**
+
+- When a step matches several copies of one ingredient, it shows one. It
+  picks the copy whose amount the step names ("1-2 tablespoons of water"),
+  then the copy listed nearest the step's other ingredients (the syrup's
+  water sits next to its sugar and ginger), then the copies in order of use.
+- Names match as whole words, and a name followed by a word like "droplets",
+  "bath" or "level" doesn't count.
+- Tests cover each case from the screenshots.
+- When the screen lock isn't held, the next tap anywhere asks for it again,
+  so tapping "Done with step" is enough. The status follows the lock's
+  release, and the hint now says "Tap anywhere to keep it on". Home Screen
+  web apps need iOS 18.4 or later for the lock to work at all.
+
+Check both in the next cook.
 
 ## 2026-10-12: Step ingredients hard to find in two-chef mode (open)
 

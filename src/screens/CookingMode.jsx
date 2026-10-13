@@ -109,7 +109,7 @@ export default function CookingMode() {
   const factor = scaleFactor(recipe.base_servings, servings)
   const current = Math.min(stepIndex, lastIndex)
   const step = steps[current]
-  const needed = step ? ingredientsForStep(step.text, ingredients) : []
+  const needed = step ? ingredientsForStep(step.text, ingredients, steps.slice(0, current).map((s) => s.text)) : []
 
   // Finish logs today's meal (its time comes from the recipe's total
   // time) and goes to "How was it?". Stop cooking logs nothing.
@@ -130,7 +130,8 @@ export default function CookingMode() {
       <p className="hint" style={{ marginBottom: 0 }}>
         {[
           timeSummary(recipe),
-          (wakeLock === 'failed' || wakeLock === 'unsupported') && "Screen may dim; tap it now and then",
+          wakeLock === 'failed' && 'Screen may dim. Tap anywhere to keep it on',
+          wakeLock === 'unsupported' && "Screen may dim; this browser can't keep it on",
         ]
           .filter(Boolean)
           .join(' · ')}

@@ -32,27 +32,109 @@ export function keyWords(item) {
     .map(singular)
 }
 
-// True when the step names the ingredient: either its full key phrase, or
-// its main word (the last one, as in "soy sauce" -> "sauce") when that word
-// isn't shared with another ingredient in the recipe.
-function mentions(stepWords, stepText, ingredient, mainWordCounts) {
-  const keys = keyWords(ingredient.item)
-  if (keys.length === 0) return false
-  if (stepText.includes(keys.join(' '))) return true
-  const main = keys[keys.length - 1]
-  return main.length > 2 && mainWordCounts.get(main) === 1 && stepWords.has(main)
+// Words that, right after an ingredient's name, mean the step isn't using
+// it as an ingredient: "water droplets", "water bath", "oil level".
+const NOT_AN_INGREDIENT_AFTER = new Set([
+  'droplet', 'drip', 'bath', 'level', 'line', 'vapor', 'steam', 'spot', 'mark', 'bead', 'splash',
+])
+
+// True when the phrase appears as whole words in the step, and at least
+// once not followed by one of the words above.
+function hasPhrase(stepWords, phrase) {
+  for (let i = 0; i + phrase.length <= stepWords.length; i += 1) {
+    if (phrase.every((w, j) => stepWords[i + j] === w) && !NOT_AN_INGREDIENT_AFTER.has(stepWords[i + phrase.length])) {
+      return true
+    }
+  }
+  return false
 }
 
-export function ingredientsForStep(stepText, ingredients) {
-  const stepWords = new Set(words(stepText).map(singular))
-  const normalizedStep = words(stepText).map(singular).join(' ')
+// True when the step names the ingredient: either its full key phrase, or
+// its main word (the last one, as in "soy sauce" -> "sauce") when that word
+// isn't shared with another ingredient in the recipe. Matching is by whole
+// words, so "boil" never matches "oil".
+function mentions(stepWords, ingredient, mainWordCounts) {
+  const keys = keyWords(ingredient.item)
+  if (keys.length === 0) return false
+  if (hasPhrase(stepWords, keys)) return true
+  const main = keys[keys.length - 1]
+  return main.length > 2 && mainWordCounts.get(main) === 1 && hasPhrase(stepWords, [main])
+}
+
+// Amounts written in the step, as { low, high, unit }: "1-2 tablespoons"
+// is { low: 1, high: 2, unit: 'tbsp' }.
+function stepAmounts(stepText) {
+  const found = []
+  const re = /(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+|[¼½¾⅓⅔⅛])(?:\s*(?:-|–|to)\s*(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+))?\s+(fl\.?\s?oz\.?|[A-Za-z]+\.?)/g
+  for (const [, a, b, word] of String(stepText ?? '').matchAll(re)) {
+    const low = parseQuantity(a)
+    const high = b ? parseQuantity(b) : low
+    if (low == null || high == null) continue
+    found.push({ low, high, unit: normalizeUnit(word) })
+  }
+  return found
+}
+
+function amountMatches(ing, amounts) {
+  if (ing.quantity == null) return false
+  const unit = ing.unit ? normalizeUnit(ing.unit) : null
+  return amounts.some((a) => a.unit === unit && ing.quantity >= a.low - 1e-9 && ing.quantity <= a.high + 1e-9)
+}
+
+// Recipes often list the same thing twice for two parts ("1 tbsp water" for
+// the pudding, "1/2 cup water" for the syrup). A step shows only one of
+// them, picked in this order:
+// 1. the one whose amount the step names ("1-2 tablespoons of water");
+// 2. the one listed nearest the step's other ingredients (the syrup's
+//    water sits next to its brown sugar and ginger);
+// 3. otherwise by order: the first step to mention it gets the first one,
+//    the next step the second, and so on.
+function pickOne(group, { stepText, anchors, ingredients, earlierMentions }) {
+  let candidates = group
+  const amounts = stepAmounts(stepText)
+  const byAmount = candidates.filter((ing) => amountMatches(ing, amounts))
+  if (byAmount.length > 0) candidates = byAmount
+  if (candidates.length === 1) return candidates[0]
+
+  if (anchors.length > 0) {
+    const index = (ing) => ingredients.indexOf(ing)
+    const distance = (ing) => anchors.reduce((sum, a) => sum + Math.abs(index(a) - index(ing)), 0)
+    const best = Math.min(...candidates.map(distance))
+    const nearest = candidates.filter((ing) => distance(ing) === best)
+    if (nearest.length === 1) return nearest[0]
+    candidates = nearest
+  }
+  return candidates[Math.min(earlierMentions, candidates.length - 1)]
+}
+
+// The ingredients a step uses, in recipe order. earlierSteps (the text of
+// the steps before this one) only matters when an ingredient is listed
+// more than once.
+export function ingredientsForStep(stepText, ingredients, earlierSteps = []) {
+  const stepWords = words(stepText).map(singular)
   const mainWordCounts = new Map()
   for (const ing of ingredients) {
     const keys = keyWords(ing.item)
     const main = keys[keys.length - 1]
     if (main) mainWordCounts.set(main, (mainWordCounts.get(main) ?? 0) + 1)
   }
-  return ingredients.filter((ing) => mentions(stepWords, normalizedStep, ing, mainWordCounts))
+  const matched = ingredients.filter((ing) => mentions(stepWords, ing, mainWordCounts))
+
+  // Group matches that share a name.
+  const groups = new Map()
+  for (const ing of matched) {
+    const name = keyWords(ing.item).join(' ')
+    groups.set(name, [...(groups.get(name) ?? []), ing])
+  }
+  const anchors = [...groups.values()].filter((g) => g.length === 1).map((g) => g[0])
+  const keep = new Set(anchors)
+  for (const [name, group] of groups) {
+    if (group.length === 1) continue
+    const phrase = name.split(' ')
+    const earlierMentions = earlierSteps.filter((text) => hasPhrase(words(text).map(singular), phrase)).length
+    keep.add(pickOne(group, { stepText, anchors, ingredients, earlierMentions }))
+  }
+  return ingredients.filter((ing) => keep.has(ing))
 }
 
 // One ingredient as a line of text, scaled and in the chosen units.

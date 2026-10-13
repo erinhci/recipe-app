@@ -86,3 +86,50 @@ test('an amount rounded on import still matches its step (0.3 cup vs 1/3 cup)', 
   const parts = scaleStepText('Toss together 1/3 cup diced chicken.', ingredients, 2)
   assert.ok(parts.some((p) => p.scaled))
 })
+
+// Tofu pudding with ginger syrup: water is listed twice, once per part.
+const tofuPudding = [
+  { id: 'soy', quantity: 2, unit: 'cup', item: 'unsweetened soy milk' },
+  { id: 'gdl', quantity: 0.25, unit: 'tsp', item: 'GDL powder' },
+  { id: 'corn', quantity: 1.5, unit: 'tsp', item: 'cornstarch' },
+  { id: 'w1', quantity: 1, unit: 'tbsp', item: 'water', prep_note: 'room temperature, to dissolve the powders' },
+  { id: 'sugar', quantity: 1, unit: 'cup', item: 'brown sugar or palm sugar' },
+  { id: 'w2', quantity: 0.5, unit: 'cup', item: 'water' },
+  { id: 'ginger', quantity: 4, unit: 'slices', item: 'thick slices fresh ginger' },
+]
+const tofuSteps = [
+  'Combine the brown sugar, water, and sliced ginger in a small saucepan.',
+  'Bring to a boil, then simmer 10 minutes.',
+  'In a heatproof bowl or container that will fit inside your steamer, combine the GDL powder, cornstarch, and 1–2 tablespoons of water. Stir until completely dissolved.',
+  'Heat the soy milk until steaming.',
+  'Pour the hot soy milk into the bowl in one go.',
+  'Cover the bowl tightly with aluminum foil or a heat-safe plate to prevent water droplets from dripping into your pudding.',
+]
+const needFor = (n) => ingredientsForStep(tofuSteps[n], tofuPudding, tofuSteps.slice(0, n)).map((i) => i.id)
+
+test('a duplicated ingredient shows once, next to its own part', () => {
+  assert.deepEqual(needFor(0), ['sugar', 'w2', 'ginger'])
+})
+
+test('an amount in the step picks the matching duplicate', () => {
+  assert.deepEqual(needFor(2), ['gdl', 'corn', 'w1'])
+})
+
+test('"water droplets" is not a use of water', () => {
+  assert.deepEqual(needFor(5), [])
+})
+
+test('"boil" does not match oil', () => {
+  assert.deepEqual(ingredientsForStep('Bring to a boil.', [{ id: 'o', item: 'olive oil' }]), [])
+})
+
+test('the same ingredient listed twice shows once, in order of use', () => {
+  const garlic = [
+    { id: 'g1', quantity: 1, unit: 'tsp', item: 'minced garlic' },
+    { id: 'on', quantity: 1, unit: null, item: 'onion' },
+    { id: 'g2', quantity: 1, unit: 'tsp', item: 'minced garlic' },
+  ]
+  const steps = ['Stir in 1 tsp minced garlic and cook 30 seconds.', 'Make the sauce: whisk 1 tsp minced garlic with the soy sauce.']
+  assert.deepEqual(ingredientsForStep(steps[0], garlic, []).map((i) => i.id), ['g1'])
+  assert.deepEqual(ingredientsForStep(steps[1], garlic, steps.slice(0, 1)).map((i) => i.id), ['g2'])
+})

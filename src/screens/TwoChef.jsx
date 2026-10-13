@@ -423,6 +423,15 @@ export default function TwoChef() {
   const cleanup = side !== 'all' ? names.while_waiting?.[side] ?? [] : []
   const isNext = (state) => next.kind === 'step' && next.state.step.id === state.step.id
   const askIndex = next.kind === 'step' ? next.state.number - 1 : null
+  // The step's ingredients. Earlier steps (in recipe order) decide which
+  // copy to show when an ingredient is listed twice.
+  const needed = next.kind === 'step'
+    ? ingredientsForStep(
+        next.state.step.text,
+        ingredients,
+        states.filter((s) => s.number < next.state.number).map((s) => s.step.text),
+      )
+    : []
   // A shared step whose other part isn't checked off yet. It doesn't lock;
   // the card says what's unchecked and leaves the timing to the cooks.
   const unchecked = next.kind === 'step' && next.state.track === 'both' && side !== 'all' ? next.state.waitingOn : []
@@ -454,7 +463,8 @@ export default function TwoChef() {
         {[
           timeSummary(recipe),
           left != null && `about ${formatMinutes(left)} left`,
-          (wakeLock === 'failed' || wakeLock === 'unsupported') && "Screen may dim; tap it now and then",
+          wakeLock === 'failed' && 'Screen may dim. Tap anywhere to keep it on',
+          wakeLock === 'unsupported' && "Screen may dim; this browser can't keep it on",
           !live && 'Offline: progress stays on this phone',
         ]
           .filter(Boolean)
@@ -541,11 +551,11 @@ export default function TwoChef() {
         </div>
         {next.kind === 'step' && (
           <>
-            {ingredientsForStep(next.state.step.text, ingredients).length > 0 && (
+            {needed.length > 0 && (
               <>
                 <h3>You'll need</h3>
                 <ul className="cook-needs">
-                  {ingredientsForStep(next.state.step.text, ingredients).map((ing) => (
+                  {needed.map((ing) => (
                     <li key={ing.id}>{ingredientLine(ing, factor, system)}</li>
                   ))}
                 </ul>
