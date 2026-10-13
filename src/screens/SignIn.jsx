@@ -87,13 +87,15 @@ export default function SignIn() {
           </p>
         )}
 
-        <button
-          className="btn"
-          type="submit"
-          disabled={busy || !email.trim() || password.length < (isSignUp ? 8 : 1)}
-        >
-          {busy ? 'One moment…' : isSignUp ? 'Create account' : 'Sign in'}
-        </button>
+        <div className="actions">
+          <button
+            className="btn"
+            type="submit"
+            disabled={busy || !email.trim() || password.length < (isSignUp ? 8 : 1)}
+          >
+            {busy ? 'One moment…' : isSignUp ? 'Create account' : 'Sign in'}
+          </button>
+        </div>
       </form>
 
       <p style={{ marginTop: 'var(--space-6)' }}>

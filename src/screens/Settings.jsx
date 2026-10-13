@@ -181,16 +181,20 @@ export default function Settings() {
           {!kitchenFull && (
             <>
               <p>Invite the second cook with a one-time link. It works for 7 days.</p>
-              <button className="btn" type="button" onClick={makeInvite} disabled={!online}>
-                Create invite link
-              </button>
+              <div className="actions">
+                <button className="btn" type="button" onClick={makeInvite} disabled={!online}>
+                  Create invite link
+                </button>
+              </div>
               {inviteLink && (
                 <div className="field" style={{ marginTop: 'var(--space-4)' }}>
                   <label htmlFor="invite-link">Invite link</label>
                   <input id="invite-link" readOnly value={inviteLink} onFocus={(e) => e.target.select()} />
-                  <button className="btn btn-secondary" type="button" onClick={copyInvite}>
-                    Copy link
-                  </button>
+                  <span className="actions" style={{ margin: 'var(--space-2) 0 0' }}>
+                    <button className="btn btn-secondary" type="button" onClick={copyInvite}>
+                      Copy link
+                    </button>
+                  </span>
                 </div>
               )}
             </>

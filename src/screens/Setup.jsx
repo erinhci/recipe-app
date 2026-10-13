@@ -92,13 +92,15 @@ export default function Setup() {
           </p>
         )}
 
-        <button
-          className="btn"
-          type="submit"
-          disabled={busy || !displayName.trim() || (!inviteCode && !kitchenName.trim())}
-        >
-          {busy ? 'Saving…' : inviteCode ? 'Join kitchen' : 'Create kitchen'}
-        </button>
+        <div className="actions">
+          <button
+            className="btn"
+            type="submit"
+            disabled={busy || !displayName.trim() || (!inviteCode && !kitchenName.trim())}
+          >
+            {busy ? 'Saving…' : inviteCode ? 'Join kitchen' : 'Create kitchen'}
+          </button>
+        </div>
       </form>
 
       <p style={{ marginTop: 'var(--space-6)' }}>
