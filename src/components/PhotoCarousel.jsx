@@ -12,9 +12,8 @@ const formatDay = (day) => dateFormat.format(new Date(`${day}T12:00:00`))
 // dots (date and who took it) is announced when the slide changes.
 // Tapping a photo opens it with its options: Replace for your own photo,
 // Remove, Close.
-// addDay: the latest meal you haven't added a photo to, or null, which
-// hides the Add slide (each cook has one photo per meal; change yours by
-// tapping it).
+// addDay: the latest meal, which new photos belong to, or null, which hides
+// the Add slide (nothing logged yet, or the recipe has its 20 photos).
 export default function PhotoCarousel({ recipe, photos, photoBy, addDay, member, onStatus }) {
   const track = useRef(null)
   const dialogRef = useRef(null)
@@ -149,6 +148,7 @@ export default function PhotoCarousel({ recipe, photos, photoBy, addDay, member,
                   member={member}
                   className="btn btn-secondary"
                   label="Replace photo"
+                  replacing={open}
                   onStatus={(status) => {
                     onStatus?.(status)
                     if (!status.error && status.text !== 'Saving photo…') dialogRef.current?.close()

@@ -218,16 +218,34 @@ test('a photo uploads to the kitchen folder before its record', async () => {
   assert.equal(server.table('meal_photos').get(photo.id).added_by, 'user-a')
 })
 
-test('a second photo of the same meal replaces yours, not the other cook\'s', async () => {
+test('a cook can add several photos of one meal', async () => {
+  setOnline(false)
   const first = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
   await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, brianMember)
-  await syncNow()
   const second = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  setOnline(true)
   await syncNow()
-  assert.equal(server.table('meal_photos').size, 2)
+  assert.equal(server.table('meal_photos').size, 3)
+  assert.ok(server.files.has(first.path))
+  assert.ok(server.files.has(second.path))
+})
+
+test('replacing a photo swaps it out and keeps its meal', async () => {
+  const first = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await syncNow()
+  const second = await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg(), replacing: first }, member)
+  await syncNow()
+  assert.equal(server.table('meal_photos').size, 1)
   assert.ok(!server.files.has(first.path))
   assert.ok(server.files.has(second.path))
-  assert.equal(await db.photo_files.count(), 2)
+  assert.equal(await db.photo_files.count(), 1)
+})
+
+test('a recipe keeps at most 20 photos', async () => {
+  const { RECIPE_PHOTO_LIMIT } = await import('./photos.js')
+  setOnline(false)
+  for (let i = 0; i < RECIPE_PHOTO_LIMIT; i++) await saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member)
+  await assert.rejects(saveMealPhoto({ recipeId: 'r1', cookedOn: '2026-10-11', blob: jpeg() }, member), /20 photos/)
 })
 
 test('a photo removed before it was sent never reaches the server', async () => {

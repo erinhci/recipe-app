@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.28.0",
+    "date": "2026-10-13",
+    "notes": [
+      "Add as many photos of a meal as you like, up to 20 per recipe. Add photo never replaces one; to swap a photo, tap it and choose Replace photo"
+    ]
+  },
+  {
     "version": "0.27.1",
     "date": "2026-10-13",
     "notes": [

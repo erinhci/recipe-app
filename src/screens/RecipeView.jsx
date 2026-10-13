@@ -17,7 +17,7 @@ import { AddPhoto, PhotoThumb } from '../components/MealPhotos'
 import PhotoCarousel from '../components/PhotoCarousel'
 import MealDetails from '../components/MealDetails'
 import Icon from '../components/Icon'
-import { newestFirst, removeMealPhotos } from '../lib/photos'
+import { newestFirst, RECIPE_PHOTO_LIMIT, removeMealPhotos } from '../lib/photos'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 // cooked_on is a calendar date; read it as local noon so it never shifts a day.
@@ -204,9 +204,8 @@ export default function RecipeView() {
   const loggedByNames = (meal) => [...new Set(meal.entries.map((e) => nameFor(e.created_by)))].join(' and ')
   const stars = (n) => `${n}★`
 
-  // The Add photo slide goes to the latest meal you haven't added a photo
-  // to. Your existing photos are changed by tapping them.
-  const addPhotoDay = meals.find((m) => !myPhotoOn(m.cooked_on))?.cooked_on ?? null
+  // The Add photo slide adds to the latest meal, up to 20 photos per recipe.
+  const addPhotoDay = photos.length < RECIPE_PHOTO_LIMIT ? (meals[0]?.cooked_on ?? null) : null
   const ratingNote = [
     ...ratedMembers.map((m) => `${m === member.user_id ? 'You' : nameFor(m)} ${stars(summary.byMember[m])}`),
     meals.length > 0 ? `made ${meals.length}×` : 'not made yet',
@@ -430,7 +429,7 @@ export default function RecipeView() {
           {ratingStatus}
         </p>
 
-        {finishedCooking && !myPhotoOn(finishedCooking.day) && (
+        {finishedCooking && !myPhotoOn(finishedCooking.day) && photos.length < RECIPE_PHOTO_LIMIT && (
           <div className="photo-prompt">
             <AddPhoto
               recipeId={recipe.id}
@@ -498,13 +497,9 @@ export default function RecipeView() {
                     {photosFor(meal.cooked_on).map((photo) => (
                       <PhotoThumb key={photo.id} photo={photo} recipeTitle={recipe.title} byName={photoBy(photo)} onStatus={setPhotoStatus} />
                     ))}
-                    <AddPhoto
-                      recipeId={recipe.id}
-                      cookedOn={meal.cooked_on}
-                      member={member}
-                      label={myPhotoOn(meal.cooked_on) ? 'Replace your photo' : 'Add photo'}
-                      onStatus={setPhotoStatus}
-                    />
+                    {photos.length < RECIPE_PHOTO_LIMIT && (
+                      <AddPhoto recipeId={recipe.id} cookedOn={meal.cooked_on} member={member} label="Add photo" onStatus={setPhotoStatus} />
+                    )}
                   </span>
                 </span>
                 <button className="link-btn" type="button" onClick={() => handleDeleteLog(meal)}>

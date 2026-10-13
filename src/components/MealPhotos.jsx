@@ -18,7 +18,8 @@ export function PhotoImg({ photo, alt, className }) {
 
 // A file picker that looks like a link or a button. The input stays in the
 // tab order (visually hidden), so it works with a keyboard and VoiceOver.
-export function AddPhoto({ recipeId, cookedOn, member, label, className = 'link-btn', onStatus }) {
+// replacing: a photo this one swaps out.
+export function AddPhoto({ recipeId, cookedOn, member, label, className = 'link-btn', onStatus, replacing = null }) {
   const id = useId()
   const [busy, setBusy] = useState(false)
 
@@ -29,8 +30,8 @@ export function AddPhoto({ recipeId, cookedOn, member, label, className = 'link-
     setBusy(true)
     onStatus?.({ text: 'Saving photo…' })
     try {
-      await addMealPhoto({ recipeId, cookedOn, file }, member)
-      onStatus?.({ text: `Photo added to ${formatPhotoDay(cookedOn)}.` })
+      await addMealPhoto({ recipeId, cookedOn, file, replacing }, member)
+      onStatus?.({ text: replacing ? 'Photo replaced.' : `Photo added to ${formatPhotoDay(cookedOn)}.` })
     } catch (error) {
       onStatus?.({ text: error.message, error: true })
     } finally {

@@ -3,12 +3,14 @@ import { db } from './db.js'
 import { enqueue, PHOTO_BUCKET, syncNow } from './sync.js'
 import { supabase } from './supabase.js'
 
-// Photos of finished dishes. Each cook can add one photo per meal (a
-// recipe on a date); adding another replaces theirs. Photos are shrunk on
-// the phone before saving, so the free 1 GB of storage holds the kitchen's
-// limit of 500 many times over. The database enforces the same limits.
+// Photos of finished dishes, each tied to a meal (a recipe on a date).
+// Anyone in the kitchen can add several, up to 20 per recipe and 500 per
+// kitchen. Photos are shrunk on the phone before saving, so the free 1 GB
+// of storage holds the kitchen's limit many times over. The database
+// enforces the same limits (migration 0013).
 
 export const PHOTO_LIMIT = 500
+export const RECIPE_PHOTO_LIMIT = 20
 export const TARGET_BYTES = 300 * 1024
 export const MAX_BYTES = 500 * 1000
 const LONG_EDGE = 1280
@@ -76,33 +78,30 @@ export async function shrinkPhoto(file) {
   throw new Error("That photo couldn't be made small enough. Try another one.")
 }
 
-// Adds this cook's photo of a meal, replacing their earlier one.
-export async function addMealPhoto({ recipeId, cookedOn, file }, member) {
-  await checkLimit(recipeId, cookedOn, member)
+// Adds a photo of a meal. replacing: a photo to swap out (it keeps its
+// meal date and doesn't count against the limits).
+export async function addMealPhoto({ recipeId, cookedOn, file, replacing = null }, member) {
+  await checkLimit(recipeId, replacing)
   const shrunk = await shrinkPhoto(file)
-  return saveMealPhoto({ recipeId, cookedOn, ...shrunk }, member)
+  return saveMealPhoto({ recipeId, cookedOn: replacing?.cooked_on ?? cookedOn, replacing, ...shrunk }, member)
 }
 
-async function myPhotosOn(recipeId, cookedOn, member) {
-  return db.meal_photos
-    .where('[recipe_id+cooked_on]')
-    .equals([recipeId, cookedOn])
-    .filter((p) => p.added_by === member.user_id)
-    .toArray()
-}
+// How many photos a recipe has, for the 20-per-recipe limit.
+export const recipePhotoCount = (recipeId) => db.meal_photos.where('recipe_id').equals(recipeId).count()
 
-async function checkLimit(recipeId, cookedOn, member) {
-  const count = await db.meal_photos.count()
-  const mine = await myPhotosOn(recipeId, cookedOn, member)
-  if (count - mine.length >= PHOTO_LIMIT) {
+async function checkLimit(recipeId, replacing) {
+  const freed = replacing ? 1 : 0
+  if ((await recipePhotoCount(recipeId)) - freed >= RECIPE_PHOTO_LIMIT) {
+    throw new Error(`This recipe has ${RECIPE_PHOTO_LIMIT} photos, the most it can keep. Remove one to add another.`)
+  }
+  if ((await db.meal_photos.count()) - freed >= PHOTO_LIMIT) {
     throw new Error(`Your kitchen has ${PHOTO_LIMIT} photos, the most it can keep. Remove some to add more.`)
   }
 }
 
 // Saves an already shrunk photo on this phone and queues it to send.
-export async function saveMealPhoto({ recipeId, cookedOn, blob, width = null, height = null }, member) {
-  await checkLimit(recipeId, cookedOn, member)
-  const mine = await myPhotosOn(recipeId, cookedOn, member)
+export async function saveMealPhoto({ recipeId, cookedOn, blob, width = null, height = null, replacing = null }, member) {
+  await checkLimit(recipeId, replacing)
   const id = crypto.randomUUID()
   const row = {
     id,
@@ -116,7 +115,7 @@ export async function saveMealPhoto({ recipeId, cookedOn, blob, width = null, he
     created_at: new Date().toISOString(),
   }
   await db.transaction('rw', [db.meal_photos, db.photo_files, db.outbox], async () => {
-    for (const old of mine) await removeLocally(old)
+    if (replacing) await removeLocally(replacing)
     await db.photo_files.put({ id, blob })
     await db.meal_photos.put(row)
     await enqueue('meal_photos', 'insert', row)
