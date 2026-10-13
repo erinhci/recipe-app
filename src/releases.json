@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.29.1",
+    "date": "2026-10-13",
+    "notes": [
+      "Waving avatars wave outward, so it no longer looks like a high five"
+    ]
+  },
+  {
     "version": "0.29.0",
     "date": "2026-10-13",
     "notes": [

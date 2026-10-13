@@ -9,6 +9,10 @@ const DUO = {
   highfive: ['highfive', 'highfive', 'high-fiving'],
   taste: ['taste', 'wave', 'taste-testing'],
 }
+// Which way each avatar's raised arm points. Only the high five meets in
+// the middle; waving hands point outward, so waving never reads as a high
+// five.
+const FLIP = { highfive: [false, true], wave: [true, false], taste: [false, false] }
 const WHERE = { home: 'in the kitchen', market: 'at the night market', picnic: 'at a picnic' }
 
 export function sceneCaption(cooks, scene, pose) {
@@ -19,6 +23,7 @@ export function sceneCaption(cooks, scene, pose) {
 
 export default function Scene({ cooks, scene = 'home', pose = 'wave', compact = false, caption = true }) {
   const [left, right] = DUO[pose] ?? DUO.wave
+  const [flipA, flipB] = cooks.length > 1 ? FLIP[pose] ?? FLIP.wave : [false, false]
   const size = compact ? 72 : 176
   return (
     <figure className={`scene${compact ? ' is-compact' : ''}`}>
@@ -57,10 +62,10 @@ export default function Scene({ cooks, scene = 'home', pose = 'wave', compact = 
         )}
       </svg>
       <div className="scene-cooks">
-        {cooks[0] && <Avatar pose={cooks.length > 1 ? left : 'wave'} outfit={cooks[0].look?.outfit} hat={cooks[0].look?.hat} size={size} />}
+        {cooks[0] && <Avatar pose={cooks.length > 1 ? left : 'wave'} outfit={cooks[0].look?.outfit} hat={cooks[0].look?.hat} size={size} flip={flipA} />}
         {cooks[1] && (
           <span style={{ marginLeft: -size * 0.15 }}>
-            <Avatar pose={right} outfit={cooks[1].look?.outfit} hat={cooks[1].look?.hat} size={size} flip />
+            <Avatar pose={right} outfit={cooks[1].look?.outfit} hat={cooks[1].look?.hat} size={size} flip={flipB} />
           </span>
         )}
       </div>
