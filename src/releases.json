@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.27.0",
+    "date": "2026-10-13",
+    "notes": [
+      "Recipe page: cuisine sits under the title; photos run edge to edge and you swipe between them, with dots to tap and an Add photo slide at the end",
+      "Recipe page: Ingredients, Nutrition, Steps, Rating and cook log, and Notes each open and close, with a one-line summary when closed",
+      "Stats: counts instead of percentages; a note you can close lists recipes missing a cook time, with a link to add it; badges are one row that opens a Badges page"
+    ]
+  },
+  {
     "version": "0.26.1",
     "date": "2026-10-13",
     "notes": [

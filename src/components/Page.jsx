@@ -6,7 +6,8 @@ import { useEffect, useRef } from 'react'
 // close: { label, onClick } puts an X at the top right (cooking modes).
 // aside: something small to sit on the title's row, at the right (Settings'
 // sync status and button).
-export default function Page({ title, children, close, aside }) {
+// subtitle: a short line right under the title (a recipe's cuisine).
+export default function Page({ title, children, close, aside, subtitle }) {
   const headingRef = useRef(null)
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function Page({ title, children, close, aside }) {
           {title}
         </h1>
       )}
+      {subtitle && <p className="page-subtitle">{subtitle}</p>}
       {close && (
         <button className="close-btn" type="button" onClick={close.onClick} aria-label={close.label}>
           <span aria-hidden="true">×</span>

@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import Icon from '../components/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import { db } from '../lib/db'
@@ -10,7 +12,7 @@ const timeText = (hours) => {
   return { value: Math.round(hours * 10) / 10, unit: hours < 1.05 ? 'hour' : 'hours' }
 }
 const shortDay = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
-const percent = (part, whole) => `${Math.round((part / whole) * 100)}%`
+const percent = (part, whole) => `${Math.round((part / Math.max(1, whole)) * 100)}%`
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1)
 
 // The three headline numbers, as stat tiles.
@@ -120,12 +122,27 @@ const UNIT = { meals: 'meals', cuisines: 'cuisines', hours: 'hours' }
 
 // Earned milestones as filled badges; the next one on each track as an
 // outlined badge with how close you are.
-function Badges({ stats }) {
-  const badges = MILESTONES.flatMap(({ kind }) => {
+function allBadges(stats) {
+  return MILESTONES.flatMap(({ kind }) => {
     const earned = stats.milestones.filter((m) => m.kind === kind && m.reached)
     const next = stats.next.find((m) => m.kind === kind)
     return [...earned.map((m) => ({ ...m, earned: true })), ...(next ? [{ ...next, earned: false }] : [])]
   })
+}
+
+// The row on Stats: the two most recent earned badges and the closest one
+// to earning, linking to all of them.
+function badgeRow(stats) {
+  const all = allBadges(stats)
+  const earned = all.filter((b) => b.earned).slice(-2)
+  const next = all
+    .filter((b) => !b.earned)
+    .sort((a, b) => b.current / b.threshold - a.current / a.threshold)
+    .slice(0, 3 - earned.length)
+  return [...earned, ...next]
+}
+
+export function Badges({ badges }) {
   return (
     <ul className="badges">
       {badges.map((badge) => {
@@ -169,8 +186,9 @@ function Badges({ stats }) {
   )
 }
 
-// Each item's share of all meals, as a thin meter. The numbers are in the text.
-function ShareList({ items, total, label }) {
+// Each item's share of all meals, as a thin meter. The text gives the
+// count, not a percentage.
+function ShareList({ items, total, label, countText = (n) => `${n} ${n === 1 ? 'meal' : 'meals'}` }) {
   return (
     <ul className="share-list">
       {items.map((item) => (
@@ -178,7 +196,7 @@ function ShareList({ items, total, label }) {
           <span className="row-between">
             <span>{label ? label(item) : item.name}</span>
             <span className="share-count">
-              {item.count} · {percent(item.count, total)}
+              {countText(item.count)}
             </span>
           </span>
           <span className="meter" aria-hidden="true">
@@ -187,6 +205,100 @@ function ShareList({ items, total, label }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+function badgeSummary(stats) {
+  const all = allBadges(stats)
+  const earned = all.filter((b) => b.earned).length
+  const next = badgeRow(stats).find((b) => !b.earned)
+  return `Badges: ${earned} earned.${next ? ` Next, ${next.label}, ${Math.floor(next.current)} of ${next.threshold}.` : ''} See all.`
+}
+
+// Which meals aren't in the hours yet, and a way to fix each: open the
+// recipe's edit screen at its times. It can be closed; it comes back if
+// the number changes.
+function MissingTime({ stats }) {
+  const key = 'stats-missing-time-dismissed'
+  const count = stats.mealsWithoutTime
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return Number(localStorage.getItem(key)) === count
+    } catch {
+      return false
+    }
+  })
+  if (count === 0 || dismissed) return null
+  function dismiss() {
+    try {
+      localStorage.setItem(key, String(count))
+    } catch {
+      // Not remembered; it just closes for now.
+    }
+    setDismissed(true)
+  }
+  const title = `${count} ${count === 1 ? "meal isn't" : "meals aren't"} in the hours yet`
+  return (
+    <div className="missing-time">
+      <details open>
+        <summary>{title}</summary>
+        <p className="hint" style={{ margin: '0 0 var(--space-1)' }}>
+          Hours come from each recipe's prep and cook times. Add the time and its meals count.
+        </p>
+        <ul className="plain-list divided" style={{ marginTop: 0 }}>
+          {stats.untimedRecipes.map((r) => (
+            <li key={r.id}>
+              <span>
+                {r.title}{' '}
+                <span className="hint">
+                  · {r.meals} {r.meals === 1 ? 'meal' : 'meals'}
+                </span>
+              </span>
+              <Link className="small-link" to={`/recipe/${r.id}/edit`} aria-label={`Add cook time to ${r.title}`}>
+                Add cook time
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </details>
+      <button className="close-btn missing-time-close" type="button" aria-label={`Dismiss: ${title}`} onClick={dismiss}>
+        <Icon name="close" size={20} />
+      </button>
+    </div>
+  )
+}
+
+// Every badge, earned and next, opened from the row on Stats.
+export function BadgesPage() {
+  const stats = useLiveQuery(async () => {
+    const [recipes, ingredients, cookLog, ratings] = await Promise.all([
+      db.recipes.toArray(),
+      db.ingredients.toArray(),
+      db.cook_log.toArray(),
+      db.ratings.toArray(),
+    ])
+    return computeStats({ recipes, ingredients, cookLog, ratings, today: localDate() })
+  }, [])
+  const all = stats ? allBadges(stats) : []
+  return (
+    <Page title="Badges">
+      <p className="meta">
+        <Link to="/stats">Back to Stats</Link>
+      </p>
+      {stats === undefined ? (
+        <p role="status">Loading…</p>
+      ) : (
+        <>
+          <p className="hint">
+            {all.filter((b) => b.earned).length} earned. Each one marks something you've cooked together.
+          </p>
+          <h2>Earned</h2>
+          <Badges badges={all.filter((b) => b.earned)} />
+          <h2 className="subheading">Still to earn</h2>
+          <Badges badges={all.filter((b) => !b.earned)} />
+        </>
+      )}
+    </Page>
   )
 }
 
@@ -227,16 +339,21 @@ export default function Stats() {
           Totals
         </h2>
         <Tiles stats={stats} />
-        {stats.mealsWithoutTime > 0 && (
-          <p className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
-            {stats.mealsWithoutTime} {stats.mealsWithoutTime === 1 ? 'meal has' : 'meals have'} no recipe time, so {stats.mealsWithoutTime === 1 ? "it isn't" : "they aren't"} counted.
-          </p>
-        )}
+        <MissingTime stats={stats} />
       </section>
 
       <section aria-labelledby="badges-heading">
-        <h2 id="badges-heading">Badges</h2>
-        <Badges stats={stats} />
+        <div className="row-between">
+          <h2 id="badges-heading" style={{ margin: 0 }}>
+            Badges
+          </h2>
+          <Link className="small-link" to="/badges">
+            See all {allBadges(stats).length} badges
+          </Link>
+        </div>
+        <Link className="badge-row" to="/badges" aria-label={badgeSummary(stats)}>
+          <Badges badges={badgeRow(stats)} />
+        </Link>
       </section>
 
       <section aria-labelledby="weeks-heading">
@@ -249,6 +366,7 @@ export default function Stats() {
         <ShareList
           items={stats.mostMade.map((r) => ({ name: r.id, count: r.count, title: r.title }))}
           total={stats.mealsLogged}
+          countText={(n) => `${n}×`}
           label={(item) => <Link to={`/recipe/${item.name}`}>{item.title}</Link>}
         />
       </section>

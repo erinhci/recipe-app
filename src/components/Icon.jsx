@@ -69,6 +69,8 @@ const PATHS = {
   ),
   file: <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />,
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
+  close: <path d="M6 6l12 12M18 6L6 18" />,
+  plus: <path d="M12 5v14M5 12h14" />,
 }
 
 export default function Icon({ name, size = 20 }) {

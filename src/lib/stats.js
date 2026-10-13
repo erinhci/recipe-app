@@ -162,6 +162,16 @@ export function computeStats({ recipes, ingredients, cookLog, ratings, today = n
   const timed = meals.filter((c) => recipeById.get(c.recipe_id).total_time_minutes > 0)
   const hours = timed.reduce((sum, c) => sum + recipeById.get(c.recipe_id).total_time_minutes, 0) / 60
   const mealsWithoutTime = meals.length - timed.length
+  // Recipes whose meals aren't in the hours because they have no time, so
+  // Stats can link straight to adding one.
+  const untimed = new Map()
+  for (const c of meals) {
+    const recipe = recipeById.get(c.recipe_id)
+    if (recipe.total_time_minutes > 0) continue
+    const entry = untimed.get(recipe.id) ?? { id: recipe.id, title: recipe.title, meals: 0 }
+    entry.meals += 1
+    untimed.set(recipe.id, entry)
+  }
   const cuisinesTried = cuisines.filter((c) => c.name !== 'Other').length
   const totals = { meals: meals.length, cuisines: cuisinesTried, hours }
 
@@ -179,6 +189,7 @@ export function computeStats({ recipes, ingredients, cookLog, ratings, today = n
     recipesCooked: new Set(meals.map((c) => c.recipe_id)).size,
     hours,
     mealsWithoutTime,
+    untimedRecipes: [...untimed.values()],
     cuisinesTried,
     mostMade,
     topRated,

@@ -82,6 +82,7 @@
 }
 
 html {
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: rgb(0 0 0 / 0.08);
   touch-action: manipulation;
@@ -1236,3 +1237,62 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .row-body .divided > li:last-child { border-bottom: 0; }
 .page > details.nut-peek { margin-top: var(--space-3); }
 .ingredient-section { margin: var(--space-4) 0 var(--space-2); font-size: var(--text-md); }
+
+/* Recipe page: cuisine under the title, photos edge to edge, sections */
+.page-subtitle { display: flex; align-items: center; gap: var(--space-1); margin: calc(-1 * var(--space-2)) 0 var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+.carousel { margin: 0 calc(-1 * var(--space-5)) var(--space-4); }
+.carousel-track {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-track > li { position: relative; flex: 0 0 100%; margin: 0; scroll-snap-align: start; }
+.carousel-photo,
+.carousel-track .photo-placeholder { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+.carousel-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--color-subtle);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.carousel-add-icon { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border: 2px dashed var(--color-border); border-radius: 50%; }
+.carousel-add:focus-within { outline: 3px solid var(--color-focus); outline-offset: -3px; }
+.carousel-dots { display: flex; justify-content: center; gap: 0; margin-top: var(--space-1); }
+.carousel-dot { display: flex; align-items: center; justify-content: center; width: 32px; height: var(--target); padding: 0; border: 0; background: none; color: var(--color-border); cursor: pointer; }
+.carousel-dot > span { display: block; width: 8px; height: 8px; border-radius: 999px; background: var(--color-border); transition: width 160ms ease; }
+.carousel-dot[aria-current='true'] > span { width: 20px; background: var(--color-text); }
+.carousel-dot.is-add[aria-current='true'] { color: var(--color-text); }
+.carousel-caption { margin: 0; text-align: center; }
+.page > details.sec { margin-top: 0; }
+.sec { border-top: 1px solid var(--color-divider); }
+.sec > summary { justify-content: space-between; gap: var(--space-3); min-height: 56px; padding: var(--space-2) 0; list-style: none; }
+.sec > summary::-webkit-details-marker { display: none; }
+.sec-title { display: flex; flex-direction: column; gap: 2px; }
+.sec-title h2 { margin: 0; }
+.sec-note { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-muted); }
+.sec .chev { display: flex; flex: none; transition: transform 160ms ease; }
+.sec[open] > summary .chev { transform: rotate(180deg); }
+.sec-body { padding: var(--space-1) 0 var(--space-6); }
+.cook-actions + .sec, .page > section + .sec { margin-top: var(--space-6); }
+
+/* Stats: a closable note about missing times, and one row of badges */
+.missing-time { position: relative; margin-top: var(--space-3); }
+.missing-time details { padding: 0 var(--space-4) var(--space-2); border-radius: var(--radius); background: var(--color-subtle); }
+.missing-time summary { padding-right: calc(var(--target) + var(--space-2)); font-size: var(--text-sm); }
+.missing-time .close-btn.missing-time-close { position: absolute; top: 0; right: 0; background: transparent; }
+.missing-time .divided > li { border-bottom: 0; border-top: 1px solid var(--color-divider); }
+.badge-row { display: block; margin-top: var(--space-3); padding: var(--space-4) var(--space-2); border-radius: var(--radius); background: var(--color-subtle); color: var(--color-text); text-decoration: none; }
+.badge-row:hover { background: var(--color-subtle-hover); }
+.badge-row .meter { background: var(--color-bg); }

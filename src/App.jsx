@@ -18,7 +18,7 @@ import RecipeView from './screens/RecipeView'
 import RecipeEdit from './screens/RecipeEdit'
 import CookingMode from './screens/CookingMode'
 import TwoChef from './screens/TwoChef'
-import Stats from './screens/Stats'
+import Stats, { BadgesPage } from './screens/Stats'
 import NoteEdit from './screens/NoteEdit'
 import { startSync } from './lib/sync'
 
@@ -96,6 +96,7 @@ function Shell() {
         <Route path="/recipe/:id/two-chef" element={<TwoChef />} />
         <Route path="/recipe/:id/note/:noteId" element={<NoteEdit />} />
         <Route path="/stats" element={<Stats />} />
+        <Route path="/badges" element={<BadgesPage />} />
         <Route path="/settings" element={<Settings />} />
         <Route
           path="*"

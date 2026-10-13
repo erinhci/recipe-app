@@ -13,7 +13,8 @@ import { groupMeals, ratingIsStale, recipeRatings, timeSummary } from '../lib/st
 import StarPicker from '../components/StarPicker'
 import StepText from '../components/StepText'
 import NutritionPanel from '../components/NutritionPanel'
-import { AddPhoto, PhotoImg, PhotoThumb } from '../components/MealPhotos'
+import { AddPhoto, PhotoThumb } from '../components/MealPhotos'
+import PhotoCarousel from '../components/PhotoCarousel'
 import MealDetails from '../components/MealDetails'
 import Icon from '../components/Icon'
 import { newestFirst, removeMealPhotos } from '../lib/photos'
@@ -31,6 +32,27 @@ const siteName = (url) => {
   }
 }
 const shortDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
+
+// One part of the recipe page that opens and closes. The heading sits in
+// the summary, so the outline still reads Ingredients, Nutrition, Steps.
+function Section({ id: sectionId, title, note, open, headingRef, children }) {
+  return (
+    <details className="sec" open={open || undefined} id={sectionId}>
+      <summary>
+        <span className="sec-title">
+          <h2 ref={headingRef} tabIndex={headingRef ? -1 : undefined}>
+            {title}
+          </h2>
+          {note && <span className="sec-note">{note}</span>}
+        </span>
+        <span className="chev" aria-hidden="true">
+          <Icon name="chevron" size={22} />
+        </span>
+      </summary>
+      <div className="sec-body">{children}</div>
+    </details>
+  )
+}
 
 export default function RecipeView() {
   const { id } = useParams()
@@ -182,6 +204,18 @@ export default function RecipeView() {
   const loggedByNames = (meal) => [...new Set(meal.entries.map((e) => nameFor(e.created_by)))].join(' and ')
   const stars = (n) => `${n}★`
 
+  const latestDay = meals[0]?.cooked_on ?? null
+  const ratingNote = [
+    ...ratedMembers.map((m) => `${m === member.user_id ? 'You' : nameFor(m)} ${stars(summary.byMember[m])}`),
+    meals.length > 0 ? `made ${meals.length}×` : 'not made yet',
+  ].join(' · ')
+  const noteCount = notes.length
+  const nutritionNote = (() => {
+    if (!recipe.nutrition?.items?.length) return null
+    const per = (key) => recipe.nutrition.items.reduce((sum, item) => sum + (Number(item[key]) || 0), 0) / (Number(recipe.base_servings) || 1)
+    return `${Math.round(per('calories'))} cal · ${Math.round(per('protein_g'))} g protein per serving`
+  })()
+
   async function handleAddNote(event) {
     event.preventDefault()
     if (!noteText.trim()) return
@@ -190,18 +224,29 @@ export default function RecipeView() {
   }
 
   return (
-    <Page title={recipe.title}>
+    <Page
+      title={recipe.title}
+      subtitle={
+        (recipe.cuisine || recipe.meal_type) && (
+          <>
+            <Icon name="globe" size={18} />
+            {[recipe.cuisine, recipe.meal_type].filter(Boolean).join(' · ')}
+          </>
+        )
+      }
+    >
       <p role="status" style={message ? undefined : { margin: 0 }}>
         {message && <strong>{message}</strong>}
       </p>
-      {photos.length > 0 && (
-        <figure className="recipe-photo">
-          <PhotoImg photo={photos[0]} alt={`${recipe.title} as you made it on ${formatDay(photos[0].cooked_on)}`} />
-          <figcaption className="hint">
-            {formatDay(photos[0].cooked_on)} · {photoBy(photos[0])}
-          </figcaption>
-        </figure>
-      )}
+      <PhotoCarousel
+        recipe={recipe}
+        photos={photos}
+        photoBy={photoBy}
+        addDay={latestDay}
+        addLabel={latestDay && myPhotoOn(latestDay) ? 'Replace your photo' : 'Add photo'}
+        member={member}
+        onStatus={setPhotoStatus}
+      />
       <ul className="facts">
         {ratedMembers.length > 0 && (
           <li>
@@ -220,12 +265,6 @@ export default function RecipeView() {
           <li>
             <Icon name="clock" size={18} />
             {timeSummary(recipe)}
-          </li>
-        )}
-        {(recipe.cuisine || recipe.meal_type) && (
-          <li>
-            <Icon name="globe" size={18} />
-            {[recipe.cuisine, recipe.meal_type].filter(Boolean).join(' · ')}
           </li>
         )}
       </ul>
@@ -283,8 +322,7 @@ export default function RecipeView() {
         </div>
       )}
 
-      <section aria-labelledby="ingredients-heading">
-        <h2 id="ingredients-heading">Ingredients</h2>
+      <Section id="ingredients" title="Ingredients" open>
         {groupBySection(ingredients).map((group) => (
           <div key={group.section ?? 'main'}>
             {group.section && <h3 className="ingredient-section">{group.section}</h3>}
@@ -303,12 +341,13 @@ export default function RecipeView() {
             </ul>
           </div>
         ))}
-      </section>
+      </Section>
 
-      <NutritionPanel recipe={recipe} ingredients={ingredients} member={member} online={online} shownServings={shownServings} />
+      <Section id="nutrition" title="Nutrition" note={nutritionNote}>
+        <NutritionPanel recipe={recipe} ingredients={ingredients} member={member} online={online} shownServings={shownServings} headless />
+      </Section>
 
-      <section aria-labelledby="steps-heading">
-        <h2 id="steps-heading">Steps</h2>
+      <Section id="steps" title="Steps" open>
         {steps.length === 0 ? (
           <p className="hint">No steps yet.</p>
         ) : (
@@ -325,12 +364,15 @@ export default function RecipeView() {
             Amounts are scaled. Times and pan sizes aren't.
           </p>
         )}
-      </section>
+      </Section>
 
-      <section aria-labelledby="log-heading">
-        <h2 id="log-heading" ref={logHeadingRef} tabIndex={-1}>
-          {finishedCooking ? 'How was it?' : 'Your rating'}
-        </h2>
+      <Section
+        id="rating"
+        title={finishedCooking ? 'How was it?' : 'Rating and cook log'}
+        note={finishedCooking ? null : ratingNote}
+        open={Boolean(finishedCooking) || meals.length === 0}
+        headingRef={logHeadingRef}
+      >
         {meals.length === 0 ? (
           <p className="hint">Rate it once you've made it.</p>
         ) : myStars === undefined || changingRating ? (
@@ -476,10 +518,9 @@ export default function RecipeView() {
             Show all {meals.length}
           </button>
         )}
-      </section>
+      </Section>
 
-      <section aria-labelledby="notes-heading">
-        <h2 id="notes-heading">Notes</h2>
+      <Section id="notes" title="Notes" note={noteCount ? `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : null} open>
         {notes.length === 0 ? (
           <p className="hint">No notes yet.</p>
         ) : (
@@ -566,7 +607,7 @@ export default function RecipeView() {
             Post
           </button>
         </form>
-      </section>
+      </Section>
 
       {(recipe.source_name || recipe.source_url) && (
         <p>

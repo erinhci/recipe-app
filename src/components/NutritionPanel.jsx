@@ -36,7 +36,9 @@ function NutrientTable({ caption, values }) {
 
 // Estimated calories and macros. Saved with the recipe, so it shows offline
 // and on both phones; asks again only when someone taps Estimate.
-export default function NutritionPanel({ recipe, ingredients, member, online, shownServings }) {
+// headless: no section or heading, for when the recipe page's own
+// collapsible section already gives it one.
+export default function NutritionPanel({ recipe, ingredients, member, online, shownServings, headless = false }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [eaten, setEaten] = useState(1)
@@ -62,9 +64,10 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
   )
 
   if (!nutrition) {
+    const Wrap = headless ? 'div' : 'section'
     return (
-      <section aria-labelledby="nutrition-heading">
-        <h2 id="nutrition-heading">Nutrition</h2>
+      <Wrap aria-labelledby={headless ? undefined : 'nutrition-heading'}>
+        {!headless && <h2 id="nutrition-heading">Nutrition</h2>}
         {estimateButton('Estimate calories and protein')}
         {!online && <p className="hint">Needs the internet.</p>}
         {busy ? (
@@ -74,7 +77,7 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
             {error}
           </p>
         )}
-      </section>
+      </Wrap>
     )
   }
 
@@ -88,11 +91,18 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
   const byNumber = new Map(nutrition.items.map((item) => [item.number, item]))
   const missing = basis.lines.length - nutrition.items.filter((i) => i.number <= basis.lines.length).length
 
+  const Wrap = headless ? 'div' : 'section'
   return (
-    <section aria-labelledby="nutrition-heading">
-      <h2 id="nutrition-heading">
-        Nutrition <span className="heading-note">per serving, estimated</span>
-      </h2>
+    <Wrap aria-labelledby={headless ? undefined : 'nutrition-heading'}>
+      {headless ? (
+        <p className="hint" style={{ marginTop: 0 }}>
+          Per serving, estimated.
+        </p>
+      ) : (
+        <h2 id="nutrition-heading">
+          Nutrition <span className="heading-note">per serving, estimated</span>
+        </h2>
+      )}
 
       {stale && (
         <>
@@ -195,6 +205,6 @@ export default function NutritionPanel({ recipe, ingredients, member, online, sh
           {error}
         </p>
       )}
-    </section>
+    </Wrap>
   )
 }
