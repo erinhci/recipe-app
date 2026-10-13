@@ -1,6 +1,8 @@
 import { supabase } from './supabase.js'
 import { blobToBase64, compressImage } from './images.js'
-import { ingredientToLine } from './ingredients.js'
+import { ingredientsToText, sectionHeading } from './ingredients.js'
+
+const sectionName = (name) => sectionHeading(`${name}:`) || null
 import { normalizeUnit } from './units.js'
 import { splitRecipeText } from './textRecipe.js'
 
@@ -81,15 +83,18 @@ export async function importUrl(url) {
 
 // Turns a draft from the function into the review form's fields.
 export function draftToForm(draft) {
+  // Gemini marks which part of the list each ingredient is in ("Sauce");
+  // the text gets a "Sauce:" line where the part changes.
   const ingredientLines = draft.ingredients
-    ? draft.ingredients.map((ing) =>
-        ingredientToLine({
+    ? ingredientsToText(
+        draft.ingredients.map((ing) => ({
           quantity: typeof ing.quantity === 'number' ? ing.quantity : null,
           unit: normalizeUnit(ing.unit),
           item: ing.item,
           prep_note: ing.prep || null,
-        }),
-      )
+          section: typeof ing.section === 'string' && ing.section.trim() ? sectionName(ing.section) : null,
+        })),
+      ).split('\n')
     : (draft.ingredient_lines ?? [])
   return {
     title: draft.title ?? '',

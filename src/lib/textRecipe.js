@@ -1,4 +1,5 @@
 import { parseQuantity } from './units.js'
+import { sectionHeading } from './ingredients.js'
 
 // Splits raw recipe text (pasted, read from a PDF, or read by OCR) into a
 // title, ingredient lines, and steps, using section headers when present
@@ -48,7 +49,9 @@ export function splitRecipeText(text) {
     // sentences are steps, and the first other line is the title.
     for (const line of lines) {
       if (SERVINGS.test(line) && line.length < 40) continue
-      if (startsWithAmount(line) && line.length < 80 && !STEP_NUMBER.test(line)) ingredientLines.push(line)
+      // "Sauce:" between ingredient lines starts a part of the list.
+      if (ingredientLines.length > 0 && steps.length === 0 && sectionHeading(line)) ingredientLines.push(line)
+      else if (startsWithAmount(line) && line.length < 80 && !STEP_NUMBER.test(line)) ingredientLines.push(line)
       else if (!title && line.length < 80 && steps.length === 0 && ingredientLines.length === 0) title = line
       else steps.push(line)
     }

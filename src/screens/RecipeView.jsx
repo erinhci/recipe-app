@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
+import { groupBySection } from '../lib/ingredients'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { addNote, deleteMealLog, deleteNote, deleteRecipe, localDate, logMeal, rateRecipe } from '../lib/data'
@@ -284,19 +285,24 @@ export default function RecipeView() {
 
       <section aria-labelledby="ingredients-heading">
         <h2 id="ingredients-heading">Ingredients</h2>
-        <ul style={{ paddingLeft: 'var(--space-4)' }}>
-          {ingredients.map((ing) => {
-            const shown = displayIngredient(ing, factor, system)
-            return (
-              <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
-                {shown.text && <strong>{shown.text} </strong>}
-                {ing.item}
-                {ing.prep_note ? `, ${ing.prep_note}` : ''}
-                {shown.note && <div className="hint">{shown.note}</div>}
-              </li>
-            )
-          })}
-        </ul>
+        {groupBySection(ingredients).map((group) => (
+          <div key={group.section ?? 'main'}>
+            {group.section && <h3 className="ingredient-section">{group.section}</h3>}
+            <ul style={{ paddingLeft: 'var(--space-4)' }}>
+              {group.items.map((ing) => {
+                const shown = displayIngredient(ing, factor, system)
+                return (
+                  <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
+                    {shown.text && <strong>{shown.text} </strong>}
+                    {ing.item}
+                    {ing.prep_note ? `, ${ing.prep_note}` : ''}
+                    {shown.note && <div className="hint">{shown.note}</div>}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
       </section>
 
       <NutritionPanel recipe={recipe} ingredients={ingredients} member={member} online={online} shownServings={shownServings} />

@@ -107,6 +107,25 @@ function pickOne(group, { stepText, anchors, ingredients, earlierMentions }) {
   return candidates[Math.min(earlierMentions, candidates.length - 1)]
 }
 
+// True when a step refers to a whole part of the ingredient list: "add
+// the sauce ingredients", "For the sauce, whisk...", "make the dressing".
+// "Pour the sauce over the rolls" uses the finished sauce, so it doesn't.
+function namesSection(stepWords, section) {
+  const s = keyWords(section).join(' ')
+  if (!s) return false
+  const text = ` ${stepWords.join(' ')} `
+  return [
+    ` ${s} ingredient `,
+    ` ingredient for the ${s} `,
+    ` ingredient for ${s} `,
+    ` make the ${s} `,
+    ` prepare the ${s} `,
+    ` mix the ${s} `,
+    ` whisk together the ${s} `,
+    ` stir together the ${s} `,
+  ].some((phrase) => text.includes(phrase)) || text.startsWith(` for the ${s} `) || text.startsWith(` ${s} `)
+}
+
 // The ingredients a step uses, in recipe order. earlierSteps (the text of
 // the steps before this one) only matters when an ingredient is listed
 // more than once.
@@ -118,7 +137,11 @@ export function ingredientsForStep(stepText, ingredients, earlierSteps = []) {
     const main = keys[keys.length - 1]
     if (main) mainWordCounts.set(main, (mainWordCounts.get(main) ?? 0) + 1)
   }
-  const matched = ingredients.filter((ing) => mentions(stepWords, ing, mainWordCounts))
+  const sections = [...new Set(ingredients.map((ing) => ing.section).filter(Boolean))]
+  const fromSections = new Set(
+    ingredients.filter((ing) => ing.section && sections.includes(ing.section) && namesSection(stepWords, ing.section)),
+  )
+  const matched = ingredients.filter((ing) => fromSections.has(ing) || mentions(stepWords, ing, mainWordCounts))
 
   // Group matches that share a name.
   const groups = new Map()
@@ -127,9 +150,14 @@ export function ingredientsForStep(stepText, ingredients, earlierSteps = []) {
     groups.set(name, [...(groups.get(name) ?? []), ing])
   }
   const anchors = [...groups.values()].filter((g) => g.length === 1).map((g) => g[0])
-  const keep = new Set(anchors)
+  const keep = new Set([...anchors, ...fromSections])
   for (const [name, group] of groups) {
     if (group.length === 1) continue
+    // A named part of the list already settles which copy this step uses.
+    if (group.some((ing) => fromSections.has(ing))) {
+      for (const ing of group) if (!fromSections.has(ing)) keep.delete(ing)
+      continue
+    }
     const phrase = name.split(' ')
     const earlierMentions = earlierSteps.filter((text) => hasPhrase(words(text).map(singular), phrase)).length
     keep.add(pickOne(group, { stepText, anchors, ingredients, earlierMentions }))

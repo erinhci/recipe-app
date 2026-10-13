@@ -18,7 +18,7 @@
 //
 // Response: { draft: { title, servings, cuisine, meal_type, total_time_minutes,
 //   prep_minutes, cook_minutes,
-//   ingredients: [{ quantity, unit, item, prep }] | null,
+//   ingredients: [{ quantity, unit, item, prep, section }] | null,
 //   ingredient_lines: string[] | null, steps: string[], source_url, source_name }, method }
 //   source_name: who the recipe is credited to (a site, book, or person), if shown.
 
@@ -56,7 +56,7 @@ type Draft = {
   total_time_minutes: number | null
   prep_minutes: number | null
   cook_minutes: number | null
-  ingredients: { quantity: number | null; unit: string | null; item: string; prep: string | null }[] | null
+  ingredients: { quantity: number | null; unit: string | null; item: string; prep: string | null; section?: string | null }[] | null
   ingredient_lines: string[] | null
   steps: string[]
   source_url: string | null
@@ -208,6 +208,7 @@ Return the recipe exactly as written. Rules:
 - quantity is a number (convert fractions: 1 1/2 -> 1.5). Use null when there is no amount ("salt to taste").
 - unit is the unit word as written ("cup", "tbsp", "g", "clove", "can"), or null when there is none ("2 eggs").
 - item is the ingredient name. prep is preparation like "diced" or "room temperature", or null.
+- section is the heading an ingredient is listed under when the ingredient list has parts, like "Sauce", "Filling" or "For the dressing". Use the heading's words without "For the". Use null when the list has no headings, and for ingredients listed before the first heading.
 - steps are the instructions in order, one entry per step, without step numbers.
 - servings is the number of servings the recipe makes as written, or null if not stated.
 - total_time_minutes is the total time, prep and cooking together, in minutes. Use the stated total time if there is one. Otherwise estimate it from the steps.
@@ -237,6 +238,7 @@ const SCHEMA = {
           unit: { type: 'STRING', nullable: true },
           item: { type: 'STRING' },
           prep: { type: 'STRING', nullable: true },
+          section: { type: 'STRING', nullable: true },
         },
         required: ['item'],
       },
@@ -314,7 +316,9 @@ async function askGemini(parts: unknown[], apiKey: string, models: string[]): Pr
       total_time_minutes: Number.isInteger(parsed.total_time_minutes) ? parsed.total_time_minutes : null,
       prep_minutes: Number.isInteger(parsed.prep_minutes) && parsed.prep_minutes > 0 ? parsed.prep_minutes : null,
       cook_minutes: Number.isInteger(parsed.cook_minutes) && parsed.cook_minutes > 0 ? parsed.cook_minutes : null,
-      ingredients: (parsed.ingredients ?? []).filter((i: any) => i?.item),
+      ingredients: (parsed.ingredients ?? [])
+        .filter((i: any) => i?.item)
+        .map((i: any) => ({ ...i, section: typeof i.section === 'string' && i.section.trim() ? i.section.trim().slice(0, 60) : null })),
       ingredient_lines: null,
       steps: (parsed.steps ?? []).map((s: unknown) => String(s).trim()).filter(Boolean),
       source_url: /^https?:\/\/\S+\.\S+$/.test(String(parsed.source_url ?? '').trim()) ? String(parsed.source_url).trim() : null,

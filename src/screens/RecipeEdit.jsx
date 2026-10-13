@@ -4,7 +4,7 @@ import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
 import { loadRecipe, saveRecipe } from '../lib/data'
 import OriginalPanel from '../components/OriginalPanel'
-import { ingredientToLine, parseIngredientLine, parseSteps } from '../lib/ingredients'
+import { ingredientToLine, ingredientsToText, parseIngredientText, parseSteps } from '../lib/ingredients'
 import { CUISINES, MEAL_TYPES } from '../lib/constants'
 
 const SOURCE_TYPES = { images: 'photo', pdf: 'pdf', url: 'url', text: 'text' }
@@ -56,7 +56,7 @@ export default function RecipeEdit() {
         setCookTime(recipe.cook_minutes ? String(recipe.cook_minutes) : '')
         setSourceUrl(recipe.source_url ?? '')
         setSourceName(recipe.source_name ?? '')
-        setIngredientText(proposed?.ingredientText ?? ingredients.map(ingredientToLine).join('\n'))
+        setIngredientText(proposed?.ingredientText ?? ingredientsToText(ingredients))
         setStepText(proposed?.stepText ?? steps.map((s) => s.text).join('\n\n'))
       }
       setLoaded(true)
@@ -65,7 +65,7 @@ export default function RecipeEdit() {
   }, [id, isNew])
 
   const parsed = useMemo(
-    () => ingredientText.split('\n').map(parseIngredientLine).filter(Boolean),
+    () => parseIngredientText(ingredientText),
     [ingredientText],
   )
   const flagged = parsed.filter((ing) => ing.needs_review).length
@@ -245,7 +245,7 @@ export default function RecipeEdit() {
             aria-describedby="ingredients-hint"
           />
           <span id="ingredients-hint" className="hint">
-            One per line, like "1 1/2 cups flour, sifted".
+            One per line, like "1 1/2 cups flour, sifted". For parts of the recipe, put a line like "Sauce:" above them.
           </span>
         </div>
 
@@ -266,6 +266,9 @@ export default function RecipeEdit() {
                   key={i}
                   className={ing.needs_review ? 'flagged' : undefined}
                 >
+                  {ing.section && (i === 0 || parsed[i - 1].section !== ing.section) && (
+                    <strong style={{ display: 'block', marginTop: i ? 'var(--space-2)' : 0 }}>{ing.section}</strong>
+                  )}
                   {ing.quantity != null ? <strong>{ingredientToLine({ ...ing, item: '', prep_note: null }).trim()}</strong> : <em>no amount</em>}
                   {' · '}
                   {ing.item}

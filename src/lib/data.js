@@ -25,13 +25,16 @@ const RECIPE_FIELDS = [
 ]
 const INGREDIENT_FIELDS = [
   'id', 'recipe_id', 'position', 'quantity', 'unit', 'item', 'prep_note',
-  'raw_text', 'needs_review', 'updated_at',
+  'raw_text', 'needs_review', 'updated_at', 'section',
 ]
 const STEP_FIELDS = ['id', 'recipe_id', 'position', 'text', 'track', 'updated_at']
 
 function pick(obj, fields) {
   const out = {}
   for (const field of fields) if (obj[field] !== undefined) out[field] = obj[field]
+  // Sent only when set, so recipes without sections keep syncing even
+  // before the section column exists (migration 0012).
+  if (out.section == null) delete out.section
   return out
 }
 
@@ -198,26 +201,39 @@ export async function deleteRecipeForever(recipeId) {
 // Saves a two-chef split: track names on the recipe and a track on each
 // step (in step order). Step edit times stay as they were, so this
 // doesn't count as a recipe change for ratings.
-// extra: { timing: [{ minutes }], while_waiting: { a, b } }, kept
-// with the track names on the recipe.
+// extra: { timing: [{ minutes }], while_waiting: { a, b },
+//   prep_steps: [{ text, track, minutes }] }. Prep steps are prep the
+// ingredient list implies ("finely chopped") that no step asked for. They
+// become real steps at the start, so they can be split and checked off.
+// They take the recipe's last edit time, so adding them doesn't ask for
+// ratings to be redone: the dish is the same.
 export async function saveChefSplit(recipeId, names, tracks, extra = {}) {
-  await db.transaction('rw', [db.recipes, db.steps, db.outbox], async () => {
+  const prep = (Array.isArray(extra.prep_steps) ? extra.prep_steps : []).filter((p) => p?.text && (p.track === 'a' || p.track === 'b'))
+  await db.transaction('rw', [db.recipes, db.steps, db.ingredients, db.outbox], async () => {
     const recipe = await db.recipes.get(recipeId)
     if (!recipe) return
     const steps = await db.steps.where('recipe_id').equals(recipeId).sortBy('position')
+    const ingredients = await db.ingredients.where('recipe_id').equals(recipeId).toArray()
+    const quiet = [...steps, ...ingredients].reduce((latest, row) => (row.updated_at > latest ? row.updated_at : latest), '') || now()
+    const rows = [
+      ...prep.map((p) => ({ id: newId(), recipe_id: recipeId, text: p.text, updated_at: quiet })),
+      ...steps,
+    ]
+    const allTracks = [...prep.map((p) => p.track), ...tracks]
     const chefTracks = { a: names.a, b: names.b }
-    if (Array.isArray(extra.timing)) chefTracks.timing = extra.timing
+    if (Array.isArray(extra.timing)) chefTracks.timing = [...prep.map((p) => ({ minutes: p.minutes ?? null })), ...extra.timing]
     if (extra.while_waiting) chefTracks.while_waiting = extra.while_waiting
     const updated = pick({ ...recipe, chef_tracks: chefTracks }, RECIPE_FIELDS)
     await db.recipes.put(updated)
     await enqueue('recipes', 'upsert', updated)
-    for (const [index, step] of steps.entries()) {
-      const row = pick({ ...step, track: tracks[index] ?? 'both' }, STEP_FIELDS)
+    for (const [index, step] of rows.entries()) {
+      const row = pick({ ...step, position: index, track: allTracks[index] ?? 'both' }, STEP_FIELDS)
       await db.steps.put(row)
       await enqueue('steps', 'upsert', row)
     }
   })
   afterWrite()
+  return prep.length
 }
 
 export async function updateRecipeFields(recipeId, fields) {

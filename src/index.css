@@ -95,6 +95,9 @@ html:has(.cook-nav) {
 
 body {
   margin: 0;
+  /* Nothing on a phone screen should scroll sideways. Clipping (not
+     hiding) keeps sticky and fixed bars working and still allows zoom. */
+  overflow-x: clip;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
@@ -271,6 +274,7 @@ textarea {
 
 .page {
   max-width: var(--page-width);
+  overflow-x: clip;
   margin: 0 auto;
   padding: var(--space-6) var(--space-5) calc(var(--nav-height) + env(safe-area-inset-bottom) + var(--space-10));
 }
@@ -950,6 +954,8 @@ ul + h3,
 .library-tools { display: flex; gap: var(--space-2); align-items: stretch; margin-bottom: var(--space-4); }
 .library-tools .field { margin: 0; }
 .library-tools .field:first-child { flex: 1; min-width: 0; }
+/* Safari sizes a search box by its character count; let it shrink. */
+.library-tools input { width: 100%; min-width: 0; }
 .library-sort select { width: auto; max-width: 10rem; }
 .filter-chips {
   list-style: none;
@@ -1229,3 +1235,4 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .source-note { font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.3; }
 .row-body .divided > li:last-child { border-bottom: 0; }
 .page > details.nut-peek { margin-top: var(--space-3); }
+.ingredient-section { margin: var(--space-4) 0 var(--space-2); font-size: var(--text-md); }

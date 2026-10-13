@@ -1,5 +1,6 @@
 import Icon from './Icon'
 import { ingredientLine } from '../lib/cooking'
+import { groupBySection } from '../lib/ingredients'
 import { NUTRIENTS, formatNutrient, isNutritionStale, nutritionTotals } from '../lib/nutrition'
 import { clock, findWait, waitLabel } from '../lib/stepTimer'
 
@@ -46,13 +47,18 @@ export function AllIngredients({ ingredients, factor, system }) {
   return (
     <details className="card" id="all-ingredients">
       <summary>All ingredients</summary>
-      <ul>
-        {ingredients.map((ing) => (
-          <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
-            {ingredientLine(ing, factor, system)}
-          </li>
-        ))}
-      </ul>
+      {groupBySection(ingredients).map((group) => (
+        <div key={group.section ?? 'main'}>
+          {group.section && <h3 className="ingredient-section">{group.section}</h3>}
+          <ul>
+            {group.items.map((ing) => (
+              <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
+                {ingredientLine(ing, factor, system)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </details>
   )
 }

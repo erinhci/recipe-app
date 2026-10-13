@@ -62,7 +62,7 @@ export function applyChanges({ ingredients, steps }, changes) {
   const newIngredients = applyToList(
     ingredients,
     ingChanges,
-    (old, text) => ({ ...parseIngredientLine(text), id: old.id }),
+    (old, text) => ({ ...parseIngredientLine(text), id: old.id, section: old.section ?? null }),
     (text) => parseIngredientLine(text),
   )
   const newSteps = applyToList(

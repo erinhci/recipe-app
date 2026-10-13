@@ -72,3 +72,42 @@ test('step times and cleanup tasks are kept tidy', () => {
     b: ['Toss the egg shells'],
   })
 })
+
+test('prep the ingredient list implies comes back as steps for one cook', () => {
+  const split = cleanSplit(
+    {
+      splittable: true,
+      name_a: 'Filling',
+      name_b: 'Sauce',
+      steps: [{ number: 1, track: 'a' }, { number: 2, track: 'a' }, { number: 3, track: 'both' }],
+      prep_steps: [
+        { text: 'Finely chop the rotisserie chicken', track: 'b', minutes: 4 },
+        { text: 'Dice the onion and carrots.', track: 'b', minutes: 5 },
+        { text: 'finely chop the rotisserie chicken', track: 'a' }, // duplicate
+        { text: 'Mix', track: 'both' }, // shared prep isn't allowed
+        { text: 'ok', track: 'a' }, // too short
+      ],
+    },
+    3,
+  )
+  assert.equal(split.splittable, true)
+  assert.deepEqual(split.prep_steps, [
+    { text: 'Finely chop the rotisserie chicken.', track: 'b', minutes: 4 },
+    { text: 'Dice the onion and carrots.', track: 'b', minutes: 5 },
+  ])
+})
+
+test('prep steps can be what gives the second cook work', () => {
+  const split = cleanSplit(
+    { splittable: true, name_a: 'Rolls', name_b: 'Prep', steps: [{ number: 1, track: 'a' }, { number: 2, track: 'a' }], prep_steps: [{ text: 'Grate the carrots.', track: 'b' }] },
+    2,
+  )
+  assert.equal(split.splittable, true)
+})
+
+test('the prompt asks for missing prep and reads part names', () => {
+  const input = readInput({ title: 'Rolls', ingredients: ['2 cups chicken, finely chopped', 'Sauce: 2 tbsp soy sauce'], steps: ['Fill', 'Roll'] })
+  const prompt = buildPrompt(input as Exclude<typeof input, string>)
+  assert.match(prompt, /prep_steps/)
+  assert.match(prompt, /Sauce: 2 tbsp soy sauce/)
+})

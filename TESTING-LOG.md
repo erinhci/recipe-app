@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-13 | Using 0.26.0 at home: Library scrolled sideways on iPhone; the Photos tile asks which source instead of opening the library; a sauce section in the ingredient list was lost, so "add the sauce ingredients" showed nothing; prep in the ingredient list ("finely chopped") wasn't a step, so the split was uneven | Sideways scroll stopped; ingredient sections kept and matched to steps; the split adds missing prep as steps (0.26.1). The Photos menu is iOS behavior and stays | See entry |
 | 2026-10-13 | Cooking with the build: "You'll need" showed the wrong water or the same garlic twice, and listed water for a step that only covers the bowl; the screen didn't stay on | Duplicate ingredients resolved to one per step, whole-word matching, passing mentions skipped; wake lock asked again on the next tap (0.25.2) | See entry |
 | 2026-10-12 | Two-chef mode: a step's ingredients were hard to spot on a scan; the tester left two-chef mode to check the ingredient list | Open. Redesign drawn on the design canvas (Oct 13): a "You'll need" card above the step text, as a plain list with a link to the full list | See entry |
 | 2026-10-12 | Reviewing all screens side by side in Figma: main buttons still on the left (Save recipe, Sort it, Choose files, Estimate again, Stop cooking); Restore and Delete forever too close | Main actions on the right; ways out and deletes on the far left of the same row; Stop cooking stays left with space above, away from Log it (0.25.1) | `601b604` |
@@ -44,6 +45,49 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-13: Sections, prep work, and the first 0.26.0 bugs
+
+**Finding.** Using 0.26.0 at home, with a recipe for napa cabbage rolls:
+
+- The Library scrolled sideways on iPhone.
+- The Camera tile opened the camera and the PDF tile opened Files, but the
+  Photos tile asked which source to use instead of opening the photo
+  library.
+- The recipe's ingredient list had a Sauce section, but import kept only
+  the lines, so the heading was lost. The step "add the sauce ingredients"
+  showed nothing under "You'll need".
+- The ingredient list said "finely chopped", "finely diced", "grated" and
+  "thinly sliced", but no step said to do that work. The two-chef split
+  only divides steps, so the chopping wasn't shared and the split came out
+  uneven.
+
+**Cause and change (0.26.1).**
+
+- Sideways scroll: it didn't happen in Chrome at the same width, so the
+  likely cause is Safari sizing the search box by its character count next
+  to the two new icon buttons. The search box can now shrink, and the page
+  clips anything wider than the screen. Check on the phone.
+- Photos: iOS always shows its own menu (Photo Library, Take Photo, Choose
+  Files) for a web page's photo picker. A web app can't skip it, so this
+  stays. Camera goes straight to the camera because it asks for capture.
+- Sections: ingredients now have a section (migration 0012). Gemini returns
+  the heading each ingredient is under. In the edit box a line like
+  "Sauce:" or "For the sauce:" starts a section. The recipe page and the
+  cook modes show section headings. A step that names a section ("add the
+  sauce ingredients", "For the sauce, whisk...", "make the dressing") lists
+  that whole section, and its copies win over same-named ingredients
+  elsewhere in the list. "Pour the sauce over the rolls" uses the finished
+  sauce, so it lists nothing.
+- Prep: when a recipe is split, Gemini also returns the prep the ingredient
+  list implies that no step covers, as short steps for one cook each ("Finely
+  chop the rotisserie chicken"). They're added as real steps at the start,
+  counted when balancing the two parts, and keep the recipe's last edit
+  time so ratings aren't asked again. Two-chef mode says which prep steps
+  it added.
+
+Recipes saved before this keep a flat list. Adding a "Sauce:" line in Edit
+fixes one, and splitting it again adds the missing prep.
 
 ## 2026-10-13: Wrong ingredients under a step, and the screen dimmed
 

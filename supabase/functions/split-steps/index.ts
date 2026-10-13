@@ -11,10 +11,14 @@
 //
 // Request body (JSON): { title, ingredients: string[], steps: string[] }
 // Response: { splittable, reason, names: { a, b }, tracks: ("a" | "b" | "both")[],
-//   timing: [{ minutes }], while_waiting: { a: string[], b: string[] } }
+//   timing: [{ minutes }], while_waiting: { a: string[], b: string[] },
+//   prep_steps: [{ text, track: "a" | "b", minutes }] }
 //   tracks and timing have one entry per step, in order. while_waiting is
 //   cleanup each cook can do after finishing their part. The app shows
 //   times and leaves when to start each step to the cooks.
+//   prep_steps is prep the ingredient list implies ("2 cups chicken, finely
+//   chopped") that no step asks for. The app adds them as steps at the
+//   start, before the recipe's own steps, so the prep is split too.
 
 const DEFAULT_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
 const FUNCTION_NAME = 'split-steps'
@@ -61,6 +65,8 @@ export function buildPrompt(input: Input) {
     '- minutes: about how long each step takes, including waiting in it (preheating, baking, simmering). Whole minutes.',
     '- while_waiting_a and while_waiting_b: up to 3 short cleanup or tidy-up tasks the cook of that track can do once their part is done, based on what they used, like "Toss the egg shells" or "Put away the spices". Plain, a few words each.',
     '- Return one entry for every step, using the step numbers below.',
+    '- prep_steps: ingredients are often listed already prepared ("finely chopped", "diced", "peeled", "grated", "minced", "cubed", "sliced", "zested") with no step that says to do it. Add a prep step for that work: a short instruction naming the ingredient without its amount, like "Finely chop the rotisserie chicken." Combine quick prep for the same part into one step, like "Dice the onion and carrots." Skip anything a step already covers, and things usually bought that way (jarred minced garlic, canned diced tomatoes, shredded cheese). Give each prep step a track ("a" or "b", never "both") and minutes. Count prep steps when balancing the tracks. Leave prep_steps empty if no prep is missing.',
+    '- An ingredient line that starts with a part name and a colon ("Sauce: 2 tbsp soy sauce") belongs to that part of the recipe.',
     '',
     `Recipe: ${input.title}`,
     'Ingredients:',
@@ -87,6 +93,18 @@ const SCHEMA = {
           minutes: { type: 'INTEGER', nullable: true },
         },
         required: ['number', 'track'],
+      },
+    },
+    prep_steps: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          text: { type: 'STRING' },
+          track: { type: 'STRING', enum: ['a', 'b'] },
+          minutes: { type: 'INTEGER', nullable: true },
+        },
+        required: ['text', 'track'],
       },
     },
     while_waiting_a: { type: 'ARRAY', items: { type: 'STRING' } },
@@ -126,7 +144,19 @@ export function cleanSplit(raw: any, stepCount: number) {
   const names = { a: shortName(raw?.name_a, 'Track 1'), b: shortName(raw?.name_b, 'Track 2') }
   if (names.a.toLowerCase() === names.b.toLowerCase()) names.b = `${names.b} 2`
   const reason = typeof raw?.reason === 'string' && raw.reason.trim() ? raw.reason.trim() : null
-  const bothHaveWork = tracks.includes('a') && tracks.includes('b')
+  // Prep the ingredient list implies but no step asks for. At most 8, each
+  // a short instruction for one cook.
+  const seenPrep = new Set<string>()
+  const prep_steps = (Array.isArray(raw?.prep_steps) ? raw.prep_steps : [])
+    .map((p: any) => ({
+      text: typeof p?.text === 'string' ? p.text.trim().replace(/\s+/g, ' ') : '',
+      track: p?.track === 'a' || p?.track === 'b' ? p.track : null,
+      minutes: Number.isInteger(Number(p?.minutes)) && Number(p.minutes) > 0 && Number(p.minutes) <= 120 ? Number(p.minutes) : null,
+    }))
+    .filter((p: any) => p.track && p.text.length >= 4 && p.text.length <= 160 && !seenPrep.has(p.text.toLowerCase()) && seenPrep.add(p.text.toLowerCase()))
+    .slice(0, 8)
+    .map((p: any) => ({ ...p, text: /[.!?]$/.test(p.text) ? p.text : `${p.text}.` }))
+  const bothHaveWork = [...tracks, ...prep_steps.map((p: any) => p.track)].includes('a') && [...tracks, ...prep_steps.map((p: any) => p.track)].includes('b')
   if (raw?.splittable === false || !bothHaveWork) {
     return {
       splittable: false,
@@ -135,9 +165,10 @@ export function cleanSplit(raw: any, stepCount: number) {
       tracks,
       timing,
       while_waiting,
+      prep_steps: [],
     }
   }
-  return { splittable: true, reason: null, names, tracks, timing, while_waiting }
+  return { splittable: true, reason: null, names, tracks, timing, while_waiting, prep_steps }
 }
 
 // How much the model "thinks" before answering. Less thinking answers

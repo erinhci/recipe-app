@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.26.1",
+    "date": "2026-10-13",
+    "notes": [
+      "Ingredient lists can have parts, like Filling and Sauce. A step that says \"add the sauce ingredients\" now shows them. Recipes read by Gemini keep their parts; to add one yourself, put a line like \"Sauce:\" above those ingredients in Edit",
+      "Two-chef split: prep the ingredient list implies (\"finely chopped\", \"diced\", \"grated\") becomes its own steps at the start, so the chopping is shared and the split is fairer",
+      "Screens no longer scroll sideways on iPhone"
+    ]
+  },
+  {
     "version": "0.26.0",
     "date": "2026-10-13",
     "notes": [

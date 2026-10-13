@@ -133,3 +133,32 @@ test('the same ingredient listed twice shows once, in order of use', () => {
   assert.deepEqual(ingredientsForStep(steps[0], garlic, []).map((i) => i.id), ['g1'])
   assert.deepEqual(ingredientsForStep(steps[1], garlic, steps.slice(0, 1)).map((i) => i.id), ['g2'])
 })
+
+// Napa cabbage rolls: the sauce is its own part of the ingredient list.
+const napa = [
+  { id: 'cab', quantity: 8, unit: null, item: 'large napa cabbage leaves', section: null },
+  { id: 'chk', quantity: 2, unit: 'cup', item: 'rotisserie chicken', prep_note: 'finely chopped', section: null },
+  { id: 'g1', quantity: 1, unit: 'tsp', item: 'minced garlic', section: null },
+  { id: 'oy1', quantity: 1, unit: 'tbsp', item: 'oyster sauce', section: null },
+  { id: 'soy1', quantity: 1, unit: 'tsp', item: 'soy sauce', section: null },
+  { id: 'w1', quantity: 3, unit: 'tbsp', item: 'water', section: null },
+  { id: 'soy2', quantity: 2, unit: 'tbsp', item: 'soy sauce', section: 'Sauce' },
+  { id: 'oy2', quantity: 1, unit: 'tbsp', item: 'oyster sauce', section: 'Sauce' },
+  { id: 'mirin', quantity: 1, unit: 'tbsp', item: 'mirin', section: 'Sauce' },
+  { id: 'g2', quantity: 1, unit: 'tsp', item: 'minced garlic', section: 'Sauce' },
+  { id: 'w2', quantity: 2, unit: 'tbsp', item: 'water', section: 'Sauce' },
+]
+const napaNeed = (text, earlier = []) => ingredientsForStep(text, napa, earlier).map((i) => i.id)
+
+test('"the sauce ingredients" shows the Sauce part of the list', () => {
+  assert.deepEqual(napaNeed('In the same pan, add the sauce ingredients. Simmer about 1 minute.'), ['soy2', 'oy2', 'mirin', 'g2', 'w2'])
+})
+
+test('using the finished sauce is not making it', () => {
+  assert.deepEqual(napaNeed('Pour the sauce over the rolls and top with the green onion greens.'), [])
+})
+
+test('a step outside the sauce gets the filling copy', () => {
+  assert.deepEqual(napaNeed('Add 3 tbsp water, cover, and steam about 4 minutes.'), ['w1'])
+  assert.deepEqual(napaNeed('Stir in 1 tsp minced garlic and cook 30 seconds.'), ['g1'])
+})

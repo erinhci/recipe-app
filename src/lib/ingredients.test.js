@@ -52,3 +52,20 @@ test('round-trips to an editable line', () => {
 test('splits steps and removes numbering', () => {
   assert.deepEqual(parseSteps('1. Heat oil\n\n2) Add onion\nStep 3: Simmer'), ['Heat oil', 'Add onion', 'Simmer'])
 })
+
+test('section lines group the ingredients under them', async () => {
+  const { parseIngredientText, ingredientsToText, sectionHeading } = await import('./ingredients.js')
+  assert.equal(sectionHeading('For the sauce:'), 'Sauce')
+  assert.equal(sectionHeading('SAUCE:'), 'Sauce')
+  assert.equal(sectionHeading('Ingredients:'), '')
+  assert.equal(sectionHeading('2 tbsp water'), null)
+  assert.equal(sectionHeading('Salt, to taste'), null)
+  const list = parseIngredientText('8 napa cabbage leaves\n1 tsp minced garlic\nFor the sauce:\n2 tbsp soy sauce\n1 tbsp mirin')
+  assert.deepEqual(list.map((i) => [i.item, i.section]), [
+    ['napa cabbage leaves', null],
+    ['minced garlic', null],
+    ['soy sauce', 'Sauce'],
+    ['mirin', 'Sauce'],
+  ])
+  assert.equal(ingredientsToText(list), '8 napa cabbage leaves\n1 tsp minced garlic\nSauce:\n2 tbsp soy sauce\n1 tbsp mirin')
+})

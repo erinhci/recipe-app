@@ -5,7 +5,7 @@ import Working from '../components/Working'
 import { useAuth } from '../lib/auth'
 import { db } from '../lib/db'
 import { loadRecipe, saveRecipe } from '../lib/data'
-import { ingredientToLine } from '../lib/ingredients'
+import { ingredientsToText } from '../lib/ingredients'
 import { applyChanges, suggestEdit } from '../lib/noteEdit'
 import { useOnline } from '../lib/useOnline'
 
@@ -145,7 +145,7 @@ export default function NoteEdit() {
       state: {
         proposed: {
           change: changeInfo(),
-          ingredientText: result.ingredients.map(ingredientToLine).join('\n'),
+          ingredientText: ingredientsToText(result.ingredients),
           stepText: result.steps.map((s) => s.text).join('\n\n'),
         },
       },

@@ -16,7 +16,7 @@ import Icon from '../components/Icon'
 import { AllIngredients, NutritionPeek, OtherTimers, StepNeeds, StepTimer } from '../components/CookParts'
 import { useStepTimers } from '../lib/stepTimer'
 import { scaleFactor } from '../lib/units'
-import { ingredientsForStep } from '../lib/cooking'
+import { ingredientLine, ingredientsForStep } from '../lib/cooking'
 import { invokeFunction } from '../lib/functions'
 import { useOnline } from '../lib/useOnline'
 import { useWakeLock } from '../lib/useWakeLock'
@@ -197,16 +197,27 @@ export default function TwoChef() {
     setSplit({ state: 'working' })
     const result = await invokeFunction('split-steps', {
       title: recipe.title,
-      ingredients: ingredients.map((ing) => ingredientLine(ing, 1, 'us')),
+      // "Sauce: 2 tbsp soy sauce", so Gemini knows which part each is for.
+      ingredients: ingredients.map((ing) => (ing.section ? `${ing.section}: ` : '') + ingredientLine(ing, 1, 'us')),
       steps: steps.map((s) => s.text),
     })
     if (!result.ok) return setSplit({ state: 'error', message: result.message })
     if (!result.data.splittable) return setSplit({ state: 'unsplittable', reason: result.data.reason })
-    await saveChefSplit(recipe.id, result.data.names, result.data.tracks, {
+    const prepSteps = Array.isArray(result.data.prep_steps) ? result.data.prep_steps : []
+    const added = await saveChefSplit(recipe.id, result.data.names, result.data.tracks, {
       timing: result.data.timing,
       while_waiting: result.data.while_waiting,
+      prep_steps: prepSteps,
     })
     setSplit({ state: 'idle' })
+    if (added) {
+      setStatus(
+        `Added ${added} prep ${added === 1 ? 'step' : 'steps'} from the ingredient list, so the chopping is shared too: ${prepSteps
+          .slice(0, added)
+          .map((p) => p.text.replace(/\.$/, ''))
+          .join('; ')}.`,
+      )
+    }
   }
 
   async function runSplitAgain() {

@@ -79,3 +79,69 @@ export function parseSteps(text) {
     .map((line) => line.trim().replace(/^(step\s*)?\d+[.):]\s*/i, ''))
     .filter(Boolean)
 }
+
+// ---------------------------------------------------------------------------
+// Sections ("Filling:", "For the sauce:")
+// ---------------------------------------------------------------------------
+
+// A line that names a part of the ingredient list instead of an
+// ingredient: it ends in a colon and has no amount. "For the sauce:" and
+// "SAUCE:" both become "Sauce". "Ingredients:" isn't a section.
+export function sectionHeading(line) {
+  const text = String(line ?? '').trim().replace(/^[-•*#]+\s*/, '')
+  const match = text.match(/^([^:\d½¼¾⅓⅔⅛]{1,60}):$/)
+  if (!match) return null
+  const name = match[1]
+    .trim()
+    .replace(/^for\s+(the\s+)?/i, '')
+    .replace(/\s+/g, ' ')
+  if (!name || /^(ingredients?|you(?:'ll)? need|what you need)$/i.test(name)) return ''
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()
+}
+
+// The ingredient box's text into ingredients, each with the section it
+// sits under (or null before any heading).
+export function parseIngredientText(text) {
+  let section = null
+  const out = []
+  for (const line of String(text ?? '').split('\n')) {
+    if (!line.trim()) continue
+    const heading = sectionHeading(line)
+    if (heading !== null) {
+      section = heading || null
+      continue
+    }
+    const ing = parseIngredientLine(line)
+    if (ing) out.push({ ...ing, section })
+  }
+  return out
+}
+
+// The reverse: one line per ingredient, with a "Section:" line wherever
+// the section changes.
+export function ingredientsToText(ingredients) {
+  const lines = []
+  let current = null
+  for (const ing of ingredients) {
+    const section = ing.section || null
+    if (section !== current) {
+      if (section) lines.push(`${section}:`)
+      else if (lines.length) lines.push('Other:')
+      current = section
+    }
+    lines.push(ingredientToLine(ing))
+  }
+  return lines.join('\n')
+}
+
+// Ingredients grouped for display: [{ section, items }], in list order.
+export function groupBySection(ingredients) {
+  const groups = []
+  for (const ing of ingredients) {
+    const section = ing.section || null
+    const last = groups[groups.length - 1]
+    if (last && last.section === section) last.items.push(ing)
+    else groups.push({ section, items: [ing] })
+  }
+  return groups
+}
