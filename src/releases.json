@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.28.2",
+    "date": "2026-10-13",
+    "notes": [
+      "An open photo closes with the X in its corner or a tap outside it. The Close button is gone"
+    ]
+  },
+  {
     "version": "0.28.1",
     "date": "2026-10-13",
     "notes": [

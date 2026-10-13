@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
-import { AddPhoto, PhotoImg } from "./MealPhotos";
+import {
+  AddPhoto,
+  PhotoClose,
+  PhotoImg,
+  useBackdropClose,
+} from "./MealPhotos";
 import { PHOTOS_PER_COOK, removeMealPhotos } from "../lib/photos";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
@@ -14,8 +19,8 @@ const formatDay = (day) => dateFormat.format(new Date(`${day}T12:00:00`));
 // at the end. Swipe between them, or use the dots: every dot is a button,
 // so swiping is never the only way (WCAG 2.5.7). The caption under the
 // dots (date and who took it) is announced when the slide changes.
-// Tapping a photo opens it with its options: Replace for your own photo,
-// Remove, Close.
+// Tapping a photo opens it with its options: Replace for your own photo and
+// Remove. The X in the corner, a tap outside, or Escape closes it.
 // addDay: the latest meal, which new photos belong to, or null, which hides
 // the Add slide (nothing logged yet).
 // photosLeft: how many more this cook can add (3 each per recipe). The Add
@@ -32,6 +37,7 @@ export default function PhotoCarousel({
   const track = useRef(null);
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
+  const backdrop = useBackdropClose(dialogRef);
   const [current, setCurrent] = useState(0);
   const [open, setOpen] = useState(null); // the photo shown in the dialog
   const slides = photos.length + (addDay ? 1 : 0);
@@ -46,7 +52,7 @@ export default function PhotoCarousel({
     return () => el.removeEventListener("scroll", onScroll);
   }, [slides]);
 
-  // Open the dialog once its photo has rendered, then start on Close.
+  // Open the dialog once its photo has rendered, then start on the X.
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!open || !dialog || dialog.open) return;
@@ -194,14 +200,18 @@ export default function PhotoCarousel({
         className="photo-dialog"
         aria-label={open ? describe(open) : "Photo"}
         onClose={() => setOpen(null)}
+        {...backdrop}
       >
         {open && (
-          <>
-            <PhotoImg
-              photo={open}
-              alt={describe(open)}
-              className="photo-large"
-            />
+          <div className="photo-dialog-body">
+            <div className="photo-frame">
+              <PhotoImg
+                photo={open}
+                alt={describe(open)}
+                className="photo-large"
+              />
+              <PhotoClose ref={closeRef} dialogRef={dialogRef} />
+            </div>
             <p className="hint" style={{ margin: "var(--space-2) 0" }}>
               {formatDay(open.cooked_on)} · {photoBy(open)}
             </p>
@@ -224,16 +234,8 @@ export default function PhotoCarousel({
                   }}
                 />
               )}
-              <button
-                ref={closeRef}
-                className="btn"
-                type="button"
-                onClick={() => dialogRef.current?.close()}
-              >
-                Close
-              </button>
             </div>
-          </>
+          </div>
         )}
       </dialog>
     </section>

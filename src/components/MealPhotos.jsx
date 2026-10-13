@@ -1,4 +1,5 @@
-import { useId, useRef, useState } from 'react'
+import { forwardRef, useId, useRef, useState } from 'react'
+import Icon from './Icon'
 import { addMealPhoto, removeMealPhotos, usePhotoUrl } from '../lib/photos'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
@@ -47,11 +48,38 @@ export function AddPhoto({ recipeId, cookedOn, member, label, className = 'link-
   )
 }
 
+// Props for a photo <dialog> that close it on a tap outside the box. A tap
+// on the backdrop lands on the dialog element itself, since the content sits
+// in a wrapper that fills the box. Both the press and the release have to be
+// outside, so dragging out of the photo doesn't close it.
+export function useBackdropClose(dialogRef) {
+  const downOutside = useRef(false)
+  return {
+    onPointerDown: (e) => {
+      downOutside.current = e.target === dialogRef.current
+    },
+    onClick: (e) => {
+      if (downOutside.current && e.target === dialogRef.current) dialogRef.current.close()
+      downOutside.current = false
+    },
+  }
+}
+
+// The X in the photo's top corner.
+export const PhotoClose = forwardRef(function PhotoClose({ dialogRef }, ref) {
+  return (
+    <button ref={ref} className="photo-close" type="button" aria-label="Close photo" onClick={() => dialogRef.current?.close()}>
+      <Icon name="close" size={22} />
+    </button>
+  )
+})
+
 // A small photo that opens a larger view with who added it and Remove.
 export function PhotoThumb({ photo, recipeTitle, byName, onStatus }) {
   const dialogRef = useRef(null)
   const closeRef = useRef(null)
-  const alt = `${recipeTitle}, ${formatPhotoDay(photo.cooked_on)}, added by ${byName}`
+  const backdrop = useBackdropClose(dialogRef)
+  const alt =`${recipeTitle}, ${formatPhotoDay(photo.cooked_on)}, added by ${byName}`
 
   async function remove() {
     if (!window.confirm(`Remove ${byName === 'You' ? 'your' : `${byName}'s`} photo from ${formatPhotoDay(photo.cooked_on)}?`)) return
@@ -67,24 +95,26 @@ export function PhotoThumb({ photo, recipeTitle, byName, onStatus }) {
         type="button"
         onClick={() => {
           dialogRef.current?.showModal()
-          // Start on Close, not on Remove photo, which comes first in the row.
+          // Start on the X, not on Remove photo.
           closeRef.current?.focus()
         }}
       >
         <PhotoImg photo={photo} alt={`Open photo: ${alt}`} />
       </button>
-      <dialog ref={dialogRef} className="photo-dialog" aria-label={alt}>
-        <PhotoImg photo={photo} alt={alt} className="photo-large" />
-        <p className="hint" style={{ margin: 'var(--space-2) 0' }}>
-          {formatPhotoDay(photo.cooked_on)} · added by {byName}
-        </p>
-        <div className="actions">
-          <button className="link-btn" type="button" onClick={remove}>
-            Remove photo
-          </button>
-          <button ref={closeRef} className="btn" type="button" onClick={() => dialogRef.current?.close()}>
-            Close
-          </button>
+      <dialog ref={dialogRef} className="photo-dialog" aria-label={alt} {...backdrop}>
+        <div className="photo-dialog-body">
+          <div className="photo-frame">
+            <PhotoImg photo={photo} alt={alt} className="photo-large" />
+            <PhotoClose ref={closeRef} dialogRef={dialogRef} />
+          </div>
+          <p className="hint" style={{ margin: 'var(--space-2) 0' }}>
+            {formatPhotoDay(photo.cooked_on)} · added by {byName}
+          </p>
+          <div className="actions">
+            <button className="link-btn" type="button" onClick={remove}>
+              Remove photo
+            </button>
+          </div>
         </div>
       </dialog>
     </>

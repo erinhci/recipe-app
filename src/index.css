@@ -762,15 +762,37 @@ ul + h3,
 }
 .photo-thumb img,
 .photo-thumb .photo-placeholder { width: 100%; height: 100%; object-fit: cover; }
+/* The padding sits on the body, so a tap on the dialog element itself is
+   always a tap on the backdrop (see useBackdropClose). */
 .photo-dialog {
   width: min(560px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
-  padding: var(--space-4);
+  padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
 }
+.photo-dialog-body { padding: var(--space-4); }
+.photo-frame { position: relative; }
+.photo-close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: var(--target);
+  height: var(--target);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  cursor: pointer;
+}
+.photo-close:hover { background: rgb(0 0 0 / 0.75); }
+.photo-close:focus-visible { outline: 3px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 5px #000; }
 .photo-dialog::backdrop { background: rgb(0 0 0 / 0.6); }
 .photo-large { display: block; width: 100%; height: auto; max-height: 70dvh; object-fit: contain; border-radius: calc(var(--radius) / 2); }
 .photo-dialog .photo-placeholder { aspect-ratio: 4 / 3; }
