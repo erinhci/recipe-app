@@ -11,6 +11,7 @@ The partner is referred to as "Partner" here because this file may be public.
 
 | Date | Finding | Outcome | Commit |
 | --- | --- | --- | --- |
+| 2026-10-12 | Two-chef mode: a step's ingredients were hard to spot on a scan; the tester left two-chef mode to check the ingredient list | Open. Redesign drawn on the design canvas (Oct 13): a "You'll need" card above the step text, with a checkbox per ingredient and a link to the full list | See entry |
 | 2026-10-12 | Reviewing all screens side by side in Figma: main buttons still on the left (Save recipe, Sort it, Choose files, Estimate again, Stop cooking); Restore and Delete forever too close | Main actions on the right; ways out and deletes on the far left of the same row; Stop cooking stays left with space above, away from Log it (0.25.1) | `601b604` |
 | 2026-10-11 | Exploratory walkthrough: "it looks like a bunch of big blocks of text" | Text density pass: shorter copy, icon tab bar and facts row, compact nutrition (0.25.0); all eight screens moved to Figma, light and dark, bound to the theme's tokens | See entry |
 | 2026-10-11 | US/Metric toggle and the Units setting changed nothing; the two-chef plan felt redundant; whose step is whose still not distinct enough | Units set once (Settings or setup) and applied everywhere, cups convert in metric; plan removed; You / other cook / Together labels (0.24.0) | See entry |
@@ -42,6 +43,25 @@ The partner is referred to as "Partner" here because this file may be public.
 | 2026-10-11 | Rating each meal felt like a repeat of rating the recipe | Ratings moved to the recipe | `b14becf` |
 | 2026-10-11 | Both cooks logged the same dinner, so ratings split across two entries | Same recipe and date count as one meal | `3d71b97` |
 | 2026-10-11 | Setting up the kitchen showed there was no way to remove a member | Remove a member or leave a kitchen | `7cd9031` |
+
+## 2026-10-12: Step ingredients hard to find in two-chef mode (open)
+
+**Finding.** Feedback after a two-chef cook: on a quick scan, the tester
+couldn't tell the current step apart from the ingredients that step needs.
+To find the amounts, they left two-chef mode and opened the recipe's
+ingredient list.
+
+**Reasoning.** The "You'll need" list sat under the large step text and the
+timer, in the same type as the steps, so it read as more instructions.
+Leaving the mode mid-cook loses your place and breaks the hand-off between
+the two phones. Severity 3 (Major): it interrupted the task, and it applies
+to every step that uses ingredients.
+
+**Change (designed, not built).** On the design canvas, the step's
+ingredients move above the step text into their own card ("You'll need",
+with a count), one checkbox per ingredient to tick off as you measure, and
+a link to all ingredients for the recipe without leaving the mode. Check it
+in the next two-chef session.
 
 ## 2026-10-12: Button placement across screens
 
