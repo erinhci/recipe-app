@@ -195,7 +195,7 @@ export default function Settings() {
             {cooks.map((cook) => (
               <li key={cook.user_id}>
                 <span className="cook-name">
-                  <span className="cook-dot" aria-hidden="true" style={{ background: `var(--cook-${people?.byUser[cook.user_id]?.color ?? 'coral'})` }} />
+                  <span className="cook-dot" aria-hidden="true" style={{ background: `var(--cook-${people?.byUser[cook.user_id]?.color ?? 'berry'})` }} />
                   {cook.display_name}
                   {cook.user_id === member.user_id && <span className="hint"> (you)</span>}
                 </span>

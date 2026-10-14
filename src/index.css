@@ -1339,26 +1339,21 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 
 /* ---------------------------------------------------------------------------
    Cooks' colors, avatars and the kitchen scene
-   Four colors, checked as a set: every pair stays apart for common color
-   blindness, each is at least 3:1 against the page, and the ink on top is
-   at least 4.5:1. The avatar drawing keeps its own fixed black-on-white
-   colors in both modes.
+   Five colors, the same in light and dark (see lib/avatars for the
+   checks). --ink-* is what sits on each color. The avatar drawing keeps its
+   own fixed black-on-white colors in both modes.
    --------------------------------------------------------------------------- */
 :root {
-  --cook-coral: #c8371f;
-  --cook-blue: #2563eb;
-  --cook-green: #0e7c5a;
-  --cook-magenta: #b5179e;
-  --cook-ink: #ffffff;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --cook-coral: #e85a43;
-    --cook-blue: #5b8def;
-    --cook-green: #1fa078;
-    --cook-magenta: #d84dbe;
-    --cook-ink: #111111;
-  }
+  --cook-berry: #c2185b;
+  --cook-orange: #f58a27;
+  --cook-green: #8bc34a;
+  --cook-ocean: #0077b6;
+  --cook-violet: #9c72ac;
+  --ink-berry: #ffffff;
+  --ink-orange: #111111;
+  --ink-green: #111111;
+  --ink-ocean: #ffffff;
+  --ink-violet: #111111;
 }
 
 .avatar-face,
@@ -1433,25 +1428,26 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  color: var(--cook-ink);
+  border: 1.5px solid var(--color-border);
 }
 .color-option input:checked + .color-swatch { outline: 2px solid var(--color-text); outline-offset: 3px; }
 .color-option input:focus-visible + .color-swatch { outline: 3px solid var(--color-focus); outline-offset: 4px; }
 .color-option.is-taken { cursor: not-allowed; }
 .color-option.is-taken .color-swatch { overflow: hidden; outline: 2px dashed var(--color-text-muted); outline-offset: 3px; }
-.color-picker.is-large .color-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.color-picker.is-large .color-options { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .color-picker.is-large .color-option {
   flex-direction: column;
   gap: var(--space-2);
   width: auto;
   height: auto;
-  min-height: 112px;
-  padding: 14px var(--space-2) 10px;
+  min-height: 100px;
+  padding: 12px 2px 10px;
   border-radius: var(--radius);
   background: var(--color-subtle);
   text-align: center;
 }
-.color-picker.is-large .color-swatch { width: 52px; height: 52px; }
+.color-picker.is-large .color-swatch { width: 44px; height: 44px; }
+.color-picker.is-large .color-name { font-size: var(--text-sm); }
 .color-picker.is-large .color-option input:checked + .color-swatch { outline-width: 3px; }
 .color-name { font-weight: 600; line-height: 1.2; }
 .color-taken { font-size: 0.8125rem; font-weight: 400; color: var(--color-text-muted); }
@@ -1523,7 +1519,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
    other cook: dashed in theirs. Together: outlined. */
 .owner-pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; box-sizing: border-box; padding: 0 10px 0 1px; vertical-align: middle; }
 .owner-pill:not(:has(.avatar-face)) { padding-left: 10px; }
-.owner-pill.is-you[style] { background: var(--pill-color); border-color: var(--pill-color); color: var(--cook-ink); }
+.owner-pill.is-you[style] { background: var(--pill-color); border-color: var(--color-border); color: var(--pill-ink); }
 .owner-pill.is-theirs[style] { border-color: var(--pill-color); }
 .owner-pill.is-together { border-color: var(--color-accent); }
 .owner-faces { display: flex; }

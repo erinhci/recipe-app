@@ -6,10 +6,10 @@
 -- Each cook's color and avatar
 -- ---------------------------------------------------------------------------
 
--- One of four colors, checked as a set for contrast and color blindness.
+-- One of five colors (see 0015 if this was run with the earlier four).
 -- Two cooks in a kitchen can't have the same one.
 alter table public.members add column if not exists color text
-  check (color is null or color in ('coral', 'blue', 'green', 'magenta'));
+  check (color is null or color in ('berry', 'orange', 'green', 'ocean', 'violet'));
 create unique index if not exists members_one_color_each
   on public.members (kitchen_id, color) where removed_at is null and color is not null;
 

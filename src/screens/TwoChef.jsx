@@ -295,7 +295,7 @@ export default function TwoChef() {
   const myCook = people?.me
   const theirCook = people?.partner
   const face = (cook) => cook && <AvatarFace look={cook.look} color={cook.color} />
-  const pillColor = (cook) => (cook ? { '--pill-color': `var(--cook-${cook.color})` } : undefined)
+  const pillColor = (cook) => (cook ? { '--pill-color': `var(--cook-${cook.color})`, '--pill-ink': `var(--ink-${cook.color})` } : undefined)
   const Owner = ({ state, here }) => {
     if (state.track === 'both')
       return (

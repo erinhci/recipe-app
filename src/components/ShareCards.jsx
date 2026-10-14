@@ -1,6 +1,6 @@
 import Avatar from './Avatar'
 import { DUO, FLIP, SceneArt, sceneCaption } from './Scene'
-import { describeLook } from '../lib/avatars'
+import { COLORS, describeLook, normalizeColor } from '../lib/avatars'
 
 // The images "Share my look" and "Share our scene" send: 4:5, so they fit
 // messages and feeds. They're drawn as SVG with fixed light colors (the
@@ -10,8 +10,7 @@ import { describeLook } from '../lib/avatars'
 const W = 360
 const H = 450
 const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-// The light-mode cook colors from index.css.
-const COOK_HEX = { coral: '#c8371f', blue: '#2563eb', green: '#0e7c5a', magenta: '#b5179e' }
+const hexOf = (id) => COLORS.find((c) => c.id === normalizeColor(id))?.hex ?? COLORS[0].hex
 
 const lookOf = (look) => ({ outfit: look?.outfit, hat: look?.hat, skin: look?.skin, hair: look?.hair })
 
@@ -47,7 +46,7 @@ export function LookCard({ cook, svgRef }) {
           <circle cx="180" cy="175" r="110" />
         </clipPath>
       </defs>
-      <circle cx="180" cy="175" r="110" fill={COOK_HEX[cook.color] ?? COOK_HEX.coral} />
+      <circle cx="180" cy="175" r="110" fill={hexOf(cook.color)} />
       <g clipPath="url(#look-card-circle)">
         <g transform="translate(56 83)">
           <Avatar pose="wave" {...lookOf(cook.look)} size={330} />

@@ -7,10 +7,10 @@ const { colorsFor, rewardFor, wornAvatar, kitchenScene, earnedKeys } = await imp
 test('each cook gets a different color, picked or not', () => {
   const colors = colorsFor([
     { user_id: 'a', joined_at: '2026-01-01' },
-    { user_id: 'b', joined_at: '2026-01-02', color: 'coral' },
+    { user_id: 'b', joined_at: '2026-01-02', color: 'coral' }, // an old color, now berry
     { user_id: 'c', joined_at: '2026-01-03', removed_at: '2026-02-01', color: 'blue' },
   ])
-  assert.deepEqual(colors, { a: 'blue', b: 'coral' })
+  assert.deepEqual(colors, { a: 'orange', b: 'berry' })
 })
 
 test('rewards are named for the badge that unlocks them', () => {

@@ -3,32 +3,43 @@ import { enqueue, syncNow } from './sync.js'
 
 // Each cook's color, avatar, and the kitchen's shared scene.
 //
-// Colors: four choices, checked as a set (every pair stays apart for
-// common color blindness, each is at least 3:1 against the page, and the
-// ink on top is at least 4.5:1). Two cooks can't have the same one.
+// Colors: five choices, the same in light and dark. Two cooks can't have
+// the same one. Ink is what sits on the color (a check, the "You" pill's
+// label): white on berry and ocean, near-black on orange, green and
+// violet, so it's at least 4.5:1 on each. Orange and green are under 3:1
+// against the light page, so swatches and pills always get a gray edge.
+// Orange and green, and ocean and violet, can look alike with red-green
+// color blindness; a face and a name always go with the color.
 export const COLORS = [
-  { id: 'coral', label: 'Coral' },
-  { id: 'blue', label: 'Blue' },
-  { id: 'green', label: 'Green' },
-  { id: 'magenta', label: 'Magenta' },
+  { id: 'berry', label: 'Berry', hex: '#c2185b', ink: '#ffffff' },
+  { id: 'orange', label: 'Orange', hex: '#f58a27', ink: '#111111' },
+  { id: 'green', label: 'Green', hex: '#8bc34a', ink: '#111111' },
+  { id: 'ocean', label: 'Ocean', hex: '#0077b6', ink: '#ffffff' },
+  { id: 'violet', label: 'Violet', hex: '#9c72ac', ink: '#111111' },
 ]
 
-// The CSS color for a color id (light and dark are set in index.css).
-export const cookColor = (id) => `var(--cook-${id ?? 'coral'})`
+// Colors from before the five (coral, blue, magenta) map to their nearest.
+const OLD_COLORS = { coral: 'berry', blue: 'ocean', magenta: 'violet' }
+export const normalizeColor = (id) => (COLORS.some((c) => c.id === id) ? id : OLD_COLORS[id] ?? null)
+
+// The CSS color and ink for a color id (set in index.css).
+export const cookColor = (id) => `var(--cook-${normalizeColor(id) ?? 'berry'})`
+export const cookInk = (id) => `var(--ink-${normalizeColor(id) ?? 'berry'})`
 
 // Each active cook's color by user id. Someone who hasn't picked one gets
 // the first color nobody has, in the order they joined, so two cooks
 // never share a color on screen.
 export function colorsFor(members) {
   const active = members.filter((m) => !m.removed_at).sort((a, b) => (a.joined_at ?? '').localeCompare(b.joined_at ?? ''))
-  const taken = new Set(active.map((m) => m.color).filter(Boolean))
+  const taken = new Set(active.map((m) => normalizeColor(m.color)).filter(Boolean))
   const out = {}
   for (const m of active) {
-    if (m.color) {
-      out[m.user_id] = m.color
+    const own = normalizeColor(m.color)
+    if (own) {
+      out[m.user_id] = own
       continue
     }
-    const free = COLORS.find((c) => !taken.has(c.id))?.id ?? 'coral'
+    const free = COLORS.find((c) => !taken.has(c.id))?.id ?? 'berry'
     taken.add(free)
     out[m.user_id] = free
   }

@@ -7,7 +7,7 @@ import { Badges } from './Stats'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { clearPendingInvite, readPendingInvite } from '../lib/invite'
-import { COLORS, colorsFor } from '../lib/avatars'
+import { COLORS, colorsFor, normalizeColor } from '../lib/avatars'
 
 // Short setup after creating an account, one question per step:
 // 1 your name, 2 the kitchen's name, 3 units, 4 your color, 5 your avatar
@@ -55,7 +55,8 @@ export default function Setup() {
   const [name, setName] = useState(saved.name ?? member?.display_name ?? '')
   const [kitchenName, setKitchenName] = useState(saved.kitchenName ?? 'Our Kitchen')
   const [units, setUnits] = useState(saved.units ?? member?.unit_pref ?? (usLocale() ? 'us' : 'metric'))
-  const [color, setColor] = useState(saved.color ?? null)
+  // A color saved before the five colors maps to its nearest new one.
+  const [color, setColor] = useState(normalizeColor(saved.color))
   const [taken, setTaken] = useState({}) // { colorId: name }
   const [inKitchen, setInKitchen] = useState(Boolean(saved.inKitchen || member))
   const [busy, setBusy] = useState(false)
@@ -86,7 +87,7 @@ export default function Setup() {
         const others = data.filter((m) => m.user_id !== userId)
         setTaken(Object.fromEntries(others.map((m) => [colors[m.user_id], m.display_name])))
         // Start on the first color nobody has.
-        setColor((c) => c ?? colors[userId] ?? COLORS.find((x) => !others.some((m) => colors[m.user_id] === x.id))?.id ?? 'coral')
+        setColor((c) => c ?? colors[userId] ?? COLORS.find((x) => !others.some((m) => colors[m.user_id] === x.id))?.id ?? 'berry')
       })
     return () => {
       active = false

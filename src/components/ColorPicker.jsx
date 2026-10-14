@@ -39,7 +39,7 @@ export default function ColorPicker({ value, onChange, takenBy = {}, large = fal
                 disabled={Boolean(taken)}
                 onChange={() => onChange(color.id)}
               />
-              <span className="color-swatch" aria-hidden="true" style={{ background: `var(--cook-${color.id})` }}>
+              <span className="color-swatch" aria-hidden="true" style={{ background: `var(--cook-${color.id})`, color: `var(--ink-${color.id})` }}>
                 {checked && <Icon name="check" size={large ? 24 : 18} />}
                 {face}
               </span>

@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.30.1",
+    "date": "2026-10-13",
+    "notes": [
+      "New cook colors: berry, orange, green, ocean and violet. If you'd picked a color before, you get the closest new one"
+    ]
+  },
+  {
     "version": "0.30.0",
     "date": "2026-10-13",
     "notes": [
