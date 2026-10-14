@@ -1692,3 +1692,13 @@ button.closet-hero { padding: var(--space-5); background: var(--color-subtle); }
 .color-note { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-weight: 400; margin: var(--space-1) 0 0; font-size: var(--text-sm); line-height: 1.4; color: var(--color-text-muted); }
 .color-note .cook-dot { margin-right: 0; }
 button.closet-hero.share-tile { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+
+/* Library cards: organic shapes, uneven elliptical corners in three
+   variants that repeat down the list, so cards don't look stamped from one
+   mold. Thumbnails get a matching soft blob. */
+.recipe-list > li:nth-child(3n + 1) .recipe-card { border-radius: 28px 14px 32px 18px / 22px 30px 16px 28px; }
+.recipe-list > li:nth-child(3n + 2) .recipe-card { border-radius: 16px 30px 20px 34px / 28px 18px 30px 20px; }
+.recipe-list > li:nth-child(3n + 3) .recipe-card { border-radius: 32px 20px 14px 28px / 18px 28px 32px 16px; }
+.recipe-list > li:nth-child(3n + 1) .recipe-card-photo { border-radius: 58% 42% 46% 54% / 50% 56% 44% 50%; }
+.recipe-list > li:nth-child(3n + 2) .recipe-card-photo { border-radius: 44% 56% 52% 48% / 56% 46% 54% 44%; }
+.recipe-list > li:nth-child(3n + 3) .recipe-card-photo { border-radius: 52% 48% 58% 42% / 44% 52% 48% 56%; }
