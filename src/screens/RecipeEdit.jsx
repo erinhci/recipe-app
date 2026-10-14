@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Page from '../components/Page'
 import { useAuth } from '../lib/auth'
@@ -6,6 +6,7 @@ import { loadRecipe, saveRecipe } from '../lib/data'
 import OriginalPanel from '../components/OriginalPanel'
 import { groupBySection, ingredientToLine, ingredientsToText, parseIngredientText, parseSteps } from '../lib/ingredients'
 import { CUISINES, MEAL_TYPES } from '../lib/constants'
+import { prepSuggestions, withPrepSteps } from '../lib/prepSteps'
 
 const SOURCE_TYPES = { images: 'photo', pdf: 'pdf', url: 'url', text: 'text' }
 
@@ -70,6 +71,39 @@ export default function RecipeEdit() {
   )
   const flagged = parsed.filter((ing) => ing.needs_review).length
 
+  // Prep the ingredient list implies ("1/2 onion, diced") with no step that
+  // does it. The cook picks which to add as steps, so the prep shows in
+  // cooking mode and two-chef mode can give it to one of them.
+  const prepIdeas = useMemo(() => prepSuggestions(parsed, parseSteps(stepText)), [parsed, stepText])
+  const [prepUnchecked, setPrepUnchecked] = useState(() => new Set())
+  const [prepDone, setPrepDone] = useState(false)
+  const [prepStatus, setPrepStatus] = useState('')
+  const stepsRef = useRef(null)
+  const prepChosen = prepIdeas.filter((idea) => !prepUnchecked.has(idea.text))
+
+  function togglePrep(text) {
+    setPrepUnchecked((current) => {
+      const next = new Set(current)
+      if (next.has(text)) next.delete(text)
+      else next.add(text)
+      return next
+    })
+  }
+
+  function addPrep() {
+    const count = prepChosen.length
+    setStepText(withPrepSteps(stepText, prepChosen.map((idea) => idea.text)))
+    setPrepDone(true)
+    setPrepStatus(`Added ${count} prep ${count === 1 ? 'step' : 'steps'} to the top of Steps.`)
+    stepsRef.current?.focus()
+  }
+
+  function skipPrep() {
+    setPrepDone(true)
+    setPrepStatus('Prep steps skipped. The ingredient list stays as it is.')
+    stepsRef.current?.focus()
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
@@ -122,8 +156,11 @@ export default function RecipeEdit() {
         member,
         proposed?.change ?? null,
       )
-      // The original screenshot or PDF is only for checking the import; it isn't kept.
-      navigate(`/recipe/${savedId}`, { replace: true })
+      // Opened from two-chef mode to add prep steps: go back there to split.
+      // Otherwise the recipe. (The original screenshot or PDF is only for
+      // checking the import; it isn't kept.)
+      if (!isNew && location.state?.afterSave === 'back') navigate(-1)
+      else navigate(`/recipe/${savedId}`, { replace: true })
     } catch (e) {
       setError(e.message)
       setBusy(false)
@@ -279,9 +316,44 @@ export default function RecipeEdit() {
           </section>
         )}
 
+        {!prepDone && prepIdeas.length > 0 && (
+          <section className="card prep-card" aria-labelledby="prep-heading">
+            <h2 id="prep-heading" style={{ fontSize: 'var(--text-md)' }}>
+              Prep from the ingredient list
+            </h2>
+            <p className="hint" id="prep-hint">
+              Some ingredients are listed already prepped, and no step does the prep. Add it as steps so it shows in
+              cooking mode and can be split between two cooks.
+            </p>
+            <fieldset aria-describedby="prep-hint">
+              <legend className="sr-only">Prep steps to add</legend>
+              {prepIdeas.map((idea) => (
+                <label key={idea.text} className="check-row">
+                  <input type="checkbox" checked={!prepUnchecked.has(idea.text)} onChange={() => togglePrep(idea.text)} />
+                  {idea.text}
+                </label>
+              ))}
+            </fieldset>
+            <p className="actions">
+              <button type="button" className="btn btn-secondary" onClick={skipPrep}>
+                Skip
+              </button>
+              <button type="button" className="btn" onClick={addPrep} disabled={prepChosen.length === 0}>
+                {prepChosen.length === 0
+                  ? 'Add prep steps'
+                  : `Add ${prepChosen.length} prep ${prepChosen.length === 1 ? 'step' : 'steps'}`}
+              </button>
+            </p>
+          </section>
+        )}
+        <p className="sr-only" role="status">
+          {prepStatus}
+        </p>
+
         <div className="field">
           <label htmlFor="steps">Steps</label>
           <textarea
+            ref={stepsRef}
             id="steps"
             rows={8}
             value={stepText}

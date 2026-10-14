@@ -19,6 +19,7 @@ import { useKitchenPeople } from '../lib/useKitchen'
 import { AvatarFace } from '../components/Avatar'
 import { scaleFactor } from '../lib/units'
 import { ingredientLine, ingredientsForStep } from '../lib/cooking'
+import { prepSuggestions } from '../lib/prepSteps'
 import { invokeFunction } from '../lib/functions'
 import { useOnline } from '../lib/useOnline'
 import { useWakeLock } from '../lib/useWakeLock'
@@ -231,6 +232,9 @@ export default function TwoChef() {
   // --- Not split yet ---------------------------------------------------
   if (!ready) {
     const redo = Boolean(recipe.chef_tracks)
+    // Prep the ingredient list implies with no step for it. Once it's a
+    // step, it can go to either cook.
+    const missingPrep = prepSuggestions(ingredients, steps.map((step) => step.text))
     return (
       <Page title={`${recipe.title}: two chefs`} close={{ label: 'Leave two-chef mode', onClick: () => navigate(backToRecipe) }}>
         <p>
@@ -238,6 +242,26 @@ export default function TwoChef() {
             ? 'The steps changed since this recipe was split, so it needs splitting again.'
             : 'Two-chef mode splits the steps between you, so you can both cook at the same time. Gemini works out which steps can happen side by side and where your parts come together. The split is saved with the recipe.'}
         </p>
+        {missingPrep.length > 0 && (
+          <section className="card" aria-labelledby="missing-prep-heading">
+            <h2 id="missing-prep-heading" style={{ fontSize: 'var(--text-md)' }}>
+              Prep isn't in the steps yet
+            </h2>
+            <p>
+              The ingredient list has prep that no step does, so there's less to split. Add it as steps first:
+            </p>
+            <ul>
+              {missingPrep.map((idea) => (
+                <li key={idea.text}>{idea.text}</li>
+              ))}
+            </ul>
+            <p className="actions">
+              <Link className="btn btn-secondary" to={`/recipe/${id}/edit`} state={{ afterSave: 'back' }}>
+                Add prep steps
+              </Link>
+            </p>
+          </section>
+        )}
         {split.state === 'unsplittable' ? (
           <>
             <p>

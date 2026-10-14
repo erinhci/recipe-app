@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.31.0",
+    "date": "2026-10-13",
+    "notes": [
+      "When an ingredient is listed prepped, like \"1/2 onion, diced\", adding or editing the recipe offers the prep as steps to confirm",
+      "Two-chef mode points out prep that isn't in the steps yet, so it can be split too"
+    ]
+  },
+  {
     "version": "0.30.2",
     "date": "2026-10-13",
     "notes": [
