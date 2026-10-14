@@ -159,6 +159,7 @@ export default function Library() {
             )}
           </p>
           <dialog ref={sheet} className="sheet" aria-labelledby="filter-title" onClick={(e) => e.target === sheet.current && closeSheet()}>
+            <div className="sheet-handle" aria-hidden="true" />
             <div className="row-between">
               <h2 id="filter-title" style={{ margin: 0 }}>
                 Filter recipes

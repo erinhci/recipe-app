@@ -11,7 +11,9 @@ import Icon from './Icon'
 // subtitle: a short line right under the title (a recipe's cuisine).
 // back: { to, label } puts a link back to the screen this one opened from
 // above the title (Badges back to Stats).
-export default function Page({ title, children, close, aside, subtitle, back }) {
+// above: a band shown over the title (two-chef mode's label). With it,
+// the close button sits in a row with the title instead of floating.
+export default function Page({ title, children, close, aside, subtitle, back, above }) {
   const headingRef = useRef(null)
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function Page({ title, children, close, aside, subtitle, back }) 
   }, [title])
 
   return (
-    <main id="main" className={close ? 'page has-close' : 'page'}>
+    <main id="main" className={close && !above ? 'page has-close' : 'page'}>
       {back && (
         <Link className="back-link" to={back.to}>
           <span className="back-chev">
@@ -29,7 +31,17 @@ export default function Page({ title, children, close, aside, subtitle, back }) 
           {back.label}
         </Link>
       )}
-      {aside ? (
+      {above}
+      {above && close ? (
+        <div className="page-head">
+          <h1 ref={headingRef} tabIndex={-1}>
+            {title}
+          </h1>
+          <button className="close-btn is-inline" type="button" onClick={close.onClick} aria-label={close.label}>
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+      ) : aside ? (
         <div className="page-head">
           <h1 ref={headingRef} tabIndex={-1}>
             {title}
@@ -42,7 +54,7 @@ export default function Page({ title, children, close, aside, subtitle, back }) 
         </h1>
       )}
       {subtitle && <p className="page-subtitle">{subtitle}</p>}
-      {close && (
+      {close && !above && (
         <button className="close-btn" type="button" onClick={close.onClick} aria-label={close.label}>
           <span aria-hidden="true">×</span>
         </button>

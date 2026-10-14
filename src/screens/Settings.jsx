@@ -151,7 +151,10 @@ export default function Settings() {
       <SyncProblem />
       {people?.me && (
         <Link className="scene-card" to="/avatar">
-          <Scene cooks={people.cooks} scene={people.scene} pose={people.pose} caption={false} />
+          {/* Framed in your color, so changing it below changes the frame. */}
+          <span className="scene-frame" style={{ background: `var(--cook-${people.me.color})` }}>
+            <Scene cooks={people.cooks} scene={people.scene} pose={people.pose} caption={false} />
+          </span>
           <span className="scene-card-foot">
             <span className="scene-card-text">
               <span className="scene-card-name">{people.me.name}</span>

@@ -366,6 +366,9 @@ textarea {
   font-weight: 600;
 }
 .bottom-nav a:hover { color: var(--color-text); }
+.nav-me { box-sizing: border-box; display: flex; justify-content: center; width: 28px; height: 28px; overflow: hidden; border-radius: 999px; outline-offset: 2px; }
+.nav-me-drawing { display: block; flex: none; margin-top: 2px; }
+.bottom-nav a[aria-current='page'] .nav-me { outline: 2px solid var(--color-text); }
 .bottom-nav a[aria-current='page'] {
   color: var(--color-text);
   text-decoration: underline;
@@ -893,6 +896,9 @@ ul + h3,
 .badge-label { font-size: 0.8125rem; line-height: 1.25; }
 .badge:not(.is-earned) .badge-label { color: var(--color-text-muted); }
 .badge-progress { font-size: 0.75rem; color: var(--color-text-muted); }
+.badges.is-large { grid-template-columns: repeat(2, 1fr); gap: var(--space-5) var(--space-3); }
+.badges.is-large .badge-medal { width: 96px; height: 96px; }
+.badges.is-large .badge-number { font-size: 1.25rem; }
 .badge .meter { width: 64px; }
 
 .meter { display: block; height: 8px; border-radius: 4px; background: var(--color-subtle); overflow: hidden; }
@@ -1066,7 +1072,7 @@ fieldset.field legend { font-weight: 600; padding: 0; margin-bottom: var(--space
 .cook-needs-card .cook-needs > li { padding: var(--space-2) 0; margin: 0; border-bottom: 1px solid var(--color-divider); }
 .cook-needs-card .cook-needs > li:last-child { border-bottom: 0; }
 .cook-needs-card .small-link { display: inline-flex; align-items: center; min-height: var(--target); }
-.cook-step.follows-needs { margin-top: 0; }
+.cook-step.has-needs { margin-bottom: var(--space-3); }
 
 .nut-peek { background: var(--color-subtle); border-radius: var(--radius); margin: var(--space-3) 0; }
 .nut-peek > summary { justify-content: space-between; gap: var(--space-3); min-height: 48px; padding: 0 var(--space-4); font-weight: 400; font-size: var(--text-sm); list-style: none; }
@@ -1171,6 +1177,8 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
   color: var(--color-text);
 }
 .sheet::backdrop { background: rgb(0 0 0 / 0.5); }
+.sheet { padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.sheet-handle { width: 40px; height: 4px; margin: 0 auto var(--space-4); border-radius: 2px; background: var(--color-border); }
 .sheet .sheet-close { position: static; }
 .sheet-group { margin-top: var(--space-5); }
 .sheet-group h3 { margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
@@ -1180,6 +1188,8 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 /* Settings: one plain list of rows; longer ones open in place */
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
 .page-head h1 { margin: 0; }
+.page-head:has(.close-btn.is-inline) { align-items: flex-start; margin-top: var(--space-3); }
+.close-btn.is-inline { position: static; flex: none; }
 .sync-status { display: flex; align-items: center; gap: var(--space-2); }
 .settings-list { margin: 0; }
 .settings-row-static,
@@ -1408,6 +1418,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
   color: var(--color-text);
   text-decoration: none;
 }
+.scene-frame { display: block; padding: 3px; border-radius: calc(var(--radius) + 3px); background: var(--color-text); }
 .scene-card-foot { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target); }
 .scene-card-text { flex: 1; display: flex; flex-direction: column; }
 .scene-card-name { font-weight: 600; }
@@ -1529,7 +1540,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .badge-reward { font-size: 0.75rem; line-height: 1.3; }
 .badge:not(.is-earned) .badge-reward { color: var(--color-text-muted); }
 .next-up { display: flex; align-items: center; gap: var(--space-4); margin: var(--space-4) 0; padding: var(--space-4); border-radius: var(--radius); background: var(--color-subtle); }
-.next-up .badges { display: block; flex: none; width: 96px; }
+.next-up .badges { display: block; flex: none; width: 120px; }
 .next-up .badge .meter { background: var(--color-bg); }
 .next-up-text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .eyebrow { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }

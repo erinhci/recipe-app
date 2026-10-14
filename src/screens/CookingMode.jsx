@@ -162,14 +162,15 @@ export default function CookingMode() {
                 Step {current + 1} of {steps.length}
               </h2>
             </div>
-            {/* What you need first, then what to do: the order people prep in. */}
-            <StepNeeds needed={needed} factor={factor} system={system} />
+            {/* What to do first (with its timer), then what you need for
+                it, so a long ingredient list never pushes the step off screen. */}
             <div aria-live="polite" aria-atomic="true">
-              <p className={needed.length > 0 ? 'cook-step follows-needs' : 'cook-step'}>
+              <p className={needed.length > 0 ? 'cook-step has-needs' : 'cook-step'}>
                 <StepText text={step.text} ingredients={ingredients} factor={factor} system={system} />
               </p>
             </div>
             <StepTimer key={step.id} stepId={step.id} text={step.text} timers={timers} />
+            <StepNeeds needed={needed} factor={factor} system={system} />
           </section>
 
           {/* The rest of the recipe stays readable without tapping, for

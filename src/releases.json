@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.32.0",
+    "date": "2026-10-13",
+    "notes": [
+      "The Settings tab shows your avatar in your color",
+      "In cooking mode and two-chef mode, the step comes first, then its timer and what you'll need",
+      "A step only lists the ingredients it uses: \"onion\" no longer matches \"green onion\", and \"egg mixture\" no longer lists the eggs",
+      "Your kitchen scene in Settings has a border in your color",
+      "Two-chef mode's band sits above the title, with both cooks' names",
+      "Badges are larger, two across, and the filter sheet has a handle"
+    ]
+  },
+  {
     "version": "0.31.0",
     "date": "2026-10-13",
     "notes": [

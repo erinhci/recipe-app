@@ -162,3 +162,21 @@ test('a step outside the sauce gets the filling copy', () => {
   assert.deepEqual(napaNeed('Add 3 tbsp water, cover, and steam about 4 minutes.'), ['w1'])
   assert.deepEqual(napaNeed('Stir in 1 tsp minced garlic and cook 30 seconds.'), ['g1'])
 })
+
+test('a short name inside a longer one only matches on its own', () => {
+  const soup = [
+    { id: 'g', item: 'green onion', prep_note: 'chopped, divided' },
+    { id: 'o', item: 'onion', prep_note: 'diced' },
+    { id: 'z', item: 'zucchini', prep_note: 'diced' },
+  ]
+  const ids = (text) => ingredientsForStep(text, soup).map((i) => i.id)
+  assert.deepEqual(ids('Chop the green onion.'), ['g'])
+  assert.deepEqual(ids('Dice the onion and zucchini.'), ['o', 'z'])
+  assert.deepEqual(ids('Fry the onion and half the green onion.'), ['g', 'o'])
+})
+
+test('"egg mixture" is not the eggs', () => {
+  const list = [{ id: 'e', item: 'large eggs' }, { id: 'w', item: 'water' }]
+  assert.deepEqual(ingredientsForStep('Pour the egg mixture into the cups.', list).map((i) => i.id), [])
+  assert.deepEqual(ingredientsForStep('Whisk the eggs and water.', list).map((i) => i.id), ['e', 'w'])
+})

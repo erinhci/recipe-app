@@ -36,29 +36,64 @@ export function keyWords(item) {
 // it as an ingredient: "water droplets", "water bath", "oil level".
 const NOT_AN_INGREDIENT_AFTER = new Set([
   'droplet', 'drip', 'bath', 'level', 'line', 'vapor', 'steam', 'spot', 'mark', 'bead', 'splash',
+  // "the egg mixture" is something already made, not the eggs.
+  'mixture',
 ])
 
 // True when the phrase appears as whole words in the step, and at least
 // once not followed by one of the words above.
-function hasPhrase(stepWords, phrase) {
+// skip: word positions already taken by a longer ingredient name, so
+// "onion" doesn't match inside "green onion".
+function phraseStarts(stepWords, phrase) {
+  const starts = []
   for (let i = 0; i + phrase.length <= stepWords.length; i += 1) {
     if (phrase.every((w, j) => stepWords[i + j] === w) && !NOT_AN_INGREDIENT_AFTER.has(stepWords[i + phrase.length])) {
-      return true
+      starts.push(i)
     }
   }
+  return starts
+}
+
+function hasPhrase(stepWords, phrase, skip = null) {
+  return phraseStarts(stepWords, phrase).some((i) => !skip || !phrase.some((_, j) => skip.has(i + j)))
+}
+
+// True when phrase appears as a run of words inside a longer one:
+// "onion" in "green onion".
+function isInside(phrase, longer) {
+  if (phrase.length >= longer.length) return false
+  for (let i = 0; i + phrase.length <= longer.length; i += 1) {
+    if (phrase.every((w, j) => longer[i + j] === w)) return true
+  }
   return false
+}
+
+// The word positions each ingredient can't use because a longer name
+// that contains it is written there.
+function takenPositions(stepWords, ingredients) {
+  const names = ingredients.map((ing) => keyWords(ing.item))
+  return names.map((name) => {
+    const taken = new Set()
+    for (const other of names) {
+      if (!isInside(name, other)) continue
+      for (const start of phraseStarts(stepWords, other)) {
+        for (let j = 0; j < other.length; j += 1) taken.add(start + j)
+      }
+    }
+    return taken
+  })
 }
 
 // True when the step names the ingredient: either its full key phrase, or
 // its main word (the last one, as in "soy sauce" -> "sauce") when that word
 // isn't shared with another ingredient in the recipe. Matching is by whole
 // words, so "boil" never matches "oil".
-function mentions(stepWords, ingredient, mainWordCounts) {
+function mentions(stepWords, ingredient, mainWordCounts, taken) {
   const keys = keyWords(ingredient.item)
   if (keys.length === 0) return false
-  if (hasPhrase(stepWords, keys)) return true
+  if (hasPhrase(stepWords, keys, taken)) return true
   const main = keys[keys.length - 1]
-  return main.length > 2 && mainWordCounts.get(main) === 1 && hasPhrase(stepWords, [main])
+  return main.length > 2 && mainWordCounts.get(main) === 1 && hasPhrase(stepWords, [main], taken)
 }
 
 // Amounts written in the step, as { low, high, unit }: "1-2 tablespoons"
@@ -141,7 +176,8 @@ export function ingredientsForStep(stepText, ingredients, earlierSteps = []) {
   const fromSections = new Set(
     ingredients.filter((ing) => ing.section && sections.includes(ing.section) && namesSection(stepWords, ing.section)),
   )
-  const matched = ingredients.filter((ing) => fromSections.has(ing) || mentions(stepWords, ing, mainWordCounts))
+  const taken = takenPositions(stepWords, ingredients)
+  const matched = ingredients.filter((ing, i) => fromSections.has(ing) || mentions(stepWords, ing, mainWordCounts, taken[i]))
 
   // Group matches that share a name.
   const groups = new Map()

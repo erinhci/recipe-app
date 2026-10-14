@@ -155,9 +155,10 @@ function badgeRow(stats) {
 }
 
 // showRewards: add what each badge unlocks for the avatars (Badges page).
-export function Badges({ badges, showRewards = false }) {
+// large: bigger medals (the Badges page and its Next up card).
+export function Badges({ badges, showRewards = false, large = showRewards }) {
   return (
-    <ul className="badges">
+    <ul className={large ? 'badges is-large' : 'badges'}>
       {badges.map((badge) => {
         const current = badge.kind === 'hours' ? Math.floor(badge.current * 10) / 10 : badge.current
         return (
@@ -165,8 +166,8 @@ export function Badges({ badges, showRewards = false }) {
             <span className="badge-medal" aria-hidden="true">
               <svg
                 viewBox="0 0 24 24"
-                width="22"
-                height="22"
+                width={large ? 28 : 22}
+                height={large ? 28 : 22}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.75"
@@ -330,7 +331,7 @@ function NextUp({ badge }) {
   const preview = { outfit: { outfit: reward.id }, hat: { hat: reward.id } }[reward.type]
   return (
     <section className="next-up" aria-labelledby="next-up-title">
-      <Badges badges={[badge]} />
+      <Badges badges={[badge]} large />
       <div className="next-up-text">
         <span className="eyebrow">Next up</span>
         <p id="next-up-title" className="next-up-title">

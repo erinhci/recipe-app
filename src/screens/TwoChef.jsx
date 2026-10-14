@@ -478,6 +478,12 @@ export default function TwoChef() {
   const otherOn = side !== 'all' ? currentOn(states, otherSide(side)) : null
   const otherName = live ? nameFor(side === 'a' ? cook.chef_b : cook.chef_a) : 'The other cook'
   const myName = members.find((m) => m.user_id === me)?.display_name ?? member.display_name ?? 'You'
+  // Both names for the band at the top. Offline, the kitchen's two cooks.
+  const pairNames = live
+    ? `${myName} and ${otherName}`
+    : people?.me && people?.partner
+      ? `${people.me.name} and ${people.partner.name}`
+      : null
   const meet = meetAt(states)
   const minutesOf = (state) => timing?.[state.number - 1]?.minutes ?? null
   const cleanup = side !== 'all' ? names.while_waiting?.[side] ?? [] : []
@@ -518,15 +524,19 @@ export default function TwoChef() {
   )
 
   return (
-    <Page title={`${recipe.title}: two chefs`} close={{ label: 'Leave two-chef mode', onClick: leave }}>
-      <p className="mode-band">
-        <strong>
-          <Icon name="users" size={20} />
-          Two-chef mode
-        </strong>
-        {live && side !== 'all' && <span>{`${myName} and ${otherName}`}</span>}
-        {side === 'all' && <span>Both parts on this phone</span>}
-      </p>
+    <Page
+      title={`${recipe.title}: two chefs`}
+      close={{ label: 'Leave two-chef mode', onClick: leave }}
+      above={
+        <p className="mode-band">
+          <strong>
+            <Icon name="users" size={20} />
+            Two-chef mode
+          </strong>
+          {side === 'all' ? <span>Both parts on this phone</span> : pairNames && <span>{pairNames}</span>}
+        </p>
+      }
+    >
       <p className="hint" style={{ marginBottom: 0 }}>
         {[
           timeSummary(recipe),
@@ -537,13 +547,13 @@ export default function TwoChef() {
           .filter(Boolean)
           .join(' · ')}
       </p>
+      <NutritionPeek recipe={recipe} ingredients={ingredients} />
       <ServingsBar
         servings={servings}
         base={recipe.base_servings}
         onChange={changeServings}
         note={live ? 'Same on both phones.' : null}
       />
-      <NutritionPeek recipe={recipe} ingredients={ingredients} />
       <OtherTimers timers={timers} currentId={next.kind === 'step' ? next.state.step.id : null} />
       <div className="row-between">
         <p style={{ margin: 0 }}>
@@ -586,9 +596,10 @@ export default function TwoChef() {
                 {next.state.track === 'both' ? ' · together' : side === 'all' ? ` · ${names[next.state.track]}` : ''}
                 {minutesOf(next.state) && ` · about ${formatMinutes(minutesOf(next.state))}`}
               </h2>
-              {/* What you need first, then what to do: the order people prep in. */}
-              <StepNeeds needed={needed} factor={factor} system={system} />
-              <p className={needed.length > 0 ? 'cook-step follows-needs' : 'cook-step'}>
+              {/* What to do first (its timer and what you need come after
+                  this block), so a long ingredient list never pushes the
+                  step off screen. */}
+              <p className={needed.length > 0 ? 'cook-step has-needs' : 'cook-step'}>
                 <StepText text={next.state.step.text} ingredients={ingredients} factor={factor} system={system} />
               </p>
               {unchecked.length > 0 && (
@@ -623,6 +634,7 @@ export default function TwoChef() {
         {next.kind === 'step' && (
           <>
             <StepTimer key={next.state.step.id} stepId={next.state.step.id} text={next.state.step.text} timers={timers} />
+            <StepNeeds needed={needed} factor={factor} system={system} />
             <button className="btn btn-large" type="button" onClick={() => toggleDone(next.state)}>
               Done with step {next.state.number}
             </button>
