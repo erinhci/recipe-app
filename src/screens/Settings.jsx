@@ -139,7 +139,7 @@ export default function Settings() {
 
   const kitchenFull = cooks.length >= 2
   const people = useKitchenPeople(member.user_id)
-  const takenBy = people?.partner ? { [people.partner.color]: people.partner.name } : {}
+  const takenBy = people?.partner ? { [people.partner.color]: { name: people.partner.name, look: people.partner.look } } : {}
 
   async function changeColor(color) {
     await saveMyMember(member.user_id, { color })

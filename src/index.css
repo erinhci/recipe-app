@@ -1438,7 +1438,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .color-option input:checked + .color-swatch { outline: 2px solid var(--color-text); outline-offset: 3px; }
 .color-option input:focus-visible + .color-swatch { outline: 3px solid var(--color-focus); outline-offset: 4px; }
 .color-option.is-taken { cursor: not-allowed; }
-.color-option.is-taken .color-swatch { opacity: 0.3; }
+.color-option.is-taken .color-swatch { overflow: hidden; outline: 2px dashed var(--color-text-muted); outline-offset: 3px; }
 .color-picker.is-large .color-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
 .color-picker.is-large .color-option {
   flex-direction: column;
@@ -1652,3 +1652,47 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .setup-points li { display: flex; gap: 10px; }
 .setup-points .icon { flex: none; margin-top: 2px; color: var(--color-text-muted); }
 .cook-name > .hint { margin-left: 0.25em; }
+
+/* Your avatar: the portrait or scene is the share button */
+.share-tile { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: var(--radius); background: none; color: var(--color-text); font: inherit; cursor: pointer; text-align: center; }
+button.closet-hero { padding: var(--space-5); background: var(--color-subtle); }
+.share-tile:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.share-chip {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target);
+  height: var(--target);
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+}
+.share-tile:hover .share-chip { background: var(--color-subtle-hover); }
+.closet-top { display: flex; flex-direction: column; gap: var(--space-2); }
+.with-icon { display: flex; align-items: center; gap: var(--space-2); margin: 0; }
+.with-icon .icon { flex: none; }
+.closet-panel > .hint:first-child { margin-top: 0; }
+.skin-picker { margin: 0 0 var(--space-4); padding: 0; border: 0; min-width: 0; }
+.skin-picker legend { padding: 0; margin-bottom: var(--space-2); font-weight: 700; }
+.skin-options { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: var(--space-1); justify-items: center; }
+.skin-option { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; cursor: pointer; }
+.skin-swatch { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--color-border); }
+.skin-option input:checked + span + .skin-swatch { outline: 3px solid var(--color-text); outline-offset: 3px; }
+.skin-option input:focus-visible + span + .skin-swatch { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.closet-subhead { margin: 0 0 var(--space-2); font-size: var(--text-md); }
+.closet-grid.is-dense { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.closet-grid.is-dense .closet-item { min-height: 116px; padding: 10px 4px; }
+.offscreen { position: absolute; left: -10000px; top: 0; width: 1px; height: 1px; overflow: hidden; }
+
+.swatch-face { display: flex; justify-content: center; align-self: flex-start; width: 100%; height: 100%; margin-top: -4px; }
+.swatch-face > svg { flex: none; }
+.color-picker.is-large .swatch-face { margin-top: -6px; }
+.settings-row-static:has(.color-picker) { align-items: flex-start; padding-top: var(--space-2); padding-bottom: var(--space-2); }
+.settings-row-static:has(.color-picker) > span:first-child { line-height: var(--target); }
+.color-note { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-weight: 400; margin: var(--space-1) 0 0; font-size: var(--text-sm); line-height: 1.4; color: var(--color-text-muted); }
+.color-note .cook-dot { margin-right: 0; }
+button.closet-hero.share-tile { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }

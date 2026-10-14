@@ -61,6 +61,30 @@ export const OPTIONS = {
   ],
 }
 
+// Free choices: hair styles and skin tones, never locked.
+export const HAIR_STYLES = [
+  { id: 'none', label: 'None' },
+  { id: 'buzz', label: 'Buzz' },
+  { id: 'short', label: 'Short' },
+  { id: 'curly', label: 'Curly' },
+  { id: 'afro', label: 'Afro' },
+  { id: 'bob', label: 'Bob' },
+  { id: 'bun', label: 'Bun' },
+  { id: 'puffs', label: 'Two puffs' },
+  { id: 'ponytail', label: 'Ponytail' },
+  { id: 'braids', label: 'Two braids' },
+  { id: 'braid', label: 'One braid' },
+  { id: 'locs', label: 'Locs' },
+  { id: 'long', label: 'Long' },
+  { id: 'longcurly', label: 'Long curly' },
+  { id: 'mullet', label: 'Mullet' },
+]
+// Numbered for screen readers, never named by ethnicity.
+export const SKIN_CHOICES = Array.from({ length: 12 }, (_, i) => ({
+  id: String(i + 1),
+  label: `Tone ${i + 1} of 12${i === 0 ? ', lightest' : i === 11 ? ', deepest' : ''}`,
+}))
+
 const REWARD_NOUN = { outfit: '', hat: '', scene: ' scene', pose: ' pose' }
 
 // The reward for a badge ({ kind, threshold }), as "Chef hat" or
@@ -93,7 +117,25 @@ function keep(type, value, fallback, earned) {
 // it's on until the cook takes it off.
 export function wornAvatar(member, earned) {
   const look = member?.avatar ?? {}
-  return { outfit: keep('outfit', look.outfit, 'none', earned), hat: keep('hat', look.hat ?? 'chef', 'none', earned) }
+  return {
+    outfit: keep('outfit', look.outfit, 'none', earned),
+    hat: keep('hat', look.hat ?? 'chef', 'none', earned),
+    // Until a tone is picked, the neutral gray placeholder.
+    skin: SKIN_CHOICES.some((t) => t.id === String(look.skin)) ? String(look.skin) : 'plain',
+    hair: HAIR_STYLES.some((h) => h.id === look.hair) ? look.hair : 'none',
+  }
+}
+
+// A short description of a look for alt text: "chef hat, apron, locs".
+export function describeLook(look) {
+  const parts = []
+  const hat = OPTIONS.hat.find((o) => o.id === look?.hat && o.id !== 'none')
+  const outfit = OPTIONS.outfit.find((o) => o.id === look?.outfit && o.id !== 'none')
+  const hair = HAIR_STYLES.find((h) => h.id === look?.hair && h.id !== 'none')
+  if (hat) parts.push(hat.label.toLowerCase())
+  if (outfit) parts.push(outfit.label.toLowerCase())
+  if (hair) parts.push(`${hair.label.toLowerCase()} hair`)
+  return parts.join(', ')
 }
 
 // The kitchen's scene and pose.

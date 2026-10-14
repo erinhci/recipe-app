@@ -21,7 +21,7 @@ test('rewards are named for the badge that unlocks them', () => {
 
 test('locked items come off; the chef hat is on until taken off', () => {
   const earned = earnedKeys({ milestones: [{ kind: 'joined', threshold: 1, reached: true }, { kind: 'meals', threshold: 5, reached: false }] })
-  assert.deepEqual(wornAvatar({ avatar: {} }, earned), { outfit: 'none', hat: 'chef' })
-  assert.deepEqual(wornAvatar({ avatar: { outfit: 'apron', hat: 'none' } }, earned), { outfit: 'none', hat: 'none' })
+  assert.deepEqual(wornAvatar({ avatar: {} }, earned), { outfit: 'none', hat: 'chef', skin: 'plain', hair: 'none' })
+  assert.deepEqual(wornAvatar({ avatar: { outfit: 'apron', hat: 'none', skin: 9, hair: 'locs' } }, earned), { outfit: 'none', hat: 'none', skin: '9', hair: 'locs' })
   assert.deepEqual(kitchenScene({ scene: 'picnic', duo_pose: 'nope' }, earned), { scene: 'home', pose: 'wave' })
 })
