@@ -1871,7 +1871,8 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .most-made { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
 .most-made > li + li { margin-top: 0; }
 .most-made a { display: flex; flex-direction: column; gap: 6px; color: var(--color-text); text-decoration: none; }
-.most-made-photo { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--color-subtle); color: var(--color-text-muted); font-size: 34px; font-weight: 600; }
+/* height: auto overrides the photo's own height, so it stays square. */
+.most-made-photo { display: flex; align-items: center; justify-content: center; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: var(--color-subtle); color: var(--color-text-muted); font-size: 34px; font-weight: 600; }
 .most-made > li:nth-child(3n + 1) .most-made-photo { border-radius: 58% 42% 46% 54% / 50% 56% 44% 50%; }
 .most-made > li:nth-child(3n + 2) .most-made-photo { border-radius: 44% 56% 52% 48% / 56% 46% 54% 44%; }
 .most-made > li:nth-child(3n + 3) .most-made-photo { border-radius: 52% 48% 58% 42% / 44% 52% 48% 56%; }

@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.33.2",
+    "date": "2026-10-16",
+    "notes": [
+      "Most made photos on Stats are small squares again instead of filling the screen"
+    ]
+  },
+  {
     "version": "0.33.1",
     "date": "2026-10-16",
     "notes": [
