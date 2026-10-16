@@ -1,5 +1,5 @@
 import Icon from './Icon'
-import Avatar from './Avatar'
+import Avatar, { lookProps } from './Avatar'
 import { COLORS } from '../lib/avatars'
 
 // Radio buttons for a cook's color. Yours has a check and a solid ring.
@@ -25,7 +25,7 @@ export default function ColorPicker({ value, onChange, takenBy = {}, large = fal
           // Their face, cropped to the swatch (the drawing is about 3x the circle).
           const face = taken?.look && (
             <span className="swatch-face">
-              <Avatar pose="idle" outfit={taken.look.outfit} hat={taken.look.hat} skin={taken.look.skin} hair={taken.look.hair} size={large ? 160 : 111} />
+              <Avatar pose="idle" {...lookProps(taken.look)} size={large ? 160 : 111} />
             </span>
           )
           return (

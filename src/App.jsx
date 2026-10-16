@@ -6,6 +6,7 @@ import { useOnline } from './lib/useOnline'
 import BottomNav from './components/BottomNav'
 import UpdateBanner from './components/UpdateBanner'
 import WhatsNew from './components/WhatsNew'
+import BadgeUnlock from './components/BadgeUnlock'
 import Page from './components/Page'
 import SignIn from './screens/SignIn'
 import Setup, { setupPending } from './screens/Setup'
@@ -83,6 +84,7 @@ function Shell() {
   return (
     <>
       <WhatsNew />
+      <BadgeUnlock />
       {!online && (
         <p className="offline-banner" role="status">
           You're offline. Recipes still work; changes sync when you reconnect.

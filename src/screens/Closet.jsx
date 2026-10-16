@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Page from '../components/Page'
 import Icon from '../components/Icon'
-import Avatar, { AvatarPortrait, SKIN_TONES, isDeepTone } from '../components/Avatar'
+import Avatar, { AvatarFullBody, HAIR_COLORS, SKIN_TONES, isDeepTone } from '../components/Avatar'
 import Scene, { sceneCaption } from '../components/Scene'
 import { LookCard, SceneCard, lookCardAlt } from '../components/ShareCards'
 import { useAuth } from '../lib/auth'
@@ -19,18 +20,21 @@ import { prepareImage, shareFile } from '../lib/shareImage'
 const TABS = [
   { id: 'look', label: 'Look' },
   { id: 'outfit', label: 'Outfits' },
-  { id: 'hat', label: 'Hats' },
+  { id: 'accessories', label: 'Accessories' },
   { id: 'scene', label: 'Scenes' },
   { id: 'pose', label: 'Poses' },
 ]
 
 const NOTES = {
   look: 'Always yours to change. Nothing here is locked.',
-  outfit: 'Earn badges to unlock more.',
-  hat: 'Earn badges to unlock more.',
+  outfit: 'Everyday clothes are free. Aprons and costumes come from badges.',
+  accessories: 'Everything here is free: headwear, glasses and kitchen tools.',
   scene: 'Where you two stand together.',
   pose: 'What you two are doing together.',
 }
+
+// Hair colors bright enough to need a dark check mark on their swatch.
+const DARK_HAIR = new Set(['black', 'darkbrown', 'brown', 'auburn', 'purple', 'blue'])
 
 // "meals-10" -> "10 meals cooked"
 function badgeLabel(key) {
@@ -48,7 +52,10 @@ const SHARE_MESSAGES = {
 export default function Closet() {
   const { member } = useAuth()
   const people = useKitchenPeople(member.user_id)
-  const [tab, setTab] = useState('look')
+  const navigate = useNavigate()
+  const { state: routeState } = useLocation()
+  // A badge's "Try it on" opens the tab its reward is on.
+  const [tab, setTab] = useState(() => (TABS.some((t) => t.id === routeState?.tab) ? routeState.tab : 'look'))
   const [status, setStatus] = useState('')
   const tabRefs = useRef({})
   const lookCardRef = useRef(null)
@@ -88,26 +95,36 @@ export default function Closet() {
   const { cooks, earned, scene, pose, kitchen } = people
   const partner = cooks.find((c) => !c.isMe)
   const shared = tab === 'scene' || tab === 'pose'
-  const current = { outfit: me.look.outfit, hat: me.look.hat, scene, pose, look: me.look.hair }[tab]
 
   async function saveLook(patch) {
     // Only what was chosen is stored; the gray placeholder isn't a tone.
-    const { outfit, hat, skin, hair } = { ...me.look, ...patch }
-    await saveMyMember(member.user_id, { avatar: { outfit, hat, hair, ...(skin !== 'plain' ? { skin } : {}) } })
+    const { skin, ...rest } = { ...me.look, ...patch }
+    await saveMyMember(member.user_id, { avatar: { ...rest, ...(skin !== 'plain' ? { skin } : {}) } })
   }
 
-  async function choose(option) {
-    if (tab !== 'look' && !isUnlocked(option, earned)) return
+  // type: a look field (hair, outfit, hat, glasses, utensil) or scene/pose.
+  async function choose(type, option) {
+    if (!isUnlocked(option, earned)) {
+      // A locked item opens the badge that unlocks it.
+      navigate('/badges')
+      return
+    }
+    const current = type === 'scene' ? scene : type === 'pose' ? pose : me.look[type]
     if (option.id === current) return
-    if (tab === 'look') await saveLook({ hair: option.id })
-    else if (tab === 'outfit' || tab === 'hat') await saveLook({ [tab]: option.id })
-    else if (kitchen) await saveKitchen(kitchen.id, tab === 'scene' ? { scene: option.id } : { duo_pose: option.id })
+    if (type === 'scene' || type === 'pose') {
+      if (kitchen) await saveKitchen(kitchen.id, type === 'scene' ? { scene: option.id } : { duo_pose: option.id })
+    } else await saveLook({ [type]: option.id })
     setStatus(`${option.label} chosen.`)
   }
 
   async function chooseSkin(id) {
     await saveLook({ skin: id })
     setStatus(`${SKIN_CHOICES.find((t) => t.id === id)?.label} chosen.`)
+  }
+
+  async function chooseHairColor(id) {
+    await saveLook({ hairColor: id })
+    setStatus(`${HAIR_COLORS.find((c) => c.id === id)?.label} hair chosen.`)
   }
 
   async function share() {
@@ -132,14 +149,63 @@ export default function Closet() {
     tabRefs.current[next.id]?.focus()
   }
 
-  const options = tab === 'look' ? HAIR_STYLES : OPTIONS[tab]
-  const preview = (option) => {
-    if (tab === 'scene') return <Scene cooks={cooks} scene={option.id} pose={pose} compact caption={false} />
-    if (tab === 'pose') return <Scene cooks={partner ? cooks : [...cooks, { name: '', look: {} }]} scene={scene} pose={option.id} compact caption={false} />
-    const look = { ...me.look, [tab === 'look' ? 'hair' : tab]: option.id }
-    // Hair shows without a hat, so the style is clear.
-    return <Avatar size={tab === 'look' ? 64 : 80} outfit={look.outfit} hat={tab === 'look' ? 'none' : look.hat} skin={look.skin} hair={look.hair} />
+  const look = me.look
+  // Tile previews. Hair and headwear zoom in on the head and shoulders;
+  // glasses zoom to the face; clothes, costumes and tools show the whole
+  // avatar. Hair tiles leave off the hat and headwear tiles leave off the
+  // hair, so each shows just what it's for.
+  const head = (props) => (
+    <span className="closet-head">
+      <Avatar size={130} {...props} />
+    </span>
+  )
+  const preview = {
+    hair: (o) => head({ hair: o.id, hairColor: look.hairColor, skin: look.skin }),
+    hat: (o) => head({ hat: o.id, skin: look.skin, outfit: look.outfit }),
+    glasses: (o) => (
+      <span className="closet-face">
+        <Avatar size={220} glasses={o.id} skin={look.skin} />
+      </span>
+    ),
+    outfit: (o) =>
+      o.costume ? <Avatar size={80} outfit={o.id} skin={look.skin} /> : <Avatar size={80} {...look} glasses="none" utensil="none" outfit={o.id} />,
+    utensil: (o) => <Avatar size={80} skin={look.skin} outfit={look.outfit} utensil={o.id} />,
+    scene: (o) => <Scene cooks={cooks} scene={o.id} pose={pose} compact caption={false} />,
+    pose: (o) => <Scene cooks={partner ? cooks : [...cooks, { name: '', look: {} }]} scene={scene} pose={o.id} compact caption={false} />,
   }
+
+  // One grid of choices. type: what the choice sets; cols: 3 or 4.
+  const grid = (type, options, cols = 3) => (
+    <ul className={`closet-grid${cols === 4 ? ' is-dense' : ''}`}>
+      {options.map((option) => {
+        const open = isUnlocked(option, earned)
+        const current = type === 'scene' ? scene : type === 'pose' ? pose : look[type]
+        const on = option.id === current
+        const worn = type === 'utensil' ? 'Holding' : shared ? 'Chosen' : 'Wearing'
+        return (
+          <li key={option.id}>
+            <button
+              type="button"
+              className={`closet-item${on ? ' is-on' : ''}${open ? '' : ' is-locked'}`}
+              aria-pressed={on}
+              aria-disabled={!open || undefined}
+              onClick={() => choose(type, option)}
+            >
+              <span className="closet-preview">{preview[type](option)}</span>
+              <span className="closet-label">{option.label}</span>
+              {on && <span className="closet-note">{worn}</span>}
+              {!open && (
+                <span className="closet-note">
+                  <span className="sr-only">Locked. Unlocks with </span>
+                  {badgeLabel(option.badge)}
+                </span>
+              )}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
   const shareIcon = (
     <span className="share-chip" aria-hidden="true">
       <Icon name="share" size={22} />
@@ -161,7 +227,7 @@ export default function Closet() {
         </div>
       ) : (
         <button type="button" className="closet-hero share-tile" onClick={share} aria-label={`Share my look: ${lookCardAlt(me)}`}>
-          <AvatarPortrait look={me.look} color={me.color} size={168} pose="wave" />
+          <AvatarFullBody look={me.look} color={me.color} pose="wave" />
           <span className="closet-name">{me.name}</span>
           {shareIcon}
         </button>
@@ -196,7 +262,7 @@ export default function Closet() {
               <legend>Skin tone</legend>
               <div className="skin-options">
                 {SKIN_CHOICES.map((tone) => {
-                  const checked = me.look.skin === tone.id
+                  const checked = look.skin === tone.id
                   return (
                     <label key={tone.id} className="skin-option">
                       <input type="radio" className="sr-only" name="skin" value={tone.id} checked={checked} onChange={() => chooseSkin(tone.id)} />
@@ -213,36 +279,59 @@ export default function Closet() {
                 })}
               </div>
             </fieldset>
-            <h2 className="closet-subhead">Hair</h2>
+            <fieldset className="skin-picker">
+              <legend>Hair color</legend>
+              <div className="skin-options is-seven">
+                {HAIR_COLORS.map((color) => {
+                  const checked = look.hairColor === color.id
+                  return (
+                    <label key={color.id} className="skin-option">
+                      <input
+                        type="radio"
+                        className="sr-only"
+                        name="hair-color"
+                        value={color.id}
+                        checked={checked}
+                        onChange={() => chooseHairColor(color.id)}
+                      />
+                      <span className="sr-only">{color.label}</span>
+                      <span className="skin-swatch" aria-hidden="true" style={{ background: color.hex, color: DARK_HAIR.has(color.id) ? '#ffffff' : '#111111' }}>
+                        {checked && <Icon name="check" size={20} />}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </fieldset>
+            <h2 className="closet-subhead">Hair style</h2>
+            {grid('hair', HAIR_STYLES, 4)}
           </>
         )}
-        <ul className={`closet-grid${tab === 'look' ? ' is-dense' : ''}`}>
-          {options.map((option) => {
-            const open = tab === 'look' || isUnlocked(option, earned)
-            const on = option.id === current
-            return (
-              <li key={option.id}>
-                <button
-                  type="button"
-                  className={`closet-item${on ? ' is-on' : ''}${open ? '' : ' is-locked'}`}
-                  aria-pressed={on}
-                  aria-disabled={!open || undefined}
-                  onClick={() => choose(option)}
-                >
-                  <span className="closet-preview">{preview(option)}</span>
-                  <span className="closet-label">{option.label}</span>
-                  {on && <span className="closet-note">{shared ? 'Chosen' : 'Wearing'}</span>}
-                  {!open && (
-                    <span className="closet-note">
-                      <span className="sr-only">Locked. Unlocks with </span>
-                      {badgeLabel(option.badge)}
-                    </span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        {tab === 'outfit' && (
+          <>
+            <h2 className="closet-subhead">Clothes</h2>
+            {grid(
+              'outfit',
+              OPTIONS.outfit.filter((o) => !o.costume),
+            )}
+            <h2 className="closet-subhead is-spaced">Costumes</h2>
+            {grid(
+              'outfit',
+              OPTIONS.outfit.filter((o) => o.costume),
+            )}
+          </>
+        )}
+        {tab === 'accessories' && (
+          <>
+            <h2 className="closet-subhead">Headwear</h2>
+            {grid('hat', OPTIONS.hat, 4)}
+            <h2 className="closet-subhead is-spaced">Glasses</h2>
+            {grid('glasses', OPTIONS.glasses)}
+            <h2 className="closet-subhead is-spaced">Kitchen tools</h2>
+            {grid('utensil', OPTIONS.utensil)}
+          </>
+        )}
+        {shared && grid(tab, OPTIONS[tab])}
       </section>
       <p className="sr-only" role="status">
         {status}

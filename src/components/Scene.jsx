@@ -1,4 +1,4 @@
-import Avatar from "./Avatar";
+import Avatar, { lookProps } from "./Avatar";
 
 // The two cooks' avatars together, in the kitchen's scene and pose. Each
 // avatar keeps its own outfit and hat. With one cook, they stand alone.
@@ -8,14 +8,16 @@ export const DUO = {
   wave: ["wave", "wave", "waving"],
   highfive: ["highfive", "highfive", "high-fiving"],
   taste: ["taste", "wave", "taste-testing"],
+  cheers: ["cheers", "cheers", "raising a glass"],
 };
 // Which way each avatar's raised arm points. Only the high five meets in
 // the middle; waving hands point outward, so waving never reads as a high
-// five.
+// five. Cheers faces inward like the high five, so the two glasses meet.
 export const FLIP = {
   highfive: [false, true],
   wave: [true, false],
   taste: [false, false],
+  cheers: [false, true],
 };
 const WHERE = {
   home: "in the kitchen",
@@ -105,10 +107,7 @@ export default function Scene({
         {cooks[0] && (
           <Avatar
             pose={cooks.length > 1 ? left : "wave"}
-            outfit={cooks[0].look?.outfit}
-            hat={cooks[0].look?.hat}
-            skin={cooks[0].look?.skin}
-            hair={cooks[0].look?.hair}
+            {...lookProps(cooks[0].look)}
             size={size}
             flip={flipA}
           />
@@ -117,10 +116,7 @@ export default function Scene({
           <span style={{ marginLeft: -size * 0.15 }}>
             <Avatar
               pose={right}
-              outfit={cooks[1].look?.outfit}
-              hat={cooks[1].look?.hat}
-              skin={cooks[1].look?.skin}
-              hair={cooks[1].look?.hair}
+              {...lookProps(cooks[1].look)}
               size={size}
               flip={flipB}
             />

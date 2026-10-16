@@ -1,5 +1,19 @@
 [
   {
+    "version": "0.33.0",
+    "date": "2026-10-16",
+    "notes": [
+      "Your avatar has a new Accessories tab: headwear (all free, including a turban, hijab and bonnet), glasses and kitchen tools",
+      "Pick a hair color, and a new medium curly style. Curly styles have spiral curls, and every hairline matches",
+      "Outfits has everyday clothes plus food costumes you unlock with badges",
+      "Your avatar shows head to feet while you style it, and the hair and headwear tiles zoom in on the head",
+      "Earning a badge plays a short celebration with both avatars and shows what it unlocks",
+      "Earned badges look like 3D medals, and a cheers pose unlocks at 5 two-chef cooks",
+      "A running step timer looks like a wind-up kitchen timer",
+      "Stats shows meals by week as a line, meal types as a pie chart, and most made recipes as photo tiles"
+    ]
+  },
+  {
     "version": "0.32.0",
     "date": "2026-10-13",
     "notes": [

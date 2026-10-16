@@ -8,6 +8,9 @@ import { localDate } from '../lib/data'
 import { computeStats, MILESTONES } from '../lib/stats'
 import { rewardFor } from '../lib/avatars'
 import Avatar from '../components/Avatar'
+import BadgeIcon from '../components/BadgeIcon'
+import { PhotoImg } from '../components/MealPhotos'
+import { newestFirst } from '../lib/photos'
 
 const timeText = (hours) => {
   if (hours < 1) return { value: Math.round(hours * 60), unit: 'min' }
@@ -45,45 +48,45 @@ function Tiles({ stats }) {
   )
 }
 
-// Meals per week as columns. The drawing is hidden from screen readers;
+// Meals per week as a line, oldest first, with every week labeled. Weeks
+// with meals get a filled dot and the count above it; weeks with none get
+// a hollow dot on the baseline. The drawing is hidden from screen readers;
 // the same numbers are in a table for them.
-function WeeklyChart({ weeks }) {
-  const width = 320
-  const height = 132
-  const top = 18 // room for value labels
-  const bottom = 22 // room for dates
-  const plot = height - top - bottom
+export function WeeklyChart({ weeks }) {
   const max = Math.max(1, ...weeks.map((w) => w.count))
-  const slot = width / weeks.length
-  const bar = Math.min(24, slot - 12)
+  const x0 = 28
+  const x1 = 322
+  const top = 22
+  const base = 112
+  const points = weeks.map((week, i) => ({
+    week,
+    x: x0 + (i * (x1 - x0)) / Math.max(1, weeks.length - 1),
+    y: base - (week.count / max) * (base - top),
+  }))
+  const line = points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  const area = `M${x0} ${base} L${points.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L')} L${points.at(-1)?.x.toFixed(1)} ${base}Z`
   return (
     <figure className="chart">
-      <svg viewBox={`0 0 ${width} ${height}`} width="100%" aria-hidden="true" focusable="false">
-        <line x1="0" x2={width} y1={top + plot + 0.5} y2={top + plot + 0.5} className="chart-axis" />
-        {weeks.map((week, i) => {
-          const x = i * slot + (slot - bar) / 2
-          const h = Math.max(8, (week.count / max) * plot)
-          const label = `Week of ${shortDay.format(week.start)}: ${week.count} ${week.count === 1 ? 'meal' : 'meals'}`
-          return (
-            <g key={week.start.toISOString()}>
-              <title>{label}</title>
-              {week.count > 0 && (
-                <>
-                  <path className="chart-bar" d={`M${x},${top + plot} v${-(h - 4)} q0,-4 4,-4 h${bar - 8} q4,0 4,4 v${h - 4} z`} />
-                  <text x={x + bar / 2} y={top + plot - h - 5} textAnchor="middle" className="chart-value">
-                    {week.count}
-                  </text>
-                </>
-              )}
-              {(weeks.length - 1 - i) % 2 === 0 && (
-                <text x={x + bar / 2} y={height - 6} textAnchor="middle" className="chart-tick">
-                  {i === weeks.length - 1 ? 'This wk' : shortDay.format(week.start)}
-                </text>
-              )}
-            </g>
-          )
-        })}
+      <svg viewBox="0 0 350 118" width="100%" aria-hidden="true" focusable="false" className="line-chart">
+        <path d="M12 112 H338" className="chart-axis" />
+        <path d={area} className="chart-area" />
+        <polyline points={line} className="chart-line" />
+        {points.map(({ week, x, y }) => (
+          <g key={week.start.toISOString()}>
+            <circle cx={x} cy={y} r={week.count ? 4.5 : 3.5} className={week.count ? 'chart-dot' : 'chart-dot is-empty'} />
+            {week.count > 0 && (
+              <text x={x} y={y - 10} textAnchor="middle" className="chart-value">
+                {week.count}
+              </text>
+            )}
+          </g>
+        ))}
       </svg>
+      <div className="chart-weeks" aria-hidden="true">
+        {weeks.map((week, i) => (
+          <span key={week.start.toISOString()}>{i === weeks.length - 1 ? 'This wk' : shortDay.format(week.start)}</span>
+        ))}
+      </div>
       <table className="sr-only">
         <caption>Meals cooked each week</caption>
         <thead>
@@ -105,31 +108,80 @@ function WeeklyChart({ weeks }) {
   )
 }
 
-const ICONS = {
-  meals: <path d="M9 3v7a2 2 0 0 0 4 0V3M11 10v11M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9" />,
-  cuisines: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z" />
-    </>
-  ),
-  hours: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </>
-  ),
+// Each share of all meals as a pie, starting at the top and going
+// clockwise in the legend's order. Slices go from dark to light and are
+// outlined, and the legend gives each count and share, so nothing depends
+// on telling shades apart. The pie is hidden from screen readers; they
+// read the legend.
+const SHADES = [1, 0.6, 0.3, 0.08, 0.45, 0.18]
+export function PieChart({ items, total, label = (item) => item.name }) {
+  const r = 66
+  let angle = -90
+  const slices = items.map((item, i) => {
+    const sweep = (360 * item.count) / Math.max(1, total)
+    const a0 = (angle * Math.PI) / 180
+    angle += sweep
+    const a1 = (angle * Math.PI) / 180
+    const shade = SHADES[i % SHADES.length]
+    // A single slice is the whole circle.
+    const d =
+      sweep >= 359.99
+        ? `M70 4 A${r} ${r} 0 1 1 69.99 4 Z`
+        : `M70 70 L${(70 + r * Math.cos(a0)).toFixed(1)} ${(70 + r * Math.sin(a0)).toFixed(1)} A${r} ${r} 0 ${sweep > 180 ? 1 : 0} 1 ${(70 + r * Math.cos(a1)).toFixed(1)} ${(70 + r * Math.sin(a1)).toFixed(1)} Z`
+    return { item, d, shade }
+  })
+  return (
+    <div className="pie">
+      <svg width="140" height="140" viewBox="0 0 140 140" aria-hidden="true" focusable="false">
+        {slices.map(({ item, d, shade }) => (
+          <path key={item.name} d={d} className="pie-slice" style={{ fillOpacity: shade }} />
+        ))}
+        <circle cx="70" cy="70" r={r} className="pie-rim" />
+      </svg>
+      <ul className="pie-legend">
+        {slices.map(({ item, shade }) => (
+          <li key={item.name}>
+            <span className="pie-key" aria-hidden="true">
+              <span style={{ opacity: shade }} />
+            </span>
+            <span className="pie-text">
+              <span>{label(item)}</span>
+              <span className="share-count">
+                {item.count} {item.count === 1 ? 'meal' : 'meals'} · {percent(item.count, total)}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
 }
-ICONS.joined = <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />
-ICONS.rated = ICONS.joined
-ICONS.together = (
-  <>
-    <circle cx="9" cy="8" r="3.5" />
-    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
-    <circle cx="17" cy="9" r="2.5" />
-    <path d="M16 14.2a5 5 0 0 1 5.5 4.8" />
-  </>
-)
+
+// The most made recipes as tiles: the latest meal photo (or the first
+// letter when there's no photo yet, as in Library) and how often it's
+// been made.
+export function MostMade({ items }) {
+  return (
+    <ul className="most-made">
+      {items.map((r) => (
+        <li key={r.id}>
+          <Link to={`/recipe/${r.id}`} aria-label={`${r.title}, made ${r.count} ${r.count === 1 ? 'time' : 'times'}`}>
+            {r.photo ? (
+              <PhotoImg photo={r.photo} alt="" className="most-made-photo" />
+            ) : (
+              <span className="most-made-photo is-empty" aria-hidden="true">
+                {r.title.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
+            <span className="most-made-title">{r.title}</span>
+            <span className="most-made-count">Made {r.count}×</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 const UNIT = { joined: '', meals: 'meals', cuisines: 'cuisines', hours: 'hours', together: 'two-chef cooks', rated: 'recipes rated' }
 
 // Earned milestones as filled badges; the next one on each track as an
@@ -164,18 +216,7 @@ export function Badges({ badges, showRewards = false, large = showRewards }) {
         return (
           <li key={`${badge.kind}-${badge.threshold}`} className={badge.earned ? 'badge is-earned' : 'badge'}>
             <span className="badge-medal" aria-hidden="true">
-              <svg
-                viewBox="0 0 24 24"
-                width={large ? 28 : 22}
-                height={large ? 28 : 22}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {ICONS[badge.kind]}
-              </svg>
+              <BadgeIcon kind={badge.kind} size={large ? 28 : 22} />
               <span className="badge-number">{badge.threshold}</span>
             </span>
             <span className="badge-label">
@@ -348,13 +389,18 @@ function NextUp({ badge }) {
 
 export default function Stats() {
   const stats = useLiveQuery(async () => {
-    const [recipes, ingredients, cookLog, ratings] = await Promise.all([
+    const [recipes, ingredients, cookLog, ratings, photos] = await Promise.all([
       db.recipes.toArray(),
       db.ingredients.toArray(),
       db.cook_log.toArray(),
       db.ratings.toArray(),
+      db.meal_photos.toArray(),
     ])
-    return computeStats({ recipes, ingredients, cookLog, ratings, today: localDate() })
+    const stats = computeStats({ recipes, ingredients, cookLog, ratings, today: localDate() })
+    const latest = new Map()
+    for (const photo of newestFirst(photos)) if (!latest.has(photo.recipe_id)) latest.set(photo.recipe_id, photo)
+    // Three tiles fit across.
+    return { ...stats, mostMade: stats.mostMade.slice(0, 3).map((r) => ({ ...r, photo: latest.get(r.id) })) }
   }, [])
 
   if (stats === undefined) {
@@ -407,12 +453,7 @@ export default function Stats() {
 
       <section aria-labelledby="most-made-heading">
         <h2 id="most-made-heading">Most made</h2>
-        <ShareList
-          items={stats.mostMade.map((r) => ({ name: r.id, count: r.count, title: r.title }))}
-          total={stats.mealsLogged}
-          countText={(n) => `${n}×`}
-          label={(item) => <Link to={`/recipe/${item.name}`}>{item.title}</Link>}
-        />
+        <MostMade items={stats.mostMade} />
       </section>
 
       {stats.topRated.length > 0 && (
@@ -441,7 +482,7 @@ export default function Stats() {
 
       <section aria-labelledby="meal-types-heading">
         <h2 id="meal-types-heading">Meal types</h2>
-        <ShareList items={stats.mealTypes} total={stats.mealsLogged} label={(item) => capitalize(item.name)} />
+        <PieChart items={stats.mealTypes} total={stats.mealsLogged} label={(item) => capitalize(item.name)} />
       </section>
 
       {stats.topIngredients.length > 0 && (

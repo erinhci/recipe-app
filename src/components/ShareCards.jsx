@@ -1,4 +1,4 @@
-import Avatar from './Avatar'
+import Avatar, { lookProps as lookOf } from './Avatar'
 import { DUO, FLIP, SceneArt, sceneCaption } from './Scene'
 import { COLORS, describeLook, normalizeColor } from '../lib/avatars'
 
@@ -12,7 +12,6 @@ const H = 450
 const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
 const hexOf = (id) => COLORS.find((c) => c.id === normalizeColor(id))?.hex ?? COLORS[0].hex
 
-const lookOf = (look) => ({ outfit: look?.outfit, hat: look?.hat, skin: look?.skin, hair: look?.hair })
 
 function Frame({ children, svgRef, label }) {
   return (

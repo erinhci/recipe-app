@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import Icon from './Icon'
-import Avatar from './Avatar'
+import Avatar, { lookProps } from './Avatar'
 import { useAuth } from '../lib/auth'
 import { useKitchenPeople } from '../lib/useKitchen'
 
@@ -19,7 +19,7 @@ function MyFace({ me }) {
   return (
     <span className="nav-me" aria-hidden="true" style={{ background: `var(--cook-${me.color})` }}>
       <span className="nav-me-drawing">
-        <Avatar pose="idle" outfit={look.outfit} hat={look.hat} skin={look.skin} hair={look.hair} size={44} />
+        <Avatar pose="idle" {...lookProps(look)} size={44} />
       </span>
     </span>
   )

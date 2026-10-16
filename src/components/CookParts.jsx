@@ -99,6 +99,63 @@ export function NutritionPeek({ recipe, ingredients }) {
   )
 }
 
+// A wind-up kitchen timer face. The dial turns back to the time left (6
+// degrees a minute, like the real thing, up to one full turn) and ticks
+// toward 0 once a second; a small hand in the middle clicks round once a
+// minute. When it starts, the dial winds up from 0. Reduced motion: no
+// wind-up and no rattle; the dial just shows the time left.
+const rad = (deg) => ((deg - 90) * Math.PI) / 180
+const pt = (deg, r) => [50 + r * Math.cos(rad(deg)), 56 + r * Math.sin(rad(deg))]
+const DIAL_TICKS = Array.from({ length: 60 }, (_, m) => {
+  const long = m % 5 === 0
+  const [x1, y1] = pt(m * 6, 33)
+  const [x2, y2] = pt(m * 6, long ? 27 : 30)
+  return { x1, y1, x2, y2, w: long ? 2.2 : 1 }
+})
+const DIAL_NUMBERS = [0, 10, 20, 30, 40, 50].map((m) => {
+  const [x, y] = pt(m * 6, 19.5)
+  return { x, y, a: m * 6, label: String(m) }
+})
+
+function KitchenDial({ secondsLeft, size }) {
+  const dial = -Math.min(secondsLeft / 60, 60) * 6
+  const hand = -(Math.ceil(secondsLeft) % 60) * 6
+  return (
+    <svg className="kt" aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 100 104" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <g className="kt-body">
+        <rect x="43" y="4" width="14" height="9" rx="3" fill="var(--color-surface)" stroke="var(--color-text)" strokeWidth="3" />
+        <circle cx="50" cy="56" r="42" fill="var(--color-surface)" stroke="var(--color-text)" strokeWidth="3.5" />
+        <g className="kt-dial" style={{ transform: `rotate(${dial}deg)` }}>
+          <circle cx="50" cy="56" r="34" fill="var(--color-subtle)" />
+          {DIAL_TICKS.map((t, i) => (
+            <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="var(--color-text)" strokeWidth={t.w} />
+          ))}
+          {DIAL_NUMBERS.map((n) => (
+            <text
+              key={n.label}
+              x={n.x}
+              y={n.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize="10"
+              fontWeight="700"
+              fill="var(--color-text)"
+              transform={`rotate(${n.a} ${n.x} ${n.y})`}
+            >
+              {n.label}
+            </text>
+          ))}
+          <circle cx="50" cy="56" r="9" fill="var(--color-surface)" stroke="var(--color-text)" strokeWidth="3" />
+        </g>
+        <g className="kt-sec" style={{ transform: `rotate(${hand}deg)` }}>
+          <path d="M50 56 V49.5" stroke="var(--color-text)" strokeWidth="2.5" />
+        </g>
+        <path d="M44 12 L56 12 L50 22z" fill="var(--color-text)" stroke="var(--color-text)" strokeWidth="2" />
+      </g>
+    </svg>
+  )
+}
+
 // The timer under a large current step that names a wait of 3 minutes or
 // more. Idle: one tap starts it. Running: the countdown is a timer region
 // (screen readers aren't read every second). Done: an alert, plus a
@@ -126,7 +183,9 @@ export function StepTimer({ stepId, text, timers }) {
     return (
       <div className="step-timer">
         <div className="timer-pill is-done" role="alert">
-          <Icon name="check" size={24} />
+          <span className="kt-done-face">
+            <KitchenDial secondsLeft={0} size={40} />
+          </span>
           <span className="timer-done-text">Time's up</span>
           <button className="timer-inner-btn" type="button" onClick={() => timers.clear(stepId)}>
             Done
@@ -138,11 +197,11 @@ export function StepTimer({ stepId, text, timers }) {
   }
   return (
     <div className="step-timer">
-      <div className="timer-pill is-running" role="timer" aria-label={`${label} timer`}>
-        <Icon name="clock" size={24} />
-        <span className="timer-clock">{clock(t.secondsLeft)}</span>
-        <span className="timer-bar" aria-hidden="true">
-          <span style={{ width: `${Math.min(100, Math.max(0, t.done * 100))}%` }} />
+      <div className={`timer-card${t.state === 'paused' ? ' is-paused' : ''}`} role="timer" aria-label={`${label} timer, ${clock(t.secondsLeft)} left`}>
+        <KitchenDial secondsLeft={t.secondsLeft} size={96} />
+        <span className="timer-card-text">
+          <span className="timer-clock">{clock(t.secondsLeft)}</span>
+          <span className="timer-left">left of {label}</span>
         </span>
         {t.state === 'paused' ? (
           <button className="timer-inner-btn" type="button" onClick={() => timers.resume(stepId)}>
