@@ -247,8 +247,8 @@ export function Badges({ badges, showRewards = false, large = showRewards }) {
   )
 }
 
-// Each item's share of all meals, as a thin meter. The text gives the
-// count, not a percentage.
+// Each item's share of all meals, as a thin meter, with its count (and
+// on Cuisines, the percentage).
 function ShareList({ items, total, label, countText = (n) => `${n} ${n === 1 ? 'meal' : 'meals'}` }) {
   return (
     <ul className="share-list">
@@ -476,8 +476,17 @@ export default function Stats() {
       )}
 
       <section aria-labelledby="cuisines-heading">
-        <h2 id="cuisines-heading">Cuisines</h2>
-        <ShareList items={stats.cuisines} total={stats.mealsLogged} />
+        <h2 id="cuisines-heading" style={{ marginBottom: 0 }}>
+          Cuisines
+        </h2>
+        <p className="hint" style={{ marginTop: 2 }}>
+          Share of all meals.
+        </p>
+        <ShareList
+          items={stats.cuisines}
+          total={stats.mealsLogged}
+          countText={(n) => `${n} ${n === 1 ? 'meal' : 'meals'} · ${percent(n, stats.mealsLogged)}`}
+        />
       </section>
 
       <section aria-labelledby="meal-types-heading">
@@ -500,7 +509,6 @@ export default function Stats() {
               </li>
             ))}
           </ul>
-          <p className="hint">Meals each was in.</p>
         </section>
       )}
     </Page>

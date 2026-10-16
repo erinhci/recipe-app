@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.33.1",
+    "date": "2026-10-16",
+    "notes": [
+      "Cuisines on Stats says each bar is a share of all meals and shows its percentage"
+    ]
+  },
+  {
     "version": "0.33.0",
     "date": "2026-10-16",
     "notes": [
