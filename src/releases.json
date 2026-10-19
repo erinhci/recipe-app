@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.4",
+    "date": "2026-10-19",
+    "notes": [
+      "When you scroll to Meal types, each slice of the pie jumps out in turn, clockwise, and it lands on the largest (not with reduced motion)"
+    ]
+  },
+  {
     "version": "0.35.3",
     "date": "2026-10-19",
     "notes": [

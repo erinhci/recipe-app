@@ -1983,3 +1983,14 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .share-list > li:nth-child(4) .meter > span { animation-delay: 0.45s; }
   .share-list > li:nth-child(n + 5) .meter > span { animation-delay: 0.6s; }
 }
+
+/* Meal types pie: on first view each slice jumps out in turn, clockwise,
+   and it lands on the largest share, pulled out, with its percentage
+   fading in. Reduced motion: no jumping. */
+@keyframes pie-pop { 0% { transform: translate(0, 0); } 45% { transform: translate(calc(var(--dx) * 3.2), calc(var(--dy) * 3.2)); } 100% { transform: translate(var(--ex), var(--ey)); } }
+@keyframes pie-fade { from { opacity: 0; } to { opacity: 1; } }
+.pie-slice { transition: transform 0.25s ease; }
+@media (prefers-reduced-motion: no-preference) {
+  .pie-slice { animation: pie-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) backwards; }
+  .pie-pct, .pie-label { animation: pie-fade 0.4s ease backwards; }
+}
