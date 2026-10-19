@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.2",
+    "date": "2026-10-19",
+    "notes": [
+      "The Top rated podium builds up third, second, then first, and first place spins and jumps (not with reduced motion)"
+    ]
+  },
+  {
     "version": "0.35.1",
     "date": "2026-10-19",
     "notes": [

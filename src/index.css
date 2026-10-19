@@ -1941,3 +1941,31 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 @media (prefers-reduced-motion: no-preference) {
   .line-chart { animation: wc-reveal 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both; }
 }
+
+/* The podium builds up on first load: third place's step rises and its
+   recipe drops on, then second, then first. First place's photo drops on,
+   spins once and jumps, landing with a small bounce. Reduced motion: it all
+   shows at once. */
+@keyframes pd-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes pd-drop { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pd-win {
+  0% { opacity: 0; transform: translateY(-16px) perspective(400px) rotateY(0); }
+  30% { opacity: 1; transform: translateY(0) perspective(400px) rotateY(0); }
+  70% { transform: translateY(-22px) perspective(400px) rotateY(360deg); }
+  85% { transform: translateY(0) perspective(400px) rotateY(360deg); }
+  92% { transform: translateY(-6px) perspective(400px) rotateY(360deg); }
+  100% { opacity: 1; transform: translateY(0) perspective(400px) rotateY(360deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .podium-step { transform-origin: 50% 100%; animation: pd-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .podium-place a { animation: pd-drop 0.4s ease-out both; }
+  .podium-place.is-3 .podium-step { animation-delay: 0.1s; }
+  .podium-place.is-3 a { animation-delay: 0.45s; }
+  .podium-place.is-2 .podium-step { animation-delay: 0.7s; }
+  .podium-place.is-2 a { animation-delay: 1.05s; }
+  .podium-place.is-1 .podium-step { animation-delay: 1.3s; }
+  .podium-place.is-1 a { animation: none; }
+  .podium-place.is-1 .podium-photo { animation: pd-win 1.2s cubic-bezier(0.3, 1.2, 0.5, 1) 1.65s both; }
+  .podium-place.is-1 .podium-title,
+  .podium-place.is-1 .podium-stars { animation: pd-drop 0.4s ease-out 1.65s both; }
+}
