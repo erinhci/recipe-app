@@ -21,6 +21,7 @@
      behind text that needs full contrast. */
   --me: var(--color-text);
   --me-ink: var(--color-bg);
+  --me-line: var(--color-text);
   color-scheme: light dark;
 
   --color-bg: #ffffff;
@@ -1371,6 +1372,31 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
   --ink-ocean: #ffffff;
   --ink-violet: #111111;
 }
+
+/* Stroke shades of each cook color for icons. A line icon needs 3:1
+   against what it sits on (WCAG 1.4.11). Orange and green are under that
+   on the light page and berry and ocean on the dark one, so each color
+   has a shade that keeps its hue and reaches 3:1 on the page, cards and
+   the gray button fill. MyColor sets --me-line to yours. */
+:root {
+  --line-berry: #c2185b;
+  --line-orange: #c06000;
+  --line-green: #558b2f;
+  --line-ocean: #0077b6;
+  --line-violet: #8a6399;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --line-berry: #e0457f;
+    --line-orange: #f58a27;
+    --line-green: #8bc34a;
+    --line-ocean: #3a9ad9;
+    --line-violet: #9c72ac;
+  }
+}
+/* Icons in the tab bar and on gray buttons are drawn in your color. */
+.bottom-nav .icon,
+.btn-secondary .icon { color: var(--me-line); }
 
 .avatar-face,
 .avatar-portrait {

@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.7",
+    "date": "2026-10-19",
+    "notes": [
+      "Icons in the tab bar and on gray buttons are drawn in your color, in a shade that stays easy to see in light and dark mode"
+    ]
+  },
+  {
     "version": "0.35.6",
     "date": "2026-10-19",
     "notes": [
