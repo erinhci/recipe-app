@@ -150,7 +150,7 @@ function KitchenDial({ secondsLeft, size }) {
         <g className="kt-sec" style={{ transform: `rotate(${hand}deg)` }}>
           <path d="M50 56 V49.5" stroke="var(--color-text)" strokeWidth="2.5" />
         </g>
-        <path d="M44 12 L56 12 L50 22z" fill="var(--color-text)" stroke="var(--color-text)" strokeWidth="2" />
+        <path className="kt-pointer" d="M44 12 L56 12 L50 22z" fill="var(--color-text)" stroke="var(--color-text)" strokeWidth="2" />
       </g>
     </svg>
   )

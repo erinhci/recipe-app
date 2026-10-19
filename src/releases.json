@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.0",
+    "date": "2026-10-19",
+    "notes": [
+      "Your color now shows across the app: the current step's bar in cooking mode, the step you're reading, the active tab, progress bars, the meals-by-week dots, first place on the podium and the kitchen timer's pointer"
+    ]
+  },
+  {
     "version": "0.34.3",
     "date": "2026-10-19",
     "notes": [

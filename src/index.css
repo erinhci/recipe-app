@@ -16,6 +16,11 @@
   Red is used only for errors, always with words, never as the only signal.
 */
 :root {
+  /* Your color, set from your cook color once it's known (see MyColor).
+     Used where it helps tell things apart, never as the only signal or
+     behind text that needs full contrast. */
+  --me: var(--color-text);
+  --me-ink: var(--color-bg);
   color-scheme: light dark;
 
   --color-bg: #ffffff;
@@ -372,6 +377,7 @@ textarea {
 .bottom-nav a[aria-current='page'] {
   color: var(--color-text);
   text-decoration: underline;
+  text-decoration-color: var(--me);
   text-underline-offset: 6px;
   text-decoration-thickness: 3px;
 }
@@ -902,7 +908,7 @@ ul + h3,
 .badge .meter { width: 64px; }
 
 .meter { display: block; height: 8px; border-radius: 4px; background: var(--color-subtle); overflow: hidden; }
-.meter > span { display: block; height: 100%; border-radius: 4px; background: var(--color-text); }
+.meter > span { display: block; height: 100%; border-radius: 4px; background: var(--me); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 35%, transparent); }
 
 .chart { margin: 0; }
 .chart svg { display: block; overflow: visible; }
@@ -942,7 +948,7 @@ ul + h3,
   transition: border-color 160ms ease, transform 200ms ease;
   transform-origin: left center;
 }
-.scroll-focus > li.in-focus { border-left-color: var(--color-text); transform: scale(1.02); }
+.scroll-focus > li.in-focus { border-left-color: var(--me); transform: scale(1.02); }
 @media (prefers-reduced-motion: reduce) {
   .scroll-focus > li { transition: none; }
   .scroll-focus > li.in-focus { transform: none; }
@@ -1916,3 +1922,14 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .parts { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
 .part-chip { --chip: var(--color-text); display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border: 2px solid var(--chip); border-radius: 999px; background: color-mix(in srgb, var(--chip) 16%, var(--color-bg)); line-height: 1.4; }
 .part-chip.is-theirs { border-style: dashed; }
+
+/* Your color across screens: the current step's bar in cooking mode, the
+   active tab's underline, meters, the step you're reading, the week chart's
+   dots, the podium's first step and the kitchen timer's pointer. Text stays
+   in the text color; color is a bar, a fill with an outline, or a tint. */
+.cook-step { border-left: 6px solid var(--me); padding-left: var(--space-3); border-radius: 3px; }
+.chart-area { fill: var(--me); fill-opacity: 0.22; }
+.chart-dot { fill: var(--me); stroke: var(--color-text); }
+.chart-dot.is-empty { fill: var(--color-bg); }
+.podium-place.is-1 .podium-step { background: var(--me); color: var(--me-ink); box-shadow: inset 0 0 0 2px var(--color-text); }
+.kt-pointer { fill: var(--me); }
