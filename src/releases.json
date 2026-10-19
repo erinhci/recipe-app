@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.36.0",
+    "date": "2026-10-19",
+    "notes": [
+      "Top ingredients on Stats is a mosaic: the most-used ingredient gets the biggest tile, and long names and big counts get the room they need"
+    ]
+  },
+  {
     "version": "0.35.8",
     "date": "2026-10-19",
     "notes": [

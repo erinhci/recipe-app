@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { computeStats, formatMinutes, timeSummary, groupMeals, mealRatings, ratingIsStale, recipeRatings } from './stats.js'
+import { computeStats, mosaicSize, formatMinutes, timeSummary, groupMeals, mealRatings, ratingIsStale, recipeRatings } from './stats.js'
 
 const at = (time) => `2026-10-01T${time}:00.000Z`
 
@@ -143,4 +143,17 @@ test('badges for signing up, two-chef cooks and rated recipes', () => {
   assert.ok(reached('together', 1))
   assert.ok(!reached('together', 5))
   assert.deepEqual(stats.next.find((n) => n.kind === 'rated'), { kind: 'rated', threshold: 10, label: '10 recipes rated', current: 1 })
+})
+
+test('mosaic tiles: top is 2 by 2, half the top or more is wide, short names get small tiles', () => {
+  assert.equal(mosaicSize({ name: 'large eggs', count: 4 }, 0, 4), 'top')
+  assert.equal(mosaicSize({ name: 'kimchi', count: 2 }, 1, 4), 'wide')
+  assert.equal(mosaicSize({ name: 'mochi', count: 1 }, 4, 4), 'small')
+  assert.equal(mosaicSize({ name: 'soft tofu', count: 1 }, 5, 4), 'small')
+  // Too long to read in one column
+  assert.equal(mosaicSize({ name: 'broccolini', count: 1 }, 5, 4), 'wide')
+  assert.equal(mosaicSize({ name: 'extra-virgin olive oil', count: 51 }, 2, 128), 'wide')
+  assert.equal(mosaicSize({ name: 'green onion', count: 1 }, 5, 4), 'wide')
+  // Three-digit counts need the room too
+  assert.equal(mosaicSize({ name: 'rice', count: 120 }, 3, 400), 'wide')
 })

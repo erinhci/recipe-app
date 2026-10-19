@@ -2025,23 +2025,31 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .pie-pct, .pie-label { animation: pie-fade 0.4s ease backwards; }
 }
 
-/* Stats: Top ingredients as bubbles sized by how many meals each was in
-   (--r is its share of the top one), tinted deeper in your color. */
-.ingredient-bubbles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.ingredient-bubbles > li + li { margin-top: 0; }
-.ingredient-bubbles > li {
-  --fs: calc(15px + 9px * var(--r));
-  --pad: calc(6px + 6px * var(--r));
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--pad) calc(var(--pad) + 6px) var(--pad) calc(var(--pad) + 8px);
-  border-radius: 999px;
-  border: 1.5px solid color-mix(in srgb, var(--me) 55%, var(--color-border));
-  background: color-mix(in srgb, var(--me) calc(14% + 38% * var(--r)), var(--color-bg));
-  font-size: var(--fs);
-  font-weight: 600;
-  line-height: 1.2;
+/* Stats: Top ingredients as a mosaic. --r is each one's share of the top
+   count; it sets the tint (16% to 52% of your color, where every text
+   color is at least 5:1). Rows grow to fit wrapped names; dense packing
+   fills gaps left by small tiles. */
+.ingredient-mosaic {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(4rem, auto); grid-auto-flow: row dense; gap: 6px;
 }
-.ingredient-bubbles > li.is-top { font-weight: 700; }
-.bubble-count { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-width: calc(var(--fs) * 1.15); height: calc(var(--fs) * 1.15); padding: 0 4px; border-radius: 999px; background: var(--color-bg); color: var(--color-text); font-size: calc(var(--fs) * 0.7); font-weight: 700; }
+.ingredient-mosaic > li + li { margin-top: 0; }
+.ingredient-mosaic > li {
+  box-sizing: border-box; min-width: 0;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 6px;
+  padding: 10px; border-radius: 12px;
+  border: 1.5px solid color-mix(in srgb, var(--me) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--me) calc(16% + 36% * var(--r)), var(--color-bg));
+  color: var(--color-text);
+}
+.ingredient-mosaic > li.is-top { grid-column: span 2; grid-row: span 2; }
+.ingredient-mosaic > li.is-wide { grid-column: span 2; }
+.im-name { font-size: 0.9375rem; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
+.is-wide .im-name { font-size: 1rem; }
+.is-top .im-name { font-size: 1.25rem; font-weight: 700; }
+.im-count { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 4px; }
+.im-number { font-size: 1rem; font-weight: 700; line-height: 1; }
+.is-wide .im-number { font-size: 1.25rem; }
+.is-top .im-number { font-size: 2rem; }
+.im-unit { font-size: 0.75rem; font-weight: 500; line-height: 1.2; }

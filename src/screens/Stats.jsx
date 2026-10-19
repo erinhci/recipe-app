@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import Page from '../components/Page'
 import { db } from '../lib/db'
 import { localDate } from '../lib/data'
-import { computeStats, MILESTONES } from '../lib/stats'
+import { computeStats, mosaicSize, MILESTONES } from '../lib/stats'
 import { rewardFor } from '../lib/avatars'
 import Avatar from '../components/Avatar'
 import BadgeIcon from '../components/BadgeIcon'
@@ -573,20 +573,20 @@ export default function Stats() {
           <p className="hint" style={{ marginTop: 2 }}>
             Bigger means it was in more meals.
           </p>
-          {/* Each ingredient is a bubble sized by how many meals it was in,
-              biggest first, with a deeper tint of your color the more it's
-              used. The count is in a small circle, so size and tint are
-              never the only cue. */}
-          <ul className="ingredient-bubbles">
-            {stats.topIngredients.map((item) => {
-              const share = item.count / Math.max(1, stats.topIngredients[0].count)
+          {/* A mosaic of tiles in rank order: the top ingredient gets the
+              biggest tile, and the tint of your color deepens with use. The
+              count is always written, so size and tint are never the only
+              cue. Long names wrap and the tile grows to fit. */}
+          <ul className="ingredient-mosaic">
+            {stats.topIngredients.map((item, i) => {
+              const top = stats.topIngredients[0].count
               return (
-                <li key={item.name} style={{ '--r': share }} className={share === 1 ? 'is-top' : undefined}>
-                  {item.name}
-                  <span className="bubble-count">
+                <li key={item.name} className={`is-${mosaicSize(item, i, top)}`} style={{ '--r': item.count / Math.max(1, top) }}>
+                  <span className="im-name">{item.name}</span>
+                  <span className="im-count">
                     <span className="sr-only">, in </span>
-                    {item.count}
-                    <span className="sr-only"> {item.count === 1 ? 'meal' : 'meals'}</span>
+                    <span className="im-number">{item.count}</span>
+                    <span className="im-unit">{item.count === 1 ? 'meal' : 'meals'}</span>
                   </span>
                 </li>
               )

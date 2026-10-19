@@ -123,6 +123,19 @@ export function mealsByWeek(meals, today, count = 8) {
   return weeks
 }
 
+// Top ingredients mosaic: which tile each ingredient gets. The first is
+// the 2 by 2 tile. One in at least half as many meals as the top gets a
+// wide tile. The rest get a small (one column) tile only when the name is
+// short enough to read there (10 characters or fewer, no word over 7) and
+// the count is under 100; otherwise wide. i is its rank from 0.
+export function mosaicSize(item, i, topCount) {
+  if (i === 0) return 'top'
+  if (item.count / Math.max(1, topCount) >= 0.5) return 'wide'
+  const name = String(item.name ?? '')
+  const longest = Math.max(0, ...name.split(/\s+/).map((w) => w.length))
+  return longest <= 7 && name.length <= 10 && item.count < 100 ? 'small' : 'wide'
+}
+
 export function computeStats({ recipes, ingredients, cookLog, ratings, today = null }) {
   const recipeById = new Map(recipes.map((r) => [r.id, r]))
   // Meals whose recipe was deleted for good aren't on the phone anymore.
