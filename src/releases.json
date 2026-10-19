@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.37.0",
+    "date": "2026-10-19",
+    "notes": [
+      "The tab bar floats above the page as a frosted capsule, and the current tab sits in a pill in your color"
+    ]
+  },
+  {
     "version": "0.36.2",
     "date": "2026-10-19",
     "notes": [

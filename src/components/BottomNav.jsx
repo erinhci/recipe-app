@@ -19,7 +19,7 @@ function MyFace({ me }) {
   return (
     <span className="nav-me" aria-hidden="true" style={{ background: `var(--cook-${me.color})` }}>
       <span className="nav-me-drawing">
-        <Avatar pose="idle" {...lookProps(look)} size={44} />
+        <Avatar pose="idle" {...lookProps(look)} size={36} />
       </span>
     </span>
   )
@@ -35,7 +35,7 @@ export default function BottomNav() {
         {links.map((link) => (
           <li key={link.to}>
             <NavLink to={link.to} end={link.end}>
-              {link.me && me ? <MyFace me={me} /> : <Icon name={link.icon} size={22} />}
+              {link.me && me ? <MyFace me={me} /> : <Icon name={link.icon} size={20} />}
               <span>{link.label}</span>
             </NavLink>
           </li>
