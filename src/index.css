@@ -1933,6 +1933,11 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .podium-step { box-sizing: border-box; display: flex; justify-content: center; width: 100%; height: 36px; padding-top: 6px; border-radius: 10px 10px 0 0; background: var(--color-subtle); font-size: 22px; font-weight: 700; line-height: 1.2; }
 .podium-place.is-1 .podium-step { height: 76px; background: var(--color-text); color: var(--color-bg); }
 .podium-place.is-2 .podium-step { height: 52px; }
+/* Second and third are lighter shades of your color (50% and 28% mixed
+   with the page), numbers in the text color (at least 5:1 on both), with
+   the same outline as first. Height and number carry the place. */
+.podium-place.is-2 .podium-step { background: color-mix(in srgb, var(--me) 50%, var(--color-bg)); color: var(--color-text); box-shadow: inset 0 0 0 2px var(--color-text); }
+.podium-place.is-3 .podium-step { background: color-mix(in srgb, var(--me) 28%, var(--color-bg)); color: var(--color-text); box-shadow: inset 0 0 0 2px var(--color-text); }
 
 /* Meal types pie: tap a slice or legend row to show its share. */
 .pie > svg { overflow: visible; }
