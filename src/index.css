@@ -1879,3 +1879,21 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .most-made-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-sm); font-weight: 600; line-height: 1.3; }
 .most-made-count { font-size: var(--text-sm); line-height: 1.3; color: var(--color-text-muted); }
 .most-made a:hover .most-made-title { text-decoration: underline; }
+
+/* Stats: Top rated as a podium. First sits in the middle on the tallest
+   step; the DOM keeps rank order for screen readers and the keyboard. */
+.podium { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: var(--space-2); border-bottom: 2px solid var(--color-text); }
+.podium > li + li { margin-top: 0; }
+.podium-place { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
+.podium-place.is-1 { order: 2; }
+.podium-place.is-2 { order: 1; }
+.podium-place.is-3 { order: 3; }
+.podium-place a { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; color: var(--color-text); text-decoration: none; }
+.podium-photo { display: flex; align-items: center; justify-content: center; width: 68px; height: 68px; border-radius: 50%; object-fit: cover; background: var(--color-subtle); color: var(--color-text-muted); font-size: 26px; font-weight: 600; }
+.podium-place.is-1 .podium-photo { width: 84px; height: 84px; font-size: 32px; }
+.podium-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 100%; font-size: var(--text-sm); font-weight: 600; line-height: 1.3; text-align: center; }
+.podium-place a:hover .podium-title { text-decoration: underline; }
+.podium-stars { font-size: var(--text-sm); line-height: 1.3; color: var(--color-text-muted); }
+.podium-step { box-sizing: border-box; display: flex; justify-content: center; width: 100%; height: 36px; padding-top: 6px; border-radius: 10px 10px 0 0; background: var(--color-subtle); font-size: 22px; font-weight: 700; line-height: 1.2; }
+.podium-place.is-1 .podium-step { height: 76px; background: var(--color-text); color: var(--color-bg); }
+.podium-place.is-2 .podium-step { height: 52px; }

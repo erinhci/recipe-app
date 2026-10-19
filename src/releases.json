@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.34.0",
+    "date": "2026-10-19",
+    "notes": [
+      "Top rated on Stats is a podium: first, second and third place with each recipe's photo and rating"
+    ]
+  },
+  {
     "version": "0.33.3",
     "date": "2026-10-19",
     "notes": [

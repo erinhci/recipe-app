@@ -157,6 +157,39 @@ export function PieChart({ items, total, label = (item) => item.name }) {
   )
 }
 
+// Top rated as a podium: first place in the middle on the tallest step,
+// second on the left, third on the right, each with the recipe's latest
+// photo (or first letter), name and rating. The list stays in rank order
+// for screen readers and the keyboard; only the visual order changes.
+const PLACE = ['First', 'Second', 'Third']
+export function Podium({ items }) {
+  return (
+    <ol className="podium">
+      {items.map((r, i) => {
+        const stars = Math.round(r.average * 10) / 10
+        return (
+          <li key={r.id} className={`podium-place is-${i + 1}`}>
+            <Link to={`/recipe/${r.id}`} aria-label={`${PLACE[i]} place: ${r.title}, ${stars} stars`}>
+              {r.photo ? (
+                <PhotoImg photo={r.photo} alt="" className="podium-photo" />
+              ) : (
+                <span className="podium-photo is-empty" aria-hidden="true">
+                  {r.title.trim().charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="podium-title">{r.title}</span>
+              <span className="podium-stars">{stars}★</span>
+            </Link>
+            <span className="podium-step" aria-hidden="true">
+              {i + 1}
+            </span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
 // The most made recipes as tiles: the latest meal photo (or the first
 // letter when there's no photo yet, as in Library) and how often it's
 // been made.
@@ -400,7 +433,11 @@ export default function Stats() {
     const latest = new Map()
     for (const photo of newestFirst(photos)) if (!latest.has(photo.recipe_id)) latest.set(photo.recipe_id, photo)
     // Three tiles fit across.
-    return { ...stats, mostMade: stats.mostMade.slice(0, 3).map((r) => ({ ...r, photo: latest.get(r.id) })) }
+    return {
+      ...stats,
+      mostMade: stats.mostMade.slice(0, 3).map((r) => ({ ...r, photo: latest.get(r.id) })),
+      topRated: stats.topRated.slice(0, 3).map((r) => ({ ...r, photo: latest.get(r.id) })),
+    }
   }, [])
 
   if (stats === undefined) {
@@ -459,18 +496,7 @@ export default function Stats() {
       {stats.topRated.length > 0 && (
         <section aria-labelledby="top-rated-heading">
           <h2 id="top-rated-heading">Top rated</h2>
-          <ol className="plain-list divided ranked">
-            {stats.topRated.map((r) => (
-              <li key={r.id}>
-                <Link to={`/recipe/${r.id}`}>{r.title}</Link>
-                <span className="share-count">
-                  {Math.round(r.average * 10) / 10}
-                  <span aria-hidden="true">★</span>
-                  <span className="sr-only"> stars</span>
-                </span>
-              </li>
-            ))}
-          </ol>
+          <Podium items={stats.topRated} />
           <p className="hint">Your latest ratings, averaged.</p>
         </section>
       )}
