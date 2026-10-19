@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.34.1",
+    "date": "2026-10-19",
+    "notes": [
+      "Tap a slice of the Meal types pie, or its name, to see its share in the middle"
+    ]
+  },
+  {
     "version": "0.34.0",
     "date": "2026-10-19",
     "notes": [

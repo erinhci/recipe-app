@@ -108,51 +108,76 @@ export function WeeklyChart({ weeks }) {
   )
 }
 
-// Each share of all meals as a pie, starting at the top and going
+// Each share of all meals as a donut pie, starting at the top and going
 // clockwise in the legend's order. Slices go from dark to light and are
-// outlined, and the legend gives each count and share, so nothing depends
-// on telling shades apart. The pie is hidden from screen readers; they
-// read the legend.
+// outlined. Tap a slice, or its row in the legend, to show that share in
+// the middle; the chosen slice moves out a little with a thicker outline
+// and its row is highlighted. The rows are buttons, so it works with a
+// keyboard and screen readers, and a status line says the choice.
 const SHADES = [1, 0.6, 0.3, 0.08, 0.45, 0.18]
 export function PieChart({ items, total, label = (item) => item.name }) {
+  const [sel, setSel] = useState(0)
   const r = 66
   let angle = -90
   const slices = items.map((item, i) => {
     const sweep = (360 * item.count) / Math.max(1, total)
     const a0 = (angle * Math.PI) / 180
+    const mid = ((angle + sweep / 2) * Math.PI) / 180
     angle += sweep
     const a1 = (angle * Math.PI) / 180
-    const shade = SHADES[i % SHADES.length]
     // A single slice is the whole circle.
     const d =
       sweep >= 359.99
         ? `M70 4 A${r} ${r} 0 1 1 69.99 4 Z`
         : `M70 70 L${(70 + r * Math.cos(a0)).toFixed(1)} ${(70 + r * Math.sin(a0)).toFixed(1)} A${r} ${r} 0 ${sweep > 180 ? 1 : 0} 1 ${(70 + r * Math.cos(a1)).toFixed(1)} ${(70 + r * Math.sin(a1)).toFixed(1)} Z`
-    return { item, d, shade }
+    const move = sweep < 359.99 ? `translate(${(5 * Math.cos(mid)).toFixed(1)} ${(5 * Math.sin(mid)).toFixed(1)})` : undefined
+    return { item, d, move, shade: SHADES[i % SHADES.length] }
   })
+  const chosen = items[Math.min(sel, items.length - 1)]
+  const share = (item) => `${item.count} ${item.count === 1 ? 'meal' : 'meals'} · ${percent(item.count, total)}`
   return (
     <div className="pie">
-      <svg width="140" height="140" viewBox="0 0 140 140" aria-hidden="true" focusable="false">
-        {slices.map(({ item, d, shade }) => (
-          <path key={item.name} d={d} className="pie-slice" style={{ fillOpacity: shade }} />
+      <svg width="140" height="140" viewBox="-4 -4 148 148" aria-hidden="true" focusable="false">
+        {slices.map(({ item, d, move, shade }, i) => (
+          <path
+            key={item.name}
+            d={d}
+            className={`pie-slice${i === sel ? ' is-on' : ''}`}
+            style={{ fillOpacity: shade }}
+            transform={i === sel ? move : undefined}
+            onClick={() => setSel(i)}
+          />
         ))}
-        <circle cx="70" cy="70" r={r} className="pie-rim" />
+        <circle cx="70" cy="70" r="36" className="pie-hole" />
+        {chosen && (
+          <>
+            <text x="70" y="70" textAnchor="middle" className="pie-pct">
+              {percent(chosen.count, total)}
+            </text>
+            <text x="70" y="88" textAnchor="middle" className="pie-label">
+              {label(chosen)}
+            </text>
+          </>
+        )}
       </svg>
-      <ul className="pie-legend">
-        {slices.map(({ item, shade }) => (
+      <ul className="pie-legend" aria-label="Meal types: pick one to show its share">
+        {slices.map(({ item, shade }, i) => (
           <li key={item.name}>
-            <span className="pie-key" aria-hidden="true">
-              <span style={{ opacity: shade }} />
-            </span>
-            <span className="pie-text">
-              <span>{label(item)}</span>
-              <span className="share-count">
-                {item.count} {item.count === 1 ? 'meal' : 'meals'} · {percent(item.count, total)}
+            <button type="button" className="pie-row" aria-pressed={i === sel} onClick={() => setSel(i)}>
+              <span className="pie-key" aria-hidden="true">
+                <span style={{ opacity: shade }} />
               </span>
-            </span>
+              <span className="pie-text">
+                <span className="pie-name">{label(item)}</span>
+                <span className="share-count">{share(item)}</span>
+              </span>
+            </button>
           </li>
         ))}
       </ul>
+      <p className="sr-only" role="status">
+        {chosen ? `${label(chosen)}: ${share(chosen).replace(' · ', ', ')}` : ''}
+      </p>
     </div>
   )
 }
