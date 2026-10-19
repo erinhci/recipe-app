@@ -19,8 +19,8 @@ const RIGHT_ARM = {
 
 // Skin: 'plain' is the neutral gray placeholder shown until a cook picks
 // a tone (it isn't offered as a choice). 1 to 12 run lightest to deepest,
-// across pink, golden and olive undertones. Eyes and mouth are dark on 1
-// to 7 and light on 8 to 12, so they stay at least 4.5:1 on every tone.
+// across pink, golden and olive undertones. Eyes and mouth are black on
+// every tone.
 export const SKIN_TONES = {
   plain: '#f2f2f2', 1: '#fbe3d5', 2: '#f6d2b3', 3: '#ecc19a', 4: '#e0ac85', 5: '#d0996b', 6: '#b98a5e',
   7: '#a96f47', 8: '#8f5a37', 9: '#75452a', 10: '#5c3420', 11: '#45261a', 12: '#2f1b13',
@@ -338,7 +338,8 @@ export default function Avatar({
   const apron = outfit === 'apron' || outfit === 'striped'
   const fill = SKIN_TONES[skin] ?? SKIN_TONES.plain
   const deep = isDeepTone(skin)
-  const feature = deep ? LIGHT : INK
+  // Eyes, mouth and glasses are black on every tone, like the outline.
+  const feature = INK
   const color = HAIR_COLORS.find((c) => c.id === hairColor) ?? HAIR_COLORS[0]
   // A light edge only where dark hair meets a deep skin tone.
   const edge = deep && !color.light ? LIGHT : INK
