@@ -2019,14 +2019,20 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .share-list > li:nth-child(n + 5) .meter > span { animation-delay: 0.6s; }
 }
 
-/* Meal types pie: on first view each slice jumps out in turn, clockwise,
-   and it lands on the largest share, pulled out, with its percentage
-   fading in. Reduced motion: no jumping. */
-@keyframes pie-pop { 0% { transform: translate(0, 0); } 45% { transform: translate(calc(var(--dx) * 3.2), calc(var(--dy) * 3.2)); } 100% { transform: translate(var(--ex), var(--ey)); } }
+/* Meal types pie: on first view each slice jumps out and back in turn,
+   clockwise from the top. Then, as a last step, the largest jumps out
+   again and settles a little way out, where it stays, as its percentage
+   fades in. Delays come from --pop and --land. Reduced motion: no
+   jumping. */
+@keyframes pie-pop { 0% { transform: translate(0, 0); } 45% { transform: translate(calc(var(--dx) * 3.2), calc(var(--dy) * 3.2)); } 100% { transform: translate(0, 0); } }
+@keyframes pie-land { 0% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1); } 55% { transform: translate(calc(var(--dx) * 2.6), calc(var(--dy) * 2.6)); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); } 100% { transform: translate(var(--dx), var(--dy)); } }
 @keyframes pie-fade { from { opacity: 0; } to { opacity: 1; } }
 .pie-slice { transition: transform 0.25s ease; }
 @media (prefers-reduced-motion: no-preference) {
-  .pie-slice { animation: pie-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) backwards; }
+  .pie-slice { animation: pie-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) var(--pop, 0s) backwards; }
+  /* Listed first so the round's pop wins while it runs; the land holds the
+     slice in place until its turn, then ends where the slice rests. */
+  .pie-slice.is-largest { animation: pie-land 0.8s linear var(--land, 0s) backwards, pie-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) var(--pop, 0s) backwards; }
   .pie-pct, .pie-label { animation: pie-fade 0.4s ease backwards; }
 }
 

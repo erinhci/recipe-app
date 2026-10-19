@@ -138,12 +138,15 @@ export function PieChart({ items, total, label = (item) => item.name }) {
     return { item, d, dx, dy, shade: SHADES[i % SHADES.length] }
   })
   const chosen = items[Math.min(sel, items.length - 1)]
+  // The last step of the first-view animation starts after the round.
+  const landAt = Math.round((0.3 + slices.length * 0.3) * 100) / 100
   const share = (item) => `${item.count} ${item.count === 1 ? 'meal' : 'meals'} · ${percent(item.count, total)}`
   return (
     <div className="pie">
       <svg width="140" height="140" viewBox="-4 -4 148 148" aria-hidden="true" focusable="false">
-        {/* On first view each slice jumps out in turn, clockwise from the
-            top, and the pie lands on the chosen (largest) slice. */}
+        {/* On first view each slice jumps out and back in turn, clockwise
+            from the top, then the largest (first, as items come sorted)
+            jumps out once more and stays there. */}
         {slices.map(({ item, d, dx, dy, shade }, i) => {
           const ex = i === sel ? dx : 0
           const ey = i === sel ? dy : 0
@@ -151,15 +154,14 @@ export function PieChart({ items, total, label = (item) => item.name }) {
             <path
               key={item.name}
               d={d}
-              className={`pie-slice${i === sel ? ' is-on' : ''}`}
+              className={`pie-slice${i === sel ? ' is-on' : ''}${i === 0 ? ' is-largest' : ''}`}
               style={{
                 fillOpacity: shade,
                 '--dx': `${dx}px`,
                 '--dy': `${dy}px`,
-                '--ex': `${ex}px`,
-                '--ey': `${ey}px`,
                 transform: `translate(${ex}px, ${ey}px)`,
-                animationDelay: `${0.2 + i * 0.3}s`,
+                '--pop': `${0.2 + i * 0.3}s`,
+                '--land': `${landAt}s`,
               }}
               onClick={() => setSel(i)}
             />
@@ -168,10 +170,10 @@ export function PieChart({ items, total, label = (item) => item.name }) {
         <circle cx="70" cy="70" r="36" className="pie-hole" />
         {chosen && (
           <>
-            <text x="70" y="70" textAnchor="middle" className="pie-pct" style={{ animationDelay: `${0.35 + slices.length * 0.3}s` }}>
+            <text x="70" y="70" textAnchor="middle" className="pie-pct" style={{ animationDelay: `${landAt + 0.45}s` }}>
               {percent(chosen.count, total)}
             </text>
-            <text x="70" y="88" textAnchor="middle" className="pie-label" style={{ animationDelay: `${0.35 + slices.length * 0.3}s` }}>
+            <text x="70" y="88" textAnchor="middle" className="pie-label" style={{ animationDelay: `${landAt + 0.45}s` }}>
               {label(chosen)}
             </text>
           </>
