@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.1",
+    "date": "2026-10-19",
+    "notes": [
+      "Meals by week draws itself in from left to right when Stats opens (not with reduced motion)"
+    ]
+  },
+  {
     "version": "0.35.0",
     "date": "2026-10-19",
     "notes": [

@@ -1933,3 +1933,11 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .chart-dot.is-empty { fill: var(--color-bg); }
 .podium-place.is-1 .podium-step { background: var(--me); color: var(--me-ink); box-shadow: inset 0 0 0 2px var(--color-text); }
 .kt-pointer { fill: var(--me); }
+
+/* Meals by week draws itself in from the oldest week to this one on first
+   load; each dot and count appears as the line reaches it. Reduced motion:
+   it shows all at once. */
+@keyframes wc-reveal { from { clip-path: inset(-12px 100% -12px -12px); } to { clip-path: inset(-12px -12px -12px -12px); } }
+@media (prefers-reduced-motion: no-preference) {
+  .line-chart { animation: wc-reveal 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both; }
+}
