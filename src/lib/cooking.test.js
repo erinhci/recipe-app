@@ -180,3 +180,24 @@ test('"egg mixture" is not the eggs', () => {
   assert.deepEqual(ingredientsForStep('Pour the egg mixture into the cups.', list).map((i) => i.id), [])
   assert.deepEqual(ingredientsForStep('Whisk the eggs and water.', list).map((i) => i.id), ['e', 'w'])
 })
+
+test('water used along the way is not the measured water', () => {
+  const list = [{ id: 'e', item: 'large eggs', quantity: 4 }, { id: 'w', item: 'water', quantity: 2, unit: 'tbsp' }, { id: 'p', item: 'frozen bell peppers' }]
+  const ids = (text) => ingredientsForStep(text, list).map((i) => i.id)
+  assert.deepEqual(
+    ids('Thaw the frozen bell peppers under warm water or in the microwave for 15 seconds. Press between paper towels so the egg bites bake firm instead of watery.'),
+    ['p'],
+  )
+  assert.deepEqual(ids('Microwave the leaves with a splash of water for 90 seconds.'), [])
+  assert.deepEqual(ids('Rinse under cold running water.'), [])
+  assert.deepEqual(ids('Whisk the eggs with the water.'), ['e', 'w'])
+  assert.deepEqual(ids('Add 2 tbsp water.'), ['w'])
+})
+
+test('the dish itself is not its ingredient', () => {
+  const list = [{ id: 'c', item: 'napa cabbage leaves' }, { id: 'e', item: 'eggs' }]
+  const ids = (text) => ingredientsForStep(text, list).map((i) => i.id)
+  assert.deepEqual(ids('Set the cabbage rolls seam side down.'), [])
+  assert.deepEqual(ids('Let the egg bites cool.'), [])
+  assert.deepEqual(ids('Lay out the cabbage leaves.'), ['c'])
+})

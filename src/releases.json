@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.33.3",
+    "date": "2026-10-19",
+    "notes": [
+      "Water a step uses along the way, like \"under warm water\" or \"a splash of water\", no longer pulls in the measured water meant for another step",
+      "\"Egg bites\" and \"cabbage rolls\" in a step mean the dish, so they no longer list the eggs or cabbage"
+    ]
+  },
+  {
     "version": "0.33.2",
     "date": "2026-10-16",
     "notes": [

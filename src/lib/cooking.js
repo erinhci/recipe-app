@@ -36,9 +36,24 @@ export function keyWords(item) {
 // it as an ingredient: "water droplets", "water bath", "oil level".
 const NOT_AN_INGREDIENT_AFTER = new Set([
   'droplet', 'drip', 'bath', 'level', 'line', 'vapor', 'steam', 'spot', 'mark', 'bead', 'splash',
-  // "the egg mixture" is something already made, not the eggs.
-  'mixture',
+  // "the egg mixture" is something already made, not the eggs, and "egg
+  // bites" or "cabbage rolls" are the dish itself.
+  'mixture', 'bite', 'roll', 'muffin',
 ])
+
+// Water used along the way, not the water in the ingredient list: "under
+// warm water", "a splash of water", "a bowl of ice water". These are
+// unmeasured, so they never take a measured water meant for another step.
+// A temperature word can sit between ("under cold running water").
+const UNMEASURED_WATER_BEFORE = [['under'], ['splash', 'of'], ['dash', 'of'], ['drop', 'of'], ['bit', 'of'], ['little'], ['bowl', 'of'], ['pot', 'of'], ['rinse', 'with'], ['rinse', 'in']]
+const WATER_WORDS = new Set(['warm', 'cold', 'hot', 'cool', 'lukewarm', 'running', 'ice', 'boiling', 'tap', 'clean', 'more'])
+
+function unmeasuredWater(stepWords, i, phrase) {
+  if (phrase[phrase.length - 1] !== 'water') return false
+  let end = i
+  while (end > 0 && WATER_WORDS.has(stepWords[end - 1])) end -= 1
+  return UNMEASURED_WATER_BEFORE.some((before) => before.every((w, j) => stepWords[end - before.length + j] === w))
+}
 
 // True when the phrase appears as whole words in the step, and at least
 // once not followed by one of the words above.
@@ -47,7 +62,11 @@ const NOT_AN_INGREDIENT_AFTER = new Set([
 function phraseStarts(stepWords, phrase) {
   const starts = []
   for (let i = 0; i + phrase.length <= stepWords.length; i += 1) {
-    if (phrase.every((w, j) => stepWords[i + j] === w) && !NOT_AN_INGREDIENT_AFTER.has(stepWords[i + phrase.length])) {
+    if (
+      phrase.every((w, j) => stepWords[i + j] === w) &&
+      !NOT_AN_INGREDIENT_AFTER.has(stepWords[i + phrase.length]) &&
+      !unmeasuredWater(stepWords, i, phrase)
+    ) {
       starts.push(i)
     }
   }
