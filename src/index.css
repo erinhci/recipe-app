@@ -1994,3 +1994,24 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .pie-slice { animation: pie-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) backwards; }
   .pie-pct, .pie-label { animation: pie-fade 0.4s ease backwards; }
 }
+
+/* Stats: Top ingredients as bubbles sized by how many meals each was in
+   (--r is its share of the top one), tinted deeper in your color. */
+.ingredient-bubbles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.ingredient-bubbles > li + li { margin-top: 0; }
+.ingredient-bubbles > li {
+  --fs: calc(15px + 9px * var(--r));
+  --pad: calc(6px + 6px * var(--r));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--pad) calc(var(--pad) + 6px) var(--pad) calc(var(--pad) + 8px);
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--me) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--me) calc(14% + 38% * var(--r)), var(--color-bg));
+  font-size: var(--fs);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.ingredient-bubbles > li.is-top { font-weight: 700; }
+.bubble-count { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-width: calc(var(--fs) * 1.15); height: calc(var(--fs) * 1.15); padding: 0 4px; border-radius: 999px; background: var(--color-bg); color: var(--color-text); font-size: calc(var(--fs) * 0.7); font-weight: 700; }

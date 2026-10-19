@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.5",
+    "date": "2026-10-19",
+    "notes": [
+      "Top ingredients on Stats are bubbles sized by how many meals each was in"
+    ]
+  },
+  {
     "version": "0.35.4",
     "date": "2026-10-19",
     "notes": [

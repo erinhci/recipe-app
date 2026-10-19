@@ -567,18 +567,30 @@ export default function Stats() {
 
       {stats.topIngredients.length > 0 && (
         <section aria-labelledby="ingredients-heading">
-          <h2 id="ingredients-heading">Top ingredients</h2>
-          <ul className="chips">
-            {stats.topIngredients.map((item) => (
-              <li key={item.name}>
-                {item.name}
-                <span className="chip-count">
-                  <span className="sr-only">, in </span>
-                  {item.count}
-                  <span className="sr-only"> {item.count === 1 ? 'meal' : 'meals'}</span>
-                </span>
-              </li>
-            ))}
+          <h2 id="ingredients-heading" style={{ marginBottom: 0 }}>
+            Top ingredients
+          </h2>
+          <p className="hint" style={{ marginTop: 2 }}>
+            Bigger means it was in more meals.
+          </p>
+          {/* Each ingredient is a bubble sized by how many meals it was in,
+              biggest first, with a deeper tint of your color the more it's
+              used. The count is in a small circle, so size and tint are
+              never the only cue. */}
+          <ul className="ingredient-bubbles">
+            {stats.topIngredients.map((item) => {
+              const share = item.count / Math.max(1, stats.topIngredients[0].count)
+              return (
+                <li key={item.name} style={{ '--r': share }} className={share === 1 ? 'is-top' : undefined}>
+                  {item.name}
+                  <span className="bubble-count">
+                    <span className="sr-only">, in </span>
+                    {item.count}
+                    <span className="sr-only"> {item.count === 1 ? 'meal' : 'meals'}</span>
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         </section>
       )}
