@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.34.3",
+    "date": "2026-10-19",
+    "notes": [
+      "Two-chef mode opens scrolled to your parts and the current step",
+      "Each cook's part shows in their color"
+    ]
+  },
+  {
     "version": "0.34.2",
     "date": "2026-10-19",
     "notes": [

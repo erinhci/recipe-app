@@ -91,6 +91,17 @@ export default function TwoChef() {
   const [showTheirs, setShowTheirs] = useState(false)
   const stepsRef = useRef(null)
   useScrollFocus(stepsRef, [cook?.id, local.side, showTheirs, cook?.done_steps?.length])
+  // When the steps first show, scroll to who's doing which part and the
+  // current step, past the band, nutrition and servings. Once only, so it
+  // never pulls the page away while cooking.
+  const partsRef = useRef(null)
+  const scrolledToStep = useRef(false)
+  useEffect(() => {
+    if (scrolledToStep.current || !partsRef.current) return
+    scrolledToStep.current = true
+    const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    partsRef.current.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' })
+  })
 
   // Open (or join) the shared cook once the split is ready.
   useEffect(() => {
@@ -555,18 +566,22 @@ export default function TwoChef() {
         note={live ? 'Same on both phones.' : null}
       />
       <OtherTimers timers={timers} currentId={next.kind === 'step' ? next.state.step.id : null} />
-      <div className="row-between">
-        <p style={{ margin: 0 }}>
+      {/* Each part in its cook's color, so who does what reads at a glance.
+          The tint is light, so the text keeps its full contrast; the words
+          say whose part it is, not the color alone. */}
+      <div className="row-between parts-row" ref={partsRef}>
+        <p className="parts">
           {side === 'all' ? (
             <>Both parts on this phone</>
           ) : (
             <>
-              You: <strong>{names[side]}</strong>
+              <span className="part-chip" style={myCook ? { '--chip': `var(--cook-${myCook.color})` } : undefined}>
+                You: <strong>{names[side]}</strong>
+              </span>
               {live && (
-                <>
-                  {' '}
-                  · {otherName}: <strong>{names[otherSide(side)]}</strong>
-                </>
+                <span className="part-chip is-theirs" style={theirCook ? { '--chip': `var(--cook-${theirCook.color})` } : undefined}>
+                  {otherName}: <strong>{names[otherSide(side)]}</strong>
+                </span>
               )}
             </>
           )}
