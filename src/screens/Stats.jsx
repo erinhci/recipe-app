@@ -233,7 +233,7 @@ export function Podium({ items }) {
 }
 
 // The most made recipes as tiles: the latest meal photo (or the first
-// letter when there's no photo yet, as in Library) and how often it's
+// letter when there's no photo yet, as in Recipes) and how often it's
 // been made.
 export function MostMade({ items }) {
   return (
@@ -498,7 +498,7 @@ export default function Stats() {
       <Page title="Stats">
         <p>No meals logged yet. When you finish a recipe in cooking mode, or add it to the cook log on its page, it shows up here.</p>
         <Link className="btn" to="/">
-          Go to Library
+          Go to Recipes
         </Link>
       </Page>
     )

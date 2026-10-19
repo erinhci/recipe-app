@@ -89,7 +89,7 @@ export default function Library() {
   }
 
   return (
-    <Page title="Library">
+    <Page title="Recipes">
       {recipes === undefined ? (
         <p role="status">Loading recipes…</p>
       ) : recipes.length === 0 ? (

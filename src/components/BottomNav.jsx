@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth'
 import { useKitchenPeople } from '../lib/useKitchen'
 
 const links = [
-  { to: '/', label: 'Library', icon: 'library', end: true },
+  { to: '/', label: 'Recipes', icon: 'library', end: true },
   { to: '/import', label: 'Add', icon: 'add' },
   { to: '/stats', label: 'Stats', icon: 'stats' },
   { to: '/settings', label: 'Settings', icon: 'settings', me: true },

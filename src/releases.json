@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.6",
+    "date": "2026-10-19",
+    "notes": [
+      "Library is now called Recipes, in the tab bar, the page title and the back links"
+    ]
+  },
+  {
     "version": "0.35.5",
     "date": "2026-10-19",
     "notes": [

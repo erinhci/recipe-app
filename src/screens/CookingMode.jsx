@@ -102,7 +102,7 @@ export default function CookingMode() {
       <Page title="Recipe not found">
         <p>This recipe was deleted or isn't on this phone yet.</p>
         <Link className="btn" to="/">
-          Back to Library
+          Back to Recipes
         </Link>
       </Page>
     )
