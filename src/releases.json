@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.8",
+    "date": "2026-10-19",
+    "notes": [
+      "Main buttons, like Done with step and Add recipe, are filled with your color"
+    ]
+  },
+  {
     "version": "0.35.7",
     "date": "2026-10-19",
     "notes": [

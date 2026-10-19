@@ -179,17 +179,20 @@ textarea {
   min-width: var(--target);
   padding: 0 var(--space-4);
   border-radius: var(--radius-sm);
-  border: 2px solid var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-accent-text);
+  /* Main buttons are filled with your color, with its ink on top (at
+     least 4.5:1 on every color). The edge uses the stroke shade so the
+     button's shape reads at 3:1 on the page. Before a color is picked it
+     falls back to the text color, as before. */
+  border: 2px solid var(--me-line);
+  background: var(--me);
+  color: var(--me-ink);
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
 }
-.btn:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
-}
+/* Hover adds an inner ring in the ink color rather than shifting the
+   fill, so the label's contrast never drops. */
+.btn:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--me-ink); }
 .btn-secondary {
   /* A soft gray fill with no outline. The label or icon identifies it,
      and the hit area stays at least 44px. */
@@ -200,6 +203,7 @@ textarea {
 .btn-secondary:hover:not(:disabled) {
   background: var(--color-subtle-hover);
   border-color: transparent;
+  box-shadow: none;
 }
 /* On a gray area, secondary controls sit on the page color instead. */
 :is(.card, .notice, .working, .flagged, .cook-needs-card) :is(.btn-secondary, .chip-btn) { background: var(--color-bg); }
