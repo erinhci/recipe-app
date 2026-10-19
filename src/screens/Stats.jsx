@@ -11,6 +11,7 @@ import Avatar from '../components/Avatar'
 import BadgeIcon from '../components/BadgeIcon'
 import { PhotoImg } from '../components/MealPhotos'
 import { newestFirst } from '../lib/photos'
+import { useReveal } from '../lib/useReveal'
 
 const timeText = (hours) => {
   if (hours < 1) return { value: Math.round(hours * 60), unit: 'min' }
@@ -465,6 +466,9 @@ export default function Stats() {
     }
   }, [])
 
+  // Each section's animation starts when it first scrolls into view.
+  useReveal([stats === undefined, stats?.mealsLogged])
+
   if (stats === undefined) {
     return (
       <Page title="Stats">
@@ -508,7 +512,7 @@ export default function Stats() {
         </Link>
       </section>
 
-      <section aria-labelledby="weeks-heading">
+      <section aria-labelledby="weeks-heading" className="reveal">
         <h2 id="weeks-heading">Meals by week</h2>
         <WeeklyChart weeks={stats.weeks} />
       </section>
@@ -519,14 +523,14 @@ export default function Stats() {
       </section>
 
       {stats.topRated.length > 0 && (
-        <section aria-labelledby="top-rated-heading">
+        <section aria-labelledby="top-rated-heading" className="reveal">
           <h2 id="top-rated-heading">Top rated</h2>
           <Podium items={stats.topRated} />
           <p className="hint">Your latest ratings, averaged.</p>
         </section>
       )}
 
-      <section aria-labelledby="cuisines-heading">
+      <section aria-labelledby="cuisines-heading" className="reveal">
         <h2 id="cuisines-heading" style={{ marginBottom: 0 }}>
           Cuisines
         </h2>

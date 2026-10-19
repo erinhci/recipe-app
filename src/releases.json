@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.35.3",
+    "date": "2026-10-19",
+    "notes": [
+      "Stats animations start when you scroll to them, and the Cuisines bars grow in from the left one after another"
+    ]
+  },
+  {
     "version": "0.35.2",
     "date": "2026-10-19",
     "notes": [
