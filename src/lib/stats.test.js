@@ -157,3 +157,15 @@ test('mosaic tiles: top is 2 by 2, half the top or more is wide, short names get
   // Three-digit counts need the room too
   assert.equal(mosaicSize({ name: 'rice', count: 120 }, 3, 400), 'wide')
 })
+
+test('top ingredients leave out pantry basics and stop at six', () => {
+  const recipes = [{ id: 'r1', title: 'A' }]
+  const items = ['avocado oil', 'sesame oil', 'kosher salt', 'butter', 'sugar', 'soy sauce', 'kimchi', 'large eggs (optional)', 'onion', 'garlic, minced', 'scallions', 'gochujang', 'furikake']
+  const ingredients = items.map((item, i) => ({ id: `i${i}`, recipe_id: 'r1', item }))
+  const cookLog = [{ id: 'l1', recipe_id: 'r1', cooked_on: '2026-10-01' }]
+  const stats = computeStats({ recipes, ingredients, cookLog, ratings: [] })
+  const names = stats.topIngredients.map((t) => t.name)
+  assert.equal(names.length, 6)
+  for (const staple of ['avocado oil', 'sesame oil', 'kosher salt', 'butter', 'sugar']) assert.ok(!names.includes(staple), staple)
+  assert.ok(names.includes('large eggs'))
+})

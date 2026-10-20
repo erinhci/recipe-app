@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.40.5",
+    "date": "2026-10-20",
+    "notes": [
+      "Ingredients with a note after the name, like \"2 large eggs (optional)\" or \"garlic, minced\", now show in the steps that use them",
+      "Top ingredients shows six and leaves out pantry basics like oils, salt, sugar, flour and butter",
+      "A timer for a range like 18 to 20 minutes stops at 18 with Check it and a button for the last 2 minutes",
+      "Add a minute to any timer, while it runs or after time's up"
+    ]
+  },
+  {
     "version": "0.40.4",
     "date": "2026-10-20",
     "notes": [

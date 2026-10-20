@@ -1149,7 +1149,11 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
   cursor: pointer;
 }
 .timer-pill.is-done { background: var(--color-accent); color: var(--color-accent-text); }
-.timer-pill.is-done .timer-done-text { flex: 1; }
+.timer-pill.is-done { gap: var(--space-2); padding-left: var(--space-2); }
+.timer-pill.is-done .timer-done-text { flex: 1; white-space: nowrap; }
+.timer-done-actions { display: flex; gap: var(--space-2); margin-left: auto; }
+.timer-done-actions .timer-inner-btn { padding: 0 var(--space-3); }
+.timer-actions { display: flex; gap: var(--space-5); margin: 0 0 0 var(--space-4); }
 .timer-pill.is-done .timer-inner-btn { background: transparent; color: var(--color-accent-text); border: 2px solid var(--color-accent-text); }
 .timer-note { margin: var(--space-1) 0 0 var(--space-4); font-size: var(--text-sm); color: var(--color-text-muted); }
 .other-timers { margin: var(--space-3) 0 0; }

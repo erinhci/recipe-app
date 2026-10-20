@@ -115,6 +115,23 @@ export function useStepTimers() {
       return { ...all, [id]: { ...t, endsAt: Date.now() + t.paused, paused: null } }
     })
   }
+  // More time, from any state. A running or paused timer gets longer; a
+  // finished one starts again with just the added minutes. `added` keeps
+  // the total so the screen knows the check-at time has been passed.
+  function add(id, minutes) {
+    const ms = minutes * 60 * 1000
+    const at = Date.now()
+    alerted.current.delete(id)
+    setNow(at)
+    setTimers((all) => {
+      const t = all[id]
+      if (!t) return all
+      const added = (t.added ?? 0) + minutes
+      if (t.paused != null) return { ...all, [id]: { ...t, paused: t.paused + ms, total: t.total + ms, added } }
+      if (t.endsAt > at) return { ...all, [id]: { ...t, endsAt: t.endsAt + ms, total: t.total + ms, added } }
+      return { ...all, [id]: { ...t, endsAt: at + ms, total: ms, added } }
+    })
+  }
   // Reset unwinds a timer back to not started, keeping a copy for a few
   // seconds so Undo can put it back as it was (still counting if it was
   // running).
@@ -154,5 +171,5 @@ export function useStepTimers() {
     return { ...t, secondsLeft: leftMs / 1000, done: 1 - leftMs / t.total, state: finished ? 'done' : t.paused != null ? 'paused' : 'running' }
   }
 
-  return { timers, view, start, pause, resume, reset, undo, canUndo, clear }
+  return { timers, view, start, pause, resume, add, reset, undo, canUndo, clear }
 }

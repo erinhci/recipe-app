@@ -198,19 +198,37 @@ export function StepTimer({ stepId, text, timers }) {
       </div>
     )
   }
+  // Time reached. With a range ("18-20 minutes") the first stop is the
+  // check: it offers the rest of the range. After that, or with a single
+  // time, it's Time's up with a minute more if it needs it.
   if (t.state === 'done') {
+    const checking = wait.high > wait.low && !t.added
+    const more = checking ? wait.high - wait.low : 1
     return (
       <div className="step-timer">
         <div className="timer-pill is-done" role="alert">
           <span className="kt-done-face">
             <KitchenDial secondsLeft={0} size={40} />
           </span>
-          <span className="timer-done-text">Time's up</span>
-          <button className="timer-inner-btn" type="button" onClick={() => timers.clear(stepId)}>
-            Done
-          </button>
+          <span className="timer-done-text">{checking ? 'Check it' : "Time's up"}</span>
+          <span className="timer-done-actions">
+            <button
+              className="timer-inner-btn"
+              type="button"
+              aria-label={checking ? `Add ${more} min, to ${waitLabel(wait.high)}` : 'Add 1 min'}
+              onClick={() => {
+                ratchet()
+                timers.add(stepId, more)
+              }}
+            >
+              +{more} min
+            </button>
+            <button className="timer-inner-btn" type="button" onClick={() => timers.clear(stepId)}>
+              Done
+            </button>
+          </span>
         </div>
-        {note && <p className="timer-note">{note}</p>}
+        {checking && <p className="timer-note">{note}.</p>}
       </div>
     )
   }
@@ -220,7 +238,7 @@ export function StepTimer({ stepId, text, timers }) {
         <KitchenDial secondsLeft={t.secondsLeft} totalSeconds={t.total / 1000} size={96} />
         <span className="timer-card-text">
           <span className="timer-clock">{clock(t.secondsLeft)}</span>
-          <span className="timer-left">left of {label}</span>
+          <span className="timer-left">{t.added ? `${waitLabel(t.added)} added` : `left of ${label}`}</span>
         </span>
         {t.state === 'paused' ? (
           <button className="timer-inner-btn" type="button" onClick={() => timers.resume(stepId)}>
@@ -232,9 +250,16 @@ export function StepTimer({ stepId, text, timers }) {
           </button>
         )}
       </div>
-      <p className="timer-note">
-        {t.state === 'paused' && 'Paused. '}
-        {note && `${note}. `}
+      {(t.state === 'paused' || (note && !t.added)) && (
+        <p className="timer-note">
+          {t.state === 'paused' && 'Paused. '}
+          {note && !t.added && `${note}.`}
+        </p>
+      )}
+      <p className="timer-actions">
+        <button className="link-btn" type="button" aria-label="Add 1 minute" onClick={() => timers.add(stepId, 1)}>
+          +1 min
+        </button>
         {/* Reset unwinds it back to the start, with Undo right after. */}
         <button className="link-btn" type="button" onClick={() => timers.reset(stepId)}>
           Reset timer

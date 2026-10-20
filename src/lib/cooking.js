@@ -25,6 +25,17 @@ function singular(word) {
   return word
 }
 
+// An ingredient's name without its notes: "large eggs (optional - cooked
+// sunny side up)" -> "large eggs", "garlic, minced" -> "garlic". Notes
+// otherwise become part of the name, and a step that says "the eggs" never
+// matches "eggs optional cooked sunny side up".
+export function ingredientName(item) {
+  return String(item ?? '')
+    .replace(/\([^)]*\)?/g, ' ')
+    .split(/,|\s[-–—]\s|;/)[0]
+    .trim()
+}
+
 // The words that identify an ingredient: "2 large yellow onions" -> "yellow onion".
 export function keyWords(item) {
   return words(item)
@@ -90,7 +101,7 @@ function isInside(phrase, longer) {
 // The word positions each ingredient can't use because a longer name
 // that contains it is written there.
 function takenPositions(stepWords, ingredients) {
-  const names = ingredients.map((ing) => keyWords(ing.item))
+  const names = ingredients.map((ing) => keyWords(ingredientName(ing.item)))
   return names.map((name) => {
     const taken = new Set()
     for (const other of names) {
@@ -108,7 +119,7 @@ function takenPositions(stepWords, ingredients) {
 // isn't shared with another ingredient in the recipe. Matching is by whole
 // words, so "boil" never matches "oil".
 function mentions(stepWords, ingredient, mainWordCounts, taken) {
-  const keys = keyWords(ingredient.item)
+  const keys = keyWords(ingredientName(ingredient.item))
   if (keys.length === 0) return false
   if (hasPhrase(stepWords, keys, taken)) return true
   const main = keys[keys.length - 1]
@@ -187,7 +198,7 @@ export function ingredientsForStep(stepText, ingredients, earlierSteps = []) {
   const stepWords = words(stepText).map(singular)
   const mainWordCounts = new Map()
   for (const ing of ingredients) {
-    const keys = keyWords(ing.item)
+    const keys = keyWords(ingredientName(ing.item))
     const main = keys[keys.length - 1]
     if (main) mainWordCounts.set(main, (mainWordCounts.get(main) ?? 0) + 1)
   }
@@ -201,7 +212,7 @@ export function ingredientsForStep(stepText, ingredients, earlierSteps = []) {
   // Group matches that share a name.
   const groups = new Map()
   for (const ing of matched) {
-    const name = keyWords(ing.item).join(' ')
+    const name = keyWords(ingredientName(ing.item)).join(' ')
     groups.set(name, [...(groups.get(name) ?? []), ing])
   }
   const anchors = [...groups.values()].filter((g) => g.length === 1).map((g) => g[0])
@@ -284,7 +295,7 @@ function bestIngredient(source, afterNumber, afterUnit, value, word, wordUnit, i
     // The words right after the amount (and unit), up to the next comma.
     const rest = source.slice(ingUnit ? afterUnit : afterNumber)
     const following = new Set(words(rest.split(/[,.;:(]/)[0]).slice(0, 7).map(singular))
-    const keys = keyWords(ing.item)
+    const keys = keyWords(ingredientName(ing.item))
     if (keys.length === 0 || !following.has(keys[keys.length - 1])) continue
     const score = keys.filter((k) => following.has(k)).length / keys.length
     if (score > bestScore) {

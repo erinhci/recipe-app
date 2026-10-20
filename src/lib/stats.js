@@ -1,10 +1,17 @@
 // Kitchen stats, worked out on the phone from the local copy so they
 // show offline too. Pure functions; the Stats screen passes in the tables.
 
-import { keyWords } from './cooking.js'
+import { ingredientName, keyWords } from './cooking.js'
 
 // Staples that would top the ingredient list for every kitchen.
-const STAPLES = new Set(['salt', 'water', 'pepper', 'black pepper', 'kosher salt', 'ice'])
+// Pantry basics that are in nearly everything, so they'd crowd out what's
+// actually interesting in Top ingredients: cooking oils and sprays, salt,
+// pepper, water, plain sugar and flour, and leaveners.
+const STAPLES = new Set(['salt', 'water', 'pepper', 'black pepper', 'white pepper', 'ice', 'sugar', 'granulated sugar', 'white sugar', 'flour', 'all purpose flour', 'baking soda', 'baking powder', 'butter', 'cooking spray', 'salt and pepper'])
+const STAPLE_LAST = new Set(['oil', 'salt', 'spray'])
+const isStaple = (name) => STAPLES.has(name) || STAPLE_LAST.has(name.split(' ').pop())
+// How many Top ingredients show.
+export const TOP_INGREDIENTS = 6
 
 // Badges, in the order they show. 'joined' is earned by setting up.
 export const MILESTONES = [
@@ -163,15 +170,15 @@ export function computeStats({ recipes, ingredients, cookLog, ratings, today = n
   const ingredientsByRecipe = new Map()
   const labels = new Map()
   for (const ing of ingredients) {
-    const name = keyWords(ing.item).join(' ')
-    if (!name || STAPLES.has(name)) continue
-    if (!labels.has(name)) labels.set(name, String(ing.item).trim().toLowerCase())
+    const name = keyWords(ingredientName(ing.item)).join(' ')
+    if (!name || isStaple(name)) continue
+    if (!labels.has(name)) labels.set(name, ingredientName(ing.item).toLowerCase())
     if (!ingredientsByRecipe.has(ing.recipe_id)) ingredientsByRecipe.set(ing.recipe_id, new Set())
     ingredientsByRecipe.get(ing.recipe_id).add(name)
   }
   const ingredientUses = meals.flatMap((c) => [...(ingredientsByRecipe.get(c.recipe_id) ?? [])])
   const topIngredients = countBy(ingredientUses, (name) => name)
-    .slice(0, 8)
+    .slice(0, TOP_INGREDIENTS)
     .map((item) => ({ ...item, name: labels.get(item.name) }))
 
   // Time together: each meal adds its recipe's total time once, even when

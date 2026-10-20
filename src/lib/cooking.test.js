@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ingredientsForStep, keyWords, scaleStepText } from './cooking.js'
+import { ingredientName, ingredientsForStep, keyWords, scaleStepText } from './cooking.js'
 
 const ingredients = [
   { id: 1, item: 'silken tofu' },
@@ -200,4 +200,19 @@ test('the dish itself is not its ingredient', () => {
   assert.deepEqual(ids('Set the cabbage rolls seam side down.'), [])
   assert.deepEqual(ids('Let the egg bites cool.'), [])
   assert.deepEqual(ids('Lay out the cabbage leaves.'), ['c'])
+})
+
+test('notes after the name never hide an ingredient from its step', () => {
+  assert.equal(ingredientName('large eggs (optional - cooked sunny side up)'), 'large eggs')
+  assert.equal(ingredientName('garlic, minced'), 'garlic')
+  assert.equal(ingredientName('gochujang - Korean red pepper paste'), 'gochujang')
+  assert.equal(ingredientName('kimchi (drained and chopped into bite size pieces)'), 'kimchi')
+  const ings = [
+    { id: 1, item: 'avocado oil', quantity: 1, unit: 'tbsp' },
+    { id: 2, item: 'large eggs (optional - cooked sunny side up)', quantity: 2 },
+    { id: 3, item: 'garlic, minced', quantity: 1, unit: 'tsp' },
+  ]
+  const step = 'Fry the eggs: in a skillet, heat avocado oil. Crack in the eggs and fry sunny-side up.'
+  assert.deepEqual(ingredientsForStep(step, ings).map((i) => i.id), [1, 2])
+  assert.deepEqual(ingredientsForStep('Add the garlic.', ings).map((i) => i.id), [3])
 })
