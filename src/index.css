@@ -1889,19 +1889,41 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 @keyframes bu-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-height: 760px) { .bu-stage { height: 320px; } .bu-cook > svg { width: 105px; height: 140px; } .bu-a { margin-left: -110px; } }
 
-/* A running step timer is a wind-up kitchen timer. */
+/* A running step timer is a kitchen timer knob: a raised face lit from
+   the top left in a bezel, ticks set into a well, a fin pointer and the
+   time left as an arc. The fin and arc are in your color. */
 .timer-card { display: flex; align-items: center; gap: var(--space-4); min-height: 120px; padding: var(--space-3) var(--space-3) var(--space-3) 14px; border-radius: var(--radius); background: var(--color-subtle); }
-.timer-card .kt { flex: none; display: block; overflow: visible; }
 .timer-card-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.timer-card .timer-clock { font-size: 2.125rem; line-height: 1.1; }
+.timer-card .timer-clock { font-size: 2.125rem; line-height: 1.1; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .timer-left { font-size: var(--text-sm); line-height: 1.4; color: var(--color-text-muted); }
-.kt-dial, .kt-sec, .kt-body { transform-box: view-box; transform-origin: 50px 56px; }
+.kt {
+  --kt-bezel-hi: #fbfbfb; --kt-bezel-lo: #d2d2d2; --kt-face-hi: #ffffff; --kt-face-lo: #e2e2e2; --kt-well: #ececec;
+  flex: none; display: block; overflow: visible;
+}
+@media (prefers-color-scheme: dark) {
+  .kt { --kt-bezel-hi: #3d3d3d; --kt-bezel-lo: #1a1a1a; --kt-face-hi: #4d4d4d; --kt-face-lo: #262626; --kt-well: #181818; }
+}
+.kt-bezel { fill: url(#kt-g-bezel); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.28)); }
+.kt-well { fill: var(--kt-well); }
+.kt-tick { stroke: var(--color-text-muted); stroke-linecap: round; }
+.kt-arc { fill: none; stroke: var(--me-line); stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray 0.15s ease; }
+.kt-face { fill: url(#kt-g-face); filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.32)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.18)); }
+.kt-rim { fill: none; stroke: #fff; stroke-opacity: 0.55; stroke-width: 1; }
+.kt-groove { fill: none; stroke: var(--kt-face-lo); stroke-width: 1.5; }
+.kt-fin { transform-box: view-box; transform-origin: 100px 100px; transform: rotate(var(--kt-a)); transition: transform 0.15s ease; }
+.kt-pointer { fill: var(--me); }
+.kt-knob { flex: none; border-radius: 50%; touch-action: none; cursor: grab; }
+.kt-knob:active { cursor: grabbing; }
+.kt-knob:focus-visible { outline: 3px solid var(--color-focus, var(--color-text)); outline-offset: 4px; }
 .kt-done-face { display: flex; padding: 4px; border-radius: 50%; background: var(--color-bg); }
+.kt-done-face .kt { transform-origin: 50% 50%; }
 @media (prefers-reduced-motion: no-preference) {
-  .timer-card .kt-dial { animation: kt-wind 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  .timer-pill.is-done .kt-body { animation: kt-ring 0.6s ease-in-out 3; }
+  .timer-card .kt-fin { animation: kt-wind 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .timer-card .kt-arc { animation: kt-arc 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .timer-pill.is-done .kt { animation: kt-ring 0.6s ease-in-out 3; }
 }
 @keyframes kt-wind { from { transform: rotate(0deg); } }
+@keyframes kt-arc { from { stroke-dasharray: 0 100; } }
 @keyframes kt-ring { 0%, 100% { transform: rotate(0deg); } 20% { transform: rotate(-9deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
 
 /* Stats: meals by week as a line, meal types as a pie, most made as tiles */
@@ -1986,7 +2008,6 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .chart-dot { fill: var(--me); stroke: var(--color-text); }
 .chart-dot.is-empty { fill: var(--color-bg); }
 .podium-place.is-1 .podium-step { background: var(--me); color: var(--me-ink); box-shadow: inset 0 0 0 2px var(--color-text); }
-.kt-pointer { fill: var(--me); }
 
 /* Meals by week draws itself in from the oldest week to this one on first
    load; each dot and count appears as the line reaches it. Reduced motion:

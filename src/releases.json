@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.38.0",
+    "date": "2026-10-19",
+    "notes": [
+      "Step timers are a kitchen timer knob: it winds up with a ratchet buzz on phones that vibrate, and you can turn it to add or take off minutes, with a click for each one. Pause and Resume are unchanged"
+    ]
+  },
+  {
     "version": "0.37.0",
     "date": "2026-10-19",
     "notes": [

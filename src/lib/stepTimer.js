@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react'
 // minutes", "simmer 1 hour"). Short times ("whisk for 30 seconds") get none.
 
 export const MIN_TIMER_MINUTES = 3
+// Turning the knob can't go past this.
+export const TIMER_MAX_MINUTES = 180
 
 const WAIT = /(\d+(?:\.\d+)?)(?:\s*(?:-|–|to)\s*(\d+(?:\.\d+)?))?\s*(hours?|hrs?|minutes?|mins?)\b/gi
 
@@ -115,6 +117,21 @@ export function useStepTimers() {
       return { ...all, [id]: { ...t, endsAt: Date.now() + t.paused, paused: null } }
     })
   }
+  // Turning the knob: change the time left by whole minutes, keeping at
+  // least a minute and at most TIMER_MAX_MINUTES. The total grows with it,
+  // so the knob never shows more than a full turn.
+  function adjust(id, minutes) {
+    setNow(Date.now())
+    setTimers((all) => {
+      const t = all[id]
+      if (!t) return all
+      const left = t.paused ?? (t.endsAt == null ? 0 : t.endsAt - Date.now())
+      if (left <= 0) return all
+      const next = Math.min(TIMER_MAX_MINUTES * 60000, Math.max(60000, left + minutes * 60000))
+      const total = Math.max(t.total, next)
+      return { ...all, [id]: t.paused != null ? { ...t, total, paused: next } : { ...t, total, endsAt: Date.now() + next } }
+    })
+  }
   function clear(id) {
     setTimers((all) => {
       const next = { ...all }
@@ -132,5 +149,5 @@ export function useStepTimers() {
     return { ...t, secondsLeft: leftMs / 1000, done: 1 - leftMs / t.total, state: finished ? 'done' : t.paused != null ? 'paused' : 'running' }
   }
 
-  return { timers, view, start, pause, resume, clear }
+  return { timers, view, start, pause, resume, adjust, clear }
 }

@@ -1,8 +1,9 @@
+import { useRef } from 'react'
 import Icon from './Icon'
 import { ingredientLine } from '../lib/cooking'
 import { groupBySection } from '../lib/ingredients'
 import { NUTRIENTS, formatNutrient, isNutritionStale, nutritionTotals } from '../lib/nutrition'
-import { clock, findWait, waitLabel } from '../lib/stepTimer'
+import { clock, findWait, waitLabel, TIMER_MAX_MINUTES } from '../lib/stepTimer'
 
 // Pieces shared by cooking mode and two-chef mode.
 
@@ -99,60 +100,119 @@ export function NutritionPeek({ recipe, ingredients }) {
   )
 }
 
-// A wind-up kitchen timer face. The dial turns back to the time left (6
-// degrees a minute, like the real thing, up to one full turn) and ticks
-// toward 0 once a second; a small hand in the middle clicks round once a
-// minute. When it starts, the dial winds up from 0. Reduced motion: no
-// wind-up and no rattle; the dial just shows the time left.
-const rad = (deg) => ((deg - 90) * Math.PI) / 180
-const pt = (deg, r) => [50 + r * Math.cos(rad(deg)), 56 + r * Math.sin(rad(deg))]
-const DIAL_TICKS = Array.from({ length: 60 }, (_, m) => {
-  const long = m % 5 === 0
-  const [x1, y1] = pt(m * 6, 33)
-  const [x2, y2] = pt(m * 6, long ? 27 : 30)
-  return { x1, y1, x2, y2, w: long ? 2.2 : 1 }
+// A kitchen timer knob: a raised face in a bezel, ticks set into a well,
+// a fin for a pointer and the time left as an arc in your color. The fin
+// and arc show the share of the timer left, unwinding toward the top. On
+// start it winds up to the time set (with a ratchet buzz on phones that
+// vibrate). While it runs or is paused you can turn the knob to change the
+// time: a minute for every 12 degrees, with a click of vibration for each
+// minute. It is also a slider: arrow keys change it by a minute, Page Up
+// and Page Down by five. Reduced motion: no wind-up animation.
+const TICKS = Array.from({ length: 60 }, (_, i) => {
+  const a = ((i * 6 - 90) * Math.PI) / 180
+  const r1 = i % 5 === 0 ? 74 : 77
+  return { x1: 100 + r1 * Math.cos(a), y1: 100 + r1 * Math.sin(a), x2: 100 + 82 * Math.cos(a), y2: 100 + 82 * Math.sin(a), w: i % 5 === 0 ? 2 : 1 }
 })
-const DIAL_NUMBERS = [0, 10, 20, 30, 40, 50].map((m) => {
-  const [x, y] = pt(m * 6, 19.5)
-  return { x, y, a: m * 6, label: String(m) }
-})
+const DEG_PER_MINUTE = 12
+const buzz = (pattern) => {
+  try {
+    navigator.vibrate?.(pattern)
+  } catch {
+    // No vibration on this phone.
+  }
+}
+// A ratchet: short clicks spread over the wind-up.
+export const ratchet = () => buzz(Array.from({ length: 27 }, (_, i) => (i % 2 ? 26 : 7)))
 
-function KitchenDial({ secondsLeft, size }) {
-  const dial = -Math.min(secondsLeft / 60, 60) * 6
-  const hand = -(Math.ceil(secondsLeft) % 60) * 6
+function KitchenDial({ secondsLeft, totalSeconds = 1, size }) {
+  const share = Math.max(0, Math.min(1, secondsLeft / Math.max(1, totalSeconds)))
   return (
-    <svg className="kt" aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 100 104" fill="none" strokeLinecap="round" strokeLinejoin="round">
-      <g className="kt-body">
-        <rect x="43" y="4" width="14" height="9" rx="3" fill="var(--color-surface)" stroke="var(--color-text)" strokeWidth="3" />
-        <circle cx="50" cy="56" r="42" fill="var(--color-surface)" stroke="var(--color-text)" strokeWidth="3.5" />
-        <g className="kt-dial" style={{ transform: `rotate(${dial}deg)` }}>
-          <circle cx="50" cy="56" r="34" fill="var(--color-subtle)" />
-          {DIAL_TICKS.map((t, i) => (
-            <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="var(--color-text)" strokeWidth={t.w} />
-          ))}
-          {DIAL_NUMBERS.map((n) => (
-            <text
-              key={n.label}
-              x={n.x}
-              y={n.y}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fontSize="10"
-              fontWeight="700"
-              fill="var(--color-text)"
-              transform={`rotate(${n.a} ${n.x} ${n.y})`}
-            >
-              {n.label}
-            </text>
-          ))}
-          <circle cx="50" cy="56" r="9" fill="var(--color-surface)" stroke="var(--color-text)" strokeWidth="3" />
-        </g>
-        <g className="kt-sec" style={{ transform: `rotate(${hand}deg)` }}>
-          <path d="M50 56 V49.5" stroke="var(--color-text)" strokeWidth="2.5" />
-        </g>
-        <path className="kt-pointer" d="M44 12 L56 12 L50 22z" fill="var(--color-text)" stroke="var(--color-text)" strokeWidth="2" />
+    <svg className="kt" aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 200 200" style={{ '--kt-a': `${share * 360}deg` }}>
+      <defs>
+        <radialGradient id="kt-g-bezel" cx="35%" cy="30%" r="80%">
+          <stop offset="0" style={{ stopColor: 'var(--kt-bezel-hi)' }} />
+          <stop offset="1" style={{ stopColor: 'var(--kt-bezel-lo)' }} />
+        </radialGradient>
+        <radialGradient id="kt-g-face" cx="35%" cy="28%" r="85%">
+          <stop offset="0" style={{ stopColor: 'var(--kt-face-hi)' }} />
+          <stop offset="1" style={{ stopColor: 'var(--kt-face-lo)' }} />
+        </radialGradient>
+      </defs>
+      <circle className="kt-bezel" cx="100" cy="100" r="96" />
+      <circle className="kt-well" cx="100" cy="100" r="86" />
+      {TICKS.map((t, i) => (
+        <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} className="kt-tick" strokeWidth={t.w} />
+      ))}
+      <circle className="kt-arc" cx="100" cy="100" r="88" pathLength="100" strokeDasharray={`${share * 100} 100`} transform="rotate(-90 100 100)" />
+      <circle className="kt-face" cx="100" cy="100" r="58" />
+      <circle className="kt-rim" cx="100" cy="100" r="57" />
+      <circle className="kt-groove" cx="100" cy="100" r="44" />
+      <g className="kt-fin">
+        <rect x="96" y="52" width="8" height="34" rx="4" className="kt-pointer" />
+        <rect x="97.5" y="54" width="2.5" height="28" rx="1.25" fill="#fff" opacity="0.45" />
       </g>
     </svg>
+  )
+}
+
+// The knob you can turn, wrapping the face. onTurn(minutes) changes the
+// time left by that many minutes.
+function TimerKnob({ secondsLeft, totalSeconds, size, onTurn }) {
+  const drag = useRef(null)
+  const minutes = Math.ceil(secondsLeft / 60)
+  const angleAt = (event) => {
+    const box = event.currentTarget.getBoundingClientRect()
+    return (Math.atan2(event.clientY - (box.top + box.height / 2), event.clientX - (box.left + box.width / 2)) * 180) / Math.PI
+  }
+  function down(event) {
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    drag.current = { last: angleAt(event), carry: 0 }
+  }
+  function move(event) {
+    if (!drag.current) return
+    const now = angleAt(event)
+    let delta = now - drag.current.last
+    if (delta > 180) delta -= 360
+    if (delta < -180) delta += 360
+    drag.current.last = now
+    drag.current.carry += delta
+    const steps = Math.trunc(drag.current.carry / DEG_PER_MINUTE)
+    if (steps !== 0) {
+      drag.current.carry -= steps * DEG_PER_MINUTE
+      buzz(8)
+      onTurn(steps)
+    }
+  }
+  const up = () => {
+    drag.current = null
+  }
+  function key(event) {
+    const by = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 5, PageDown: -5 }[event.key]
+    if (!by) return
+    event.preventDefault()
+    buzz(8)
+    onTurn(by)
+  }
+  const m = Math.floor(secondsLeft / 60)
+  const sec = Math.ceil(secondsLeft % 60)
+  return (
+    <div
+      className="kt-knob"
+      role="slider"
+      tabIndex={0}
+      aria-label="Time left. Turn or use the arrow keys to change it"
+      aria-valuemin={1}
+      aria-valuemax={TIMER_MAX_MINUTES}
+      aria-valuenow={minutes}
+      aria-valuetext={`${m} minute${m === 1 ? '' : 's'}${sec ? ` ${sec} seconds` : ''} left`}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={up}
+      onKeyDown={key}
+    >
+      <KitchenDial secondsLeft={secondsLeft} totalSeconds={totalSeconds} size={size} />
+    </div>
   )
 }
 
@@ -170,7 +230,14 @@ export function StepTimer({ stepId, text, timers }) {
   if (!t) {
     return (
       <div className="step-timer">
-        <button className="timer-pill" type="button" onClick={() => timers.start(stepId, wait.low, label)}>
+        <button
+          className="timer-pill"
+          type="button"
+          onClick={() => {
+            ratchet()
+            timers.start(stepId, wait.low, label)
+          }}
+        >
           <Icon name="clock" size={24} />
           <span>Start timer</span>
           <span className="timer-length">{label}</span>
@@ -198,7 +265,7 @@ export function StepTimer({ stepId, text, timers }) {
   return (
     <div className="step-timer">
       <div className={`timer-card${t.state === 'paused' ? ' is-paused' : ''}`} role="timer" aria-label={`${label} timer, ${clock(t.secondsLeft)} left`}>
-        <KitchenDial secondsLeft={t.secondsLeft} size={96} />
+        <TimerKnob secondsLeft={t.secondsLeft} totalSeconds={t.total / 1000} size={96} onTurn={(by) => timers.adjust(stepId, by)} />
         <span className="timer-card-text">
           <span className="timer-clock">{clock(t.secondsLeft)}</span>
           <span className="timer-left">left of {label}</span>
