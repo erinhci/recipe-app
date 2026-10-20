@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.40.4",
+    "date": "2026-10-20",
+    "notes": [
+      "New app icon: the plain avatar on white, in the browser tab and on the phone home screen"
+    ]
+  },
+  {
     "version": "0.40.3",
     "date": "2026-10-19",
     "notes": [

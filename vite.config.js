@@ -29,7 +29,7 @@ export default defineConfig({
       // update never reloads the page in the middle of cooking.
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Our Kitchen',
         short_name: 'Our Kitchen',
@@ -40,6 +40,7 @@ export default defineConfig({
         start_url: '/',
         icons: [
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png', purpose: 'any' },
         ],
       },
       workbox: {
