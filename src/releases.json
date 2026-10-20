@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.40.1",
+    "date": "2026-10-19",
+    "notes": [
+      "Most made prints are tacked up one at a time, left to right: each print presses on, then its pin pushes in"
+    ]
+  },
+  {
     "version": "0.40.0",
     "date": "2026-10-19",
     "notes": [

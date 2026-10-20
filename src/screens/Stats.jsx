@@ -239,15 +239,16 @@ export function Podium({ items }) {
 // been made.
 // Most made: each recipe as a print pinned to the fridge, with a white
 // border, its name in the wider bottom edge, a slight tilt and a pin in
-// your color. They drop in with a small swing the first time the section
-// scrolls into view (not with reduced motion).
+// your color. The first time the section scrolls into view they are tacked
+// up one at a time, left to right: the print presses on, then the pin
+// pushes in (not with reduced motion).
 const MAGNET_TILT = ['-1.5deg', '1.2deg', '-0.8deg', '0.9deg', '-1.6deg', '1.4deg', '-1deg', '1.1deg']
 const PRINT_TILT = ['-2.5deg', '1.8deg', '-1.2deg', '2.2deg', '-1.8deg']
 export function MostMade({ items }) {
   return (
     <ul className="most-made">
       {items.map((r, i) => (
-        <li key={r.id} style={{ '--rot': PRINT_TILT[i % PRINT_TILT.length], '--d': `${0.1 + i * 0.12}s` }}>
+        <li key={r.id} style={{ '--rot': PRINT_TILT[i % PRINT_TILT.length], '--d': `${0.1 + i * 0.45}s` }}>
           <Link to={`/recipe/${r.id}`} aria-label={`${r.title}, made ${r.count} ${r.count === 1 ? 'time' : 'times'}`}>
             <span className="most-made-print">
               {r.photo ? (

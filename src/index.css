@@ -1959,10 +1959,14 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .most-made-print::before { content: ''; position: absolute; top: -6px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 999px; background: var(--me); box-shadow: inset -2px -2px 3px rgba(0, 0, 0, 0.3), inset 2px 2px 2px rgba(255, 255, 255, 0.5), 0 2px 3px rgba(0, 0, 0, 0.35); }
 .most-made-print .most-made-photo { border-radius: 2px; background: #e6e6e6; color: #525252; }
 .most-made-count { padding-left: 2px; }
+/* Tacked up one at a time, left to right: each print is pressed onto the
+   fridge, then its pin pushes in with a small bounce, before the next. */
 @media (prefers-reduced-motion: no-preference) {
-  .most-made-print { animation: mm-drop 0.5s ease-out var(--d, 0s) backwards; }
+  .most-made-print { animation: mm-place 0.4s cubic-bezier(0.2, 0.8, 0.3, 1) var(--d, 0s) backwards; }
+  .most-made-print::before { animation: mm-tack 0.32s cubic-bezier(0.3, 1.4, 0.5, 1) calc(var(--d, 0s) + 0.3s) backwards; }
 }
-@keyframes mm-drop { 0% { opacity: 0; transform: translateY(-14px) rotate(0deg); } 60% { opacity: 1; transform: translateY(2px) rotate(calc(var(--rot, 0deg) * 1.6)); } 100% { transform: translateY(0) rotate(var(--rot, 0deg)); } }
+@keyframes mm-place { 0% { opacity: 0; transform: translateY(-6px) rotate(0deg) scale(1.08); } 60% { opacity: 1; transform: rotate(var(--rot, 0deg)) scale(0.98); } 100% { transform: rotate(var(--rot, 0deg)) scale(1); } }
+@keyframes mm-tack { 0% { opacity: 0; transform: translateY(-14px) scale(1.6); } 70% { opacity: 1; transform: translateY(1px) scale(0.9); } 100% { transform: none; } }
 
 /* Stats: Top rated as a podium. First sits in the middle on the tallest
    step; the DOM keeps rank order for screen readers and the keyboard. */
