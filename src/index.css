@@ -2124,3 +2124,60 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .avatar-clay .blush { fill: #ff7d8e; opacity: 0.3; stroke: none; filter: none; }
 .avatar-clay .feat.feat, .avatar-clay .feat.feat * { filter: none; stroke-opacity: 1; }
 
+/* Pressables: things you tap sit up on an edge and press in.
+   Main buttons: your color, lit from the top, on an edge in a darker
+   shade; pressed, they sink onto it. Hover still adds the ink ring. */
+.btn:not(.btn-secondary) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--me) 86%, #fff), var(--me));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 0 color-mix(in srgb, var(--me) 62%, #000), 0 10px 14px -8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn:not(.btn-secondary):hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--me-ink), 0 4px 0 color-mix(in srgb, var(--me) 62%, #000), 0 10px 14px -8px rgba(0, 0, 0, 0.4); }
+.btn:not(.btn-secondary):active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 0 color-mix(in srgb, var(--me) 62%, #000); }
+/* Servings and amount steppers: keycaps. */
+.stepper .btn-secondary {
+  border: 1px solid var(--color-divider);
+  background: linear-gradient(180deg, var(--color-surface), var(--color-subtle));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 0 var(--color-divider), 0 8px 12px -8px rgba(0, 0, 0, 0.35);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.stepper .btn-secondary:active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 0 var(--color-divider); }
+/* Step and list checkboxes: a socket set into the page; checked, it fills
+   with your color and the check stamps in. */
+.choice input[type='checkbox'], .check-row input[type='checkbox'] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-subtle);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.22), inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+.choice input[type='checkbox']:checked, .check-row input[type='checkbox']:checked {
+  border-color: var(--me-line);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--me) 85%, #fff), var(--me));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 3px 0 color-mix(in srgb, var(--me) 62%, #000);
+}
+.choice input[type='checkbox']:checked::after, .check-row input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 8.5px;
+  top: 4px;
+  width: 7px;
+  height: 13px;
+  border: solid var(--me-ink);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+.choice input[type='checkbox']:focus-visible, .check-row input[type='checkbox']:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) {
+  .choice input[type='checkbox']:checked::after, .check-row input[type='checkbox']:checked::after { animation: check-stamp 0.28s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+}
+@keyframes check-stamp { from { opacity: 0; transform: rotate(45deg) scale(1.8); } to { opacity: 1; transform: rotate(45deg) scale(1); } }
+

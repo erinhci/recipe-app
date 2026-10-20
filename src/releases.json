@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.39.2",
+    "date": "2026-10-19",
+    "notes": [
+      "Main buttons, the servings buttons and step checkboxes press in when you tap them; a checked box fills with your color and the check stamps in"
+    ]
+  },
+  {
     "version": "0.39.1",
     "date": "2026-10-19",
     "notes": [
