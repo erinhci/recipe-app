@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.39.0",
+    "date": "2026-10-19",
+    "notes": [
+      "Avatars have a soft clay look: rounded arms and legs, lit and shaded shapes, softer outlines and a little blush. Eyes, mouth and glasses stay solid black"
+    ]
+  },
+  {
     "version": "0.38.0",
     "date": "2026-10-19",
     "notes": [

@@ -2104,3 +2104,16 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .is-wide .im-number { font-size: 1.25rem; }
 .is-top .im-number { font-size: 2rem; }
 .im-unit { font-size: 0.75rem; font-weight: 500; line-height: 1.2; }
+
+/* Avatars in clay: each filled shape is lit by the clay filter (see
+   Avatar.jsx), outlines are thin and soft, arms and legs are rounded
+   tubes. Eyes, mouth and glasses stay solid black. */
+.avatar-clay { stroke: #3b2c25; }
+.avatar-clay :is(path, circle, rect, ellipse)[fill]:not([fill='none']):not(.feat) { filter: var(--clay); stroke-width: 1.6px; stroke-opacity: 0.55; }
+.avatar-clay :is(path, circle, rect, ellipse):not([fill]), .avatar-clay [fill='none'] { stroke-opacity: 0.7; }
+.avatar-clay path.limb.limb { stroke-width: 9px; stroke-opacity: 1; filter: var(--clay); }
+.avatar-clay .arm { stroke: #f4efe9; }
+.avatar-clay .leg { stroke: #55545e; }
+.avatar-clay .blush { fill: #ff7d8e; opacity: 0.3; stroke: none; filter: none; }
+.avatar-clay .feat.feat, .avatar-clay .feat.feat * { filter: none; stroke-opacity: 1; }
+

@@ -1,7 +1,11 @@
+import { useId } from 'react'
 import { HAIR_COLORS, HAIR_SHAPES_FOR } from '../lib/hairDraw'
 
-// A placeholder cook avatar, drawn in its own fixed colors: a near-black
-// outline on white and light gray fills. It looks the same in light and
+// A placeholder cook avatar in a soft clay style: every filled shape gets
+// its own lit edge (top left) and shade (bottom right) from the clay
+// filter, outlines are thin and soft, arms and legs are rounded tubes, and
+// the cheeks have a little blush. Eyes, mouth and glasses stay solid
+// black. It keeps its own fixed colors: white and light gray fills. It looks the same in light and
 // dark mode, so it never sinks into a dark background.
 // Aprons, costumes, scenes and duo poses are badge rewards (see
 // lib/avatars). Skin tone, hair, hair color, everyday clothes, headwear,
@@ -179,7 +183,7 @@ function Tool({ utensil }) {
 // Glasses sit over the eyes in the face's feature color (dark on light
 // tones, light on deep ones); sunglasses have dark lenses.
 function Glasses({ glasses, color }) {
-  const frame = { stroke: color, strokeWidth: 1.8 }
+  const frame = { stroke: color, strokeWidth: 1.8, className: 'feat' }
   switch (glasses) {
     case 'round':
       return <path d="M53 33.5 a5.5 5.5 0 1 0 0.01 0 M67 33.5 a5.5 5.5 0 1 0 0.01 0 M58.5 38.5 q1.5 -1.5 3 0 M47.5 38 L40.5 36 M72.5 38 L79.5 36" {...frame} />
@@ -205,6 +209,7 @@ function Glasses({ glasses, color }) {
             fill={INK}
             stroke={color}
             strokeWidth="1.6"
+            className="feat"
           />
           <path d="M46.5 37.5 L40.5 36 M73.5 37.5 L79.5 36" {...frame} />
         </>
@@ -344,9 +349,10 @@ export default function Avatar({
   // A light edge only where dark hair meets a deep skin tone.
   const edge = deep && !color.light ? LIGHT : INK
   const shownHair = COVERING_HATS.includes(hat) ? 'none' : hair
+  const clayId = `clay${useId().replace(/:/g, '')}`
   return (
     <svg
-      className={className}
+      className={`avatar-clay${className ? ` ${className}` : ''}`}
       role={label ? 'img' : undefined}
       aria-label={label || undefined}
       aria-hidden={label ? undefined : 'true'}
@@ -359,12 +365,33 @@ export default function Avatar({
       strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ display: 'block', flex: 'none', transform: flip ? 'scaleX(-1)' : undefined }}
+      style={{ display: 'block', flex: 'none', transform: flip ? 'scaleX(-1)' : undefined, '--clay': `url(#${clayId})` }}
     >
-      <path d="M50 128 V152 h-8 M70 128 V152 h8" />
+      <defs>
+        {/* Clay: a lit rim where the shape's top-left edge is, a soft shade
+            along the bottom right, both inside the shape. */}
+        <filter id={clayId} filterUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="180" colorInterpolationFilters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="soft" />
+          <feOffset in="soft" dx="1.6" dy="2" result="down" />
+          <feComposite in="SourceAlpha" in2="down" operator="out" result="litEdge" />
+          <feFlood floodColor="#ffffff" floodOpacity="0.6" />
+          <feComposite in2="litEdge" operator="in" result="lit" />
+          <feOffset in="soft" dx="-1.6" dy="-2" result="up" />
+          <feComposite in="SourceAlpha" in2="up" operator="out" result="shadeEdge" />
+          <feFlood floodColor="#2a1a12" floodOpacity="0.28" />
+          <feComposite in2="shadeEdge" operator="in" result="shade" />
+          <feMerge result="lit-shape">
+            <feMergeNode in="SourceGraphic" />
+            <feMergeNode in="shade" />
+            <feMergeNode in="lit" />
+          </feMerge>
+          <feComposite in="lit-shape" in2="SourceAlpha" operator="in" />
+        </filter>
+      </defs>
+      <path className="limb leg" d="M50 128 V152 h-8 M70 128 V152 h8" />
       {outfit === 'shirt' && <path d="M43 112 h15 v36 h-15z M62 112 h15 v36 h-15z" fill="#d9d9d9" strokeWidth="2.5" />}
       {/* Arms come before the body, so the body hides where they join. */}
-      <path d={`M40 82 L28 116${arm}`} />
+      <path className="limb arm" d={`M40 82 L28 116${arm}`} />
       <rect x="38" y="68" width="44" height="62" rx="14" fill="#ffffff" />
       {apron && (
         <>
@@ -418,10 +445,12 @@ export default function Avatar({
       <HatBack hat={hat} />
       {deep && <circle cx="60" cy="40" r="22.6" stroke={LIGHT} strokeWidth="1.6" />}
       <circle cx="60" cy="40" r="20" fill={fill} />
+      <ellipse className="blush" cx="49.5" cy="45" rx="3.4" ry="2.1" />
+      <ellipse className="blush" cx="70.5" cy="45" rx="3.4" ry="2.1" />
       <Hair hair={shownHair} hat={hat} fill={color.hex} edge={edge} layer="front" />
-      <circle cx="53" cy="39" r="2.2" fill={feature} stroke="none" />
-      <circle cx="67" cy="39" r="2.2" fill={feature} stroke="none" />
-      <path d={pose === 'taste' ? 'M56 48 h8' : 'M53 47 q7 6 14 0'} stroke={feature} strokeWidth="2.5" />
+      <circle className="feat" cx="53" cy="39" r="2.2" fill={feature} stroke="none" />
+      <circle className="feat" cx="67" cy="39" r="2.2" fill={feature} stroke="none" />
+      <path className="feat" d={pose === 'taste' ? 'M56 48 h8' : 'M53 47 q7 6 14 0'} stroke={feature} strokeWidth="2.5" />
       <Glasses glasses={glasses} color={feature} />
       <Hat hat={hat} className={hatClass} />
     </svg>
