@@ -1950,12 +1950,19 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .most-made a { display: flex; flex-direction: column; gap: 6px; color: var(--color-text); text-decoration: none; }
 /* height: auto overrides the photo's own height, so it stays square. */
 .most-made-photo { display: flex; align-items: center; justify-content: center; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: var(--color-subtle); color: var(--color-text-muted); font-size: 34px; font-weight: 600; }
-.most-made > li:nth-child(3n + 1) .most-made-photo { border-radius: 58% 42% 46% 54% / 50% 56% 44% 50%; }
-.most-made > li:nth-child(3n + 2) .most-made-photo { border-radius: 44% 56% 52% 48% / 56% 46% 54% 44%; }
-.most-made > li:nth-child(3n + 3) .most-made-photo { border-radius: 52% 48% 58% 42% / 44% 52% 48% 56%; }
-.most-made-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-sm); font-weight: 600; line-height: 1.3; }
+.most-made-title { color: #111111; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-sm); font-weight: 600; line-height: 1.3; }
 .most-made-count { font-size: var(--text-sm); line-height: 1.3; color: var(--color-text-muted); }
 .most-made a:hover .most-made-title { text-decoration: underline; }
+.most-made { gap: 14px var(--space-3); padding-top: var(--space-2); }
+.most-made a { gap: 8px; height: 100%; }
+.most-made-print { flex: 1; position: relative; display: flex; flex-direction: column; gap: 6px; padding: 6px 6px 8px; border-radius: 3px; background: #fbfbf8; transform: rotate(var(--rot, 0deg)); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15), 0 12px 18px -10px rgba(0, 0, 0, 0.45); }
+.most-made-print::before { content: ''; position: absolute; top: -6px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 999px; background: var(--me); box-shadow: inset -2px -2px 3px rgba(0, 0, 0, 0.3), inset 2px 2px 2px rgba(255, 255, 255, 0.5), 0 2px 3px rgba(0, 0, 0, 0.35); }
+.most-made-print .most-made-photo { border-radius: 2px; background: #e6e6e6; color: #525252; }
+.most-made-count { padding-left: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .most-made-print { animation: mm-drop 0.5s ease-out var(--d, 0s) backwards; }
+}
+@keyframes mm-drop { 0% { opacity: 0; transform: translateY(-14px) rotate(0deg); } 60% { opacity: 1; transform: translateY(2px) rotate(calc(var(--rot, 0deg) * 1.6)); } 100% { transform: translateY(0) rotate(var(--rot, 0deg)); } }
 
 /* Stats: Top rated as a podium. First sits in the middle on the tallest
    step; the DOM keeps rank order for screen readers and the keyboard. */

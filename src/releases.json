@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.39.1",
+    "date": "2026-10-19",
+    "notes": [
+      "Most made on Stats shows each recipe as a print pinned to the fridge, with a pin in your color"
+    ]
+  },
+  {
     "version": "0.39.0",
     "date": "2026-10-19",
     "notes": [

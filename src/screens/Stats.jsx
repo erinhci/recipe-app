@@ -237,20 +237,27 @@ export function Podium({ items }) {
 // The most made recipes as tiles: the latest meal photo (or the first
 // letter when there's no photo yet, as in Recipes) and how often it's
 // been made.
+// Most made: each recipe as a print pinned to the fridge, with a white
+// border, its name in the wider bottom edge, a slight tilt and a pin in
+// your color. They drop in with a small swing the first time the section
+// scrolls into view (not with reduced motion).
+const PRINT_TILT = ['-2.5deg', '1.8deg', '-1.2deg', '2.2deg', '-1.8deg']
 export function MostMade({ items }) {
   return (
     <ul className="most-made">
-      {items.map((r) => (
-        <li key={r.id}>
+      {items.map((r, i) => (
+        <li key={r.id} style={{ '--rot': PRINT_TILT[i % PRINT_TILT.length], '--d': `${0.1 + i * 0.12}s` }}>
           <Link to={`/recipe/${r.id}`} aria-label={`${r.title}, made ${r.count} ${r.count === 1 ? 'time' : 'times'}`}>
-            {r.photo ? (
-              <PhotoImg photo={r.photo} alt="" className="most-made-photo" />
-            ) : (
-              <span className="most-made-photo is-empty" aria-hidden="true">
-                {r.title.trim().charAt(0).toUpperCase()}
-              </span>
-            )}
-            <span className="most-made-title">{r.title}</span>
+            <span className="most-made-print">
+              {r.photo ? (
+                <PhotoImg photo={r.photo} alt="" className="most-made-photo" />
+              ) : (
+                <span className="most-made-photo is-empty" aria-hidden="true">
+                  {r.title.trim().charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="most-made-title">{r.title}</span>
+            </span>
             <span className="most-made-count">Made {r.count}×</span>
           </Link>
         </li>
@@ -535,7 +542,7 @@ export default function Stats() {
         <WeeklyChart weeks={stats.weeks} />
       </section>
 
-      <section aria-labelledby="most-made-heading">
+      <section aria-labelledby="most-made-heading" className="reveal">
         <h2 id="most-made-heading">Most made</h2>
         <MostMade items={stats.mostMade} />
       </section>
