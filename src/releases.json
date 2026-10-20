@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.40.2",
+    "date": "2026-10-19",
+    "notes": [
+      "Top rated: first place jumps instead of spinning"
+    ]
+  },
+  {
     "version": "0.40.1",
     "date": "2026-10-19",
     "notes": [
