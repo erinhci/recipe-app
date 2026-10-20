@@ -1912,9 +1912,6 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .kt-groove { fill: none; stroke: var(--kt-face-lo); stroke-width: 1.5; }
 .kt-fin { transform-box: view-box; transform-origin: 100px 100px; transform: rotate(var(--kt-a)); transition: transform 0.15s ease; }
 .kt-pointer { fill: var(--me); }
-.kt-knob { flex: none; border-radius: 50%; touch-action: none; cursor: grab; }
-.kt-knob:active { cursor: grabbing; }
-.kt-knob:focus-visible { outline: 3px solid var(--color-focus, var(--color-text)); outline-offset: 4px; }
 .kt-done-face { display: flex; padding: 4px; border-radius: 50%; background: var(--color-bg); }
 .kt-done-face .kt { transform-origin: 50% 50%; }
 @media (prefers-reduced-motion: no-preference) {

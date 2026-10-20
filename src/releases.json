@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.40.3",
+    "date": "2026-10-19",
+    "notes": [
+      "Step timers show the knob before they start, with the time they will run and a Start button",
+      "Reset timer unwinds it back to the start, with Undo for a few seconds after",
+      "Turning the knob by hand is off for now; it was too easy to change the time by mistake"
+    ]
+  },
+  {
     "version": "0.40.2",
     "date": "2026-10-19",
     "notes": [

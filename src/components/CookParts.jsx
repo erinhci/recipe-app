@@ -1,9 +1,8 @@
-import { useRef } from 'react'
 import Icon from './Icon'
 import { ingredientLine } from '../lib/cooking'
 import { groupBySection } from '../lib/ingredients'
 import { NUTRIENTS, formatNutrient, isNutritionStale, nutritionTotals } from '../lib/nutrition'
-import { clock, findWait, waitLabel, TIMER_MAX_MINUTES } from '../lib/stepTimer'
+import { clock, findWait, waitLabel } from '../lib/stepTimer'
 
 // Pieces shared by cooking mode and two-chef mode.
 
@@ -104,16 +103,13 @@ export function NutritionPeek({ recipe, ingredients }) {
 // a fin for a pointer and the time left as an arc in your color. The fin
 // and arc show the share of the timer left, unwinding toward the top. On
 // start it winds up to the time set (with a ratchet buzz on phones that
-// vibrate). While it runs or is paused you can turn the knob to change the
-// time: a minute for every 12 degrees, with a click of vibration for each
-// minute. It is also a slider: arrow keys change it by a minute, Page Up
-// and Page Down by five. Reduced motion: no wind-up animation.
+// vibrate). Turning it by hand is left out for now: it was too easy to
+// knock the time off by mistake. Reduced motion: no wind-up animation.
 const TICKS = Array.from({ length: 60 }, (_, i) => {
   const a = ((i * 6 - 90) * Math.PI) / 180
   const r1 = i % 5 === 0 ? 74 : 77
   return { x1: 100 + r1 * Math.cos(a), y1: 100 + r1 * Math.sin(a), x2: 100 + 82 * Math.cos(a), y2: 100 + 82 * Math.sin(a), w: i % 5 === 0 ? 2 : 1 }
 })
-const DEG_PER_MINUTE = 12
 const buzz = (pattern) => {
   try {
     navigator.vibrate?.(pattern)
@@ -155,67 +151,6 @@ function KitchenDial({ secondsLeft, totalSeconds = 1, size }) {
   )
 }
 
-// The knob you can turn, wrapping the face. onTurn(minutes) changes the
-// time left by that many minutes.
-function TimerKnob({ secondsLeft, totalSeconds, size, onTurn }) {
-  const drag = useRef(null)
-  const minutes = Math.ceil(secondsLeft / 60)
-  const angleAt = (event) => {
-    const box = event.currentTarget.getBoundingClientRect()
-    return (Math.atan2(event.clientY - (box.top + box.height / 2), event.clientX - (box.left + box.width / 2)) * 180) / Math.PI
-  }
-  function down(event) {
-    event.currentTarget.setPointerCapture?.(event.pointerId)
-    drag.current = { last: angleAt(event), carry: 0 }
-  }
-  function move(event) {
-    if (!drag.current) return
-    const now = angleAt(event)
-    let delta = now - drag.current.last
-    if (delta > 180) delta -= 360
-    if (delta < -180) delta += 360
-    drag.current.last = now
-    drag.current.carry += delta
-    const steps = Math.trunc(drag.current.carry / DEG_PER_MINUTE)
-    if (steps !== 0) {
-      drag.current.carry -= steps * DEG_PER_MINUTE
-      buzz(8)
-      onTurn(steps)
-    }
-  }
-  const up = () => {
-    drag.current = null
-  }
-  function key(event) {
-    const by = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 5, PageDown: -5 }[event.key]
-    if (!by) return
-    event.preventDefault()
-    buzz(8)
-    onTurn(by)
-  }
-  const m = Math.floor(secondsLeft / 60)
-  const sec = Math.ceil(secondsLeft % 60)
-  return (
-    <div
-      className="kt-knob"
-      role="slider"
-      tabIndex={0}
-      aria-label="Time left. Turn or use the arrow keys to change it"
-      aria-valuemin={1}
-      aria-valuemax={TIMER_MAX_MINUTES}
-      aria-valuenow={minutes}
-      aria-valuetext={`${m} minute${m === 1 ? '' : 's'}${sec ? ` ${sec} seconds` : ''} left`}
-      onPointerDown={down}
-      onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={up}
-      onKeyDown={key}
-    >
-      <KitchenDial secondsLeft={secondsLeft} totalSeconds={totalSeconds} size={size} />
-    </div>
-  )
-}
-
 // The timer under a large current step that names a wait of 3 minutes or
 // more. Idle: one tap starts it. Running: the countdown is a timer region
 // (screen readers aren't read every second). Done: an alert, plus a
@@ -226,23 +161,40 @@ export function StepTimer({ stepId, text, timers }) {
   const label = waitLabel(wait.low)
   const note = wait.high > wait.low ? `Check at ${waitLabel(wait.low)}, done by ${waitLabel(wait.high)}` : null
   const t = timers.view(stepId)
+  const undo = timers.canUndo(stepId) && (
+    <button className="link-btn" type="button" onClick={() => timers.undo(stepId)}>
+      Undo reset
+    </button>
+  )
 
+  // Not started: the knob sits unwound, showing the time it will run.
+  // Start winds it up.
   if (!t) {
     return (
       <div className="step-timer">
-        <button
-          className="timer-pill"
-          type="button"
-          onClick={() => {
-            ratchet()
-            timers.start(stepId, wait.low, label)
-          }}
-        >
-          <Icon name="clock" size={24} />
-          <span>Start timer</span>
-          <span className="timer-length">{label}</span>
-        </button>
-        {note && <p className="timer-note">{note}</p>}
+        <div className="timer-card is-idle" key="idle">
+          <KitchenDial secondsLeft={0} size={96} />
+          <span className="timer-card-text">
+            <span className="timer-clock">{clock(wait.low * 60)}</span>
+            <span className="timer-left">{label} timer</span>
+          </span>
+          <button
+            className="timer-inner-btn"
+            type="button"
+            onClick={() => {
+              ratchet()
+              timers.start(stepId, wait.low, label)
+            }}
+          >
+            Start
+          </button>
+        </div>
+        {(note || undo) && (
+          <p className="timer-note">
+            {note && `${note}. `}
+            {undo}
+          </p>
+        )}
       </div>
     )
   }
@@ -264,8 +216,8 @@ export function StepTimer({ stepId, text, timers }) {
   }
   return (
     <div className="step-timer">
-      <div className={`timer-card${t.state === 'paused' ? ' is-paused' : ''}`} role="timer" aria-label={`${label} timer, ${clock(t.secondsLeft)} left`}>
-        <TimerKnob secondsLeft={t.secondsLeft} totalSeconds={t.total / 1000} size={96} onTurn={(by) => timers.adjust(stepId, by)} />
+      <div key="running" className={`timer-card${t.state === 'paused' ? ' is-paused' : ''}`} role="timer" aria-label={`${label} timer, ${clock(t.secondsLeft)} left`}>
+        <KitchenDial secondsLeft={t.secondsLeft} totalSeconds={t.total / 1000} size={96} />
         <span className="timer-card-text">
           <span className="timer-clock">{clock(t.secondsLeft)}</span>
           <span className="timer-left">left of {label}</span>
@@ -283,8 +235,9 @@ export function StepTimer({ stepId, text, timers }) {
       <p className="timer-note">
         {t.state === 'paused' && 'Paused. '}
         {note && `${note}. `}
-        <button className="link-btn" type="button" onClick={() => timers.clear(stepId)}>
-          Cancel timer
+        {/* Reset unwinds it back to the start, with Undo right after. */}
+        <button className="link-btn" type="button" onClick={() => timers.reset(stepId)}>
+          Reset timer
         </button>
       </p>
     </div>
