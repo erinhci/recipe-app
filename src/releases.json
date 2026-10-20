@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.40.0",
+    "date": "2026-10-19",
+    "notes": [
+      "Avatars are back to the line style",
+      "Two-chef mode: panels and step cards are light glass tinted with each cook's color; steps you do together fade from your color into theirs",
+      "Top ingredients look like laminated fridge magnets and snap on when you scroll to them",
+      "Badges look like enamel pins in your color",
+      "The kitchen scene is soft clay, with a window light and a counter"
+    ]
+  },
+  {
     "version": "0.39.2",
     "date": "2026-10-19",
     "notes": [

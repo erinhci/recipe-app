@@ -241,6 +241,7 @@ export function Podium({ items }) {
 // border, its name in the wider bottom edge, a slight tilt and a pin in
 // your color. They drop in with a small swing the first time the section
 // scrolls into view (not with reduced motion).
+const MAGNET_TILT = ['-1.5deg', '1.2deg', '-0.8deg', '0.9deg', '-1.6deg', '1.4deg', '-1deg', '1.1deg']
 const PRINT_TILT = ['-2.5deg', '1.8deg', '-1.2deg', '2.2deg', '-1.8deg']
 export function MostMade({ items }) {
   return (
@@ -575,7 +576,7 @@ export default function Stats() {
       </section>
 
       {stats.topIngredients.length > 0 && (
-        <section aria-labelledby="ingredients-heading">
+        <section aria-labelledby="ingredients-heading" className="reveal">
           <h2 id="ingredients-heading" style={{ marginBottom: 0 }}>
             Top ingredients
           </h2>
@@ -590,7 +591,11 @@ export default function Stats() {
             {stats.topIngredients.map((item, i) => {
               const top = stats.topIngredients[0].count
               return (
-                <li key={item.name} className={`is-${mosaicSize(item, i, top)}`} style={{ '--r': item.count / Math.max(1, top) }}>
+                <li
+                  key={item.name}
+                  className={`is-${mosaicSize(item, i, top)}`}
+                  style={{ '--r': item.count / Math.max(1, top), '--tilt': MAGNET_TILT[i % MAGNET_TILT.length], '--d': `${i * 0.08}s` }}
+                >
                   <span className="im-name">{item.name}</span>
                   <span className="im-count">
                     <span className="sr-only">, in </span>

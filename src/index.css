@@ -2112,18 +2112,6 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .is-top .im-number { font-size: 2rem; }
 .im-unit { font-size: 0.75rem; font-weight: 500; line-height: 1.2; }
 
-/* Avatars in clay: each filled shape is lit by the clay filter (see
-   Avatar.jsx), outlines are thin and soft, arms and legs are rounded
-   tubes. Eyes, mouth and glasses stay solid black. */
-.avatar-clay { stroke: #3b2c25; }
-.avatar-clay :is(path, circle, rect, ellipse)[fill]:not([fill='none']):not(.feat) { filter: var(--clay); stroke-width: 1.6px; stroke-opacity: 0.55; }
-.avatar-clay :is(path, circle, rect, ellipse):not([fill]), .avatar-clay [fill='none'] { stroke-opacity: 0.7; }
-.avatar-clay path.limb.limb { stroke-width: 9px; stroke-opacity: 1; filter: var(--clay); }
-.avatar-clay .arm { stroke: #f4efe9; }
-.avatar-clay .leg { stroke: #55545e; }
-.avatar-clay .blush { fill: #ff7d8e; opacity: 0.3; stroke: none; filter: none; }
-.avatar-clay .feat.feat, .avatar-clay .feat.feat * { filter: none; stroke-opacity: 1; }
-
 /* Pressables: things you tap sit up on an edge and press in.
    Main buttons: your color, lit from the top, on an edge in a darker
    shade; pressed, they sink onto it. Hover still adds the ink ring. */
@@ -2180,4 +2168,115 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .choice input[type='checkbox']:checked::after, .check-row input[type='checkbox']:checked::after { animation: check-stamp 0.28s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
 }
 @keyframes check-stamp { from { opacity: 0; transform: rotate(45deg) scale(1.8); } to { opacity: 1; transform: rotate(45deg) scale(1); } }
+
+/* Two chefs in glass. The panels and step cards are thin glass over the
+   page, tinted with a cook's color: your step's ingredients and your next
+   step in yours, the other cook's steps in theirs (still dashed), steps
+   you do together fading left to right from yours into theirs. The
+   recipe-wide panels (nutrition, all ingredients) are neutral. Tints stay
+   light (7% to 9%), so text keeps at least 10:1. With Reduce transparency
+   on, there is no blur. */
+.page:has(.two-chef-steps) {
+  --them: var(--color-text-muted);
+  --them-line: var(--color-border);
+  --glass-hi: 7%;
+  --glass-lo: 2%;
+  --glass-base: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --glass-drop: 0 10px 24px -16px rgba(0, 0, 0, 0.35);
+}
+@media (prefers-color-scheme: dark) {
+  .page:has(.two-chef-steps) { --glass-hi: 9%; --glass-lo: 3%; --glass-base: color-mix(in srgb, var(--color-bg) 70%, transparent); --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.1); --glass-drop: 0 10px 24px -16px rgba(0, 0, 0, 0.8); }
+}
+.page:has(.two-chef-steps) :is(.cook-needs-card, .nut-peek, #all-ingredients),
+.two-chef-steps > li:is(.is-next, .theirs) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) var(--glass-hi), transparent), color-mix(in srgb, var(--tint) var(--glass-lo), transparent)), var(--glass-base);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-rim), var(--glass-drop);
+}
+.page:has(.two-chef-steps) .cook-needs-card { --tint: var(--me); border: 1px solid color-mix(in srgb, var(--me) 30%, transparent); }
+.page:has(.two-chef-steps) :is(.nut-peek, #all-ingredients) { --tint: var(--color-text-muted); border: 1px solid color-mix(in srgb, var(--color-text-muted) 30%, transparent); }
+.two-chef-steps > li { border-bottom: 0; margin: var(--space-2) 0; }
+.two-chef-steps > li.is-next { --tint: var(--me); border: 2px solid var(--me-line); padding: var(--space-3); }
+.two-chef-steps > li.theirs, .two-chef-steps > li.is-their-current { --tint: var(--them); margin-left: var(--space-4); padding: var(--space-3); border: 2px dashed var(--them-line); }
+.two-chef-steps > li.together {
+  padding: var(--space-3);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--me) var(--glass-hi), transparent), color-mix(in srgb, var(--them) var(--glass-hi), transparent)) padding-box,
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    linear-gradient(90deg, color-mix(in srgb, var(--me-line) 60%, transparent), color-mix(in srgb, var(--them-line) 60%, transparent)) border-box;
+  box-shadow: var(--glass-rim), var(--glass-drop);
+}
+@media (prefers-color-scheme: dark) {
+  .two-chef-steps > li.together {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--me) var(--glass-hi), transparent), color-mix(in srgb, var(--them) var(--glass-hi), transparent)) padding-box,
+      linear-gradient(var(--color-bg), var(--color-bg)) padding-box,
+      linear-gradient(90deg, color-mix(in srgb, var(--me-line) 60%, transparent), color-mix(in srgb, var(--them-line) 60%, transparent)) border-box;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .page:has(.two-chef-steps) :is(.cook-needs-card, .nut-peek, #all-ingredients), .two-chef-steps > li:is(.is-next, .theirs) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Top ingredients as laminated fridge magnets: a slight tilt, a hard
+   edge, a glossy top-lit coat and a diagonal glare, all under the words
+   so contrast is unchanged. They snap on one by one the first time you
+   scroll to them. */
+.ingredient-mosaic { gap: 10px; padding: 4px; }
+.ingredient-mosaic > li {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transform: rotate(var(--tilt, 0deg));
+  border-color: color-mix(in srgb, var(--me) 45%, var(--color-border));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.25), inset 0 -2px 3px rgba(0, 0, 0, 0.12), 0 3px 0 color-mix(in srgb, var(--me) 40%, var(--color-border)), 0 12px 16px -8px rgba(0, 0, 0, 0.4);
+}
+.ingredient-mosaic > li > span { position: relative; z-index: 1; }
+.ingredient-mosaic > li::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.12) 42%, rgba(255, 255, 255, 0) 43%, rgba(0, 0, 0, 0.05) 100%); }
+.ingredient-mosaic > li::after { content: ''; position: absolute; top: -40%; left: -30%; width: 45%; height: 180%; z-index: 0; pointer-events: none; transform: rotate(18deg); background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0)); }
+@media (prefers-color-scheme: dark) {
+  .ingredient-mosaic > li { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 3px 0 color-mix(in srgb, var(--me) 40%, #000), 0 12px 16px -8px rgba(0, 0, 0, 0.6); }
+  .ingredient-mosaic > li::before { background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0) 43%, rgba(0, 0, 0, 0.18) 100%); }
+  .ingredient-mosaic > li::after { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ingredient-mosaic > li { animation: mg-snap 0.45s cubic-bezier(0.3, 1.3, 0.5, 1) var(--d, 0s) backwards; }
+}
+@keyframes mg-snap { 0% { opacity: 0; transform: translateY(-10px) rotate(0deg) scale(1.04); } 70% { opacity: 1; transform: translateY(1px) rotate(var(--tilt, 0deg)) scale(0.99); } 100% { transform: translateY(0) rotate(var(--tilt, 0deg)) scale(1); } }
+
+/* Badges as enamel pins: earned ones are glossy enamel in your color, ink
+   on top (4.5:1 or more), in a metal rim with one highlight; ones still
+   to earn are matte gray enamel in the same rim. */
+:root { --metal-hi: #f5f5f5; --metal-lo: #a9a9a9; }
+@media (prefers-color-scheme: dark) { :root { --metal-hi: #d9d9d9; --metal-lo: #7d7d7d; } }
+.badge-medal, .badges.is-large .badge-medal, .badges.is-large .badge:not(.is-earned) .badge-medal {
+  border: 4px solid transparent;
+  background: linear-gradient(var(--color-subtle), var(--color-subtle)) padding-box, linear-gradient(135deg, var(--metal-hi), var(--metal-lo) 50%, var(--metal-hi)) border-box;
+  color: var(--color-text-muted);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.12), 0 6px 10px -4px rgba(0, 0, 0, 0.3);
+}
+.badge.is-earned .badge-medal, .badges.is-large .badge.is-earned .badge-medal, .bu-medal {
+  border: 4px solid transparent;
+  background: radial-gradient(ellipse 42% 26% at 36% 26%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%) padding-box, linear-gradient(var(--me), var(--me)) padding-box, linear-gradient(135deg, var(--metal-hi), var(--metal-lo) 50%, var(--metal-hi)) border-box;
+  color: var(--me-ink);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.22), inset 0 -4px 6px rgba(0, 0, 0, 0.18), 0 8px 12px -4px rgba(0, 0, 0, 0.35);
+}
+.bu-medal { border-width: 6px; }
+.badges.is-large .badge.is-earned .badge-medal > *, .bu-medal > * { filter: none; }
+
+/* The kitchen scene in clay: a soft wall lit in your color, a warm window
+   light, and a rounded counter with a lit top in front of the cooks. */
+.scene.is-home { background: radial-gradient(120% 90% at 70% 0%, color-mix(in srgb, var(--me) 14%, var(--color-surface)), color-mix(in srgb, var(--me) 6%, var(--color-subtle))); }
+.scene.is-home .scene-art { display: none; }
+.clay-window { position: absolute; left: 50%; top: 22px; width: 90px; height: 90px; margin-left: -45px; border-radius: 999px; background: radial-gradient(circle at 40% 35%, #fff7e0, #ffd88a 60%, #f2b45c); box-shadow: 0 0 40px 10px rgba(255, 214, 140, 0.45), inset 0 -6px 10px rgba(0, 0, 0, 0.12); }
+.clay-counter { position: absolute; z-index: 2; left: -10px; right: -10px; bottom: 0; height: 64px; border-radius: 26px 26px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--me) 30%, var(--color-surface)) 0 18px, color-mix(in srgb, var(--me) 46%, var(--color-subtle)) 18px); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -14px 24px rgba(0, 0, 0, 0.12), 0 -8px 18px -8px rgba(0, 0, 0, 0.3); }
+.scene.is-home .scene-cooks { z-index: 1; bottom: 30px; }
+.scene.is-compact .clay-window { width: 40px; height: 40px; margin-left: -20px; top: 8px; box-shadow: 0 0 18px 4px rgba(255, 214, 140, 0.45); }
+.scene.is-compact .clay-counter { height: 24px; border-radius: 12px 12px 0 0; }
+.scene.is-compact.is-home .scene-cooks { bottom: 12px; }
 

@@ -689,7 +689,11 @@ export default function TwoChef() {
             </button>
           )}
         </div>
-        <ol className="two-chef-steps scroll-focus" ref={stepsRef}>
+        <ol
+          className="two-chef-steps scroll-focus"
+          ref={stepsRef}
+          style={theirCook ? { '--them': `var(--cook-${theirCook.color})`, '--them-line': `var(--line-${theirCook.color})` } : undefined}
+        >
           {states.map((state) => {
             const yours = side === 'all' || state.track === side || state.track === 'both'
             if (!yours && !showTheirs) {
@@ -728,6 +732,7 @@ export default function TwoChef() {
                 key={state.step.id}
                 className={[
                   yours ? '' : 'theirs',
+                  state.track === 'both' && side !== 'all' ? 'together' : '',
                   state.done ? 'is-done' : '',
                   isNext(state) ? 'is-next' : '',
                   !yours && otherOn?.step.id === state.step.id ? 'is-their-current' : '',

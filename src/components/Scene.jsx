@@ -101,8 +101,10 @@ export default function Scene({
     cooks.length > 1 ? (FLIP[pose] ?? FLIP.wave) : [false, false];
   const size = compact ? 72 : 176;
   return (
-    <figure className={`scene${compact ? " is-compact" : ""}`}>
+    <figure className={`scene${compact ? " is-compact" : ""}${scene === "home" ? " is-home" : ""}`}>
       <SceneArt scene={scene} className="scene-art" />
+      {/* The kitchen in clay: a window light behind, a counter in front. */}
+      {scene === "home" && <span className="clay-window" aria-hidden="true" />}
       <div className="scene-cooks">
         {cooks[0] && (
           <Avatar
@@ -123,6 +125,7 @@ export default function Scene({
           </span>
         )}
       </div>
+      {scene === "home" && <span className="clay-counter" aria-hidden="true" />}
       {caption && (
         <figcaption className="sr-only">
           {sceneCaption(cooks, scene, pose)}
