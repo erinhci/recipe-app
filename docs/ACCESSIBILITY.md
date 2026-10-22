@@ -3,7 +3,37 @@
 **Standard:** WCAG 2.2 AA, plus the Vercel Web Interface Guidelines ·
 **Date:** 2026-10-11 · **Version audited:** 0.12.0, fixes shipped in 0.13.0
 
-## Summary
+## Second audit: Oct 22, 2026 (0.40.5, fixes in 0.40.6 and 0.40.7)
+
+By this point the visual design pass had added five cook colors, glass,
+gradients and animation. Earlier contrast checks used one color (berry).
+This audit measured all five, in light and dark, on the rendered page:
+each text run against the actual pixels behind it (350 runs).
+
+| Check | Before | After |
+| --- | --- | --- |
+| axe-core violations (11 screens × light and dark) | 0 | 0 |
+| Text under its contrast minimum, any of 5 colors (1.4.3) | 2 surfaces: ocean primary buttons 4.03:1; dark-mode ingredient magnets 2.7 to 4.0:1 (orange, green, violet) | None; lowest ocean button 5.2:1, lowest small magnet text 4.5:1 |
+| Sideways scrolling at 200% text (1.4.4, 1.4.10) | Stats (a hidden data table ignored its 1px width) | None |
+| Content cut off at 320 px (1.4.10) | Avatar tabs; a cook-mode link at 200% text | None; tabs and links wrap |
+| Focus ring hidden or covered (2.4.7, 2.4.11) | None | None |
+| Submit buttons disabled until valid (3.3.1) | 5 forms | Enabled; an empty submit marks the field, explains, and moves focus |
+| Inputs under 16px (iOS zoom) | Servings picker, 15px | 16px |
+| Font sizes in px (ignore the phone text size) | 12 of about 20 sizes | 0; one rem scale of 11 sizes, 12px floor |
+
+Also shipped in 0.40.7: typographic apostrophes (with a test), en dash
+number ranges in steps, `text-wrap: pretty` on paragraphs, shared motion
+tokens, a slow pulse for the loading indicator under reduced motion,
+darker stroke shades for the current-step bar and timer pointer, and
+borders for Windows High Contrast (`forced-colors`). 0.40.8 set tabular
+figures on every number that changes on screen.
+
+How it was run: the app ran locally with sample recipes and a stand-in
+for Supabase (signed in, no network), then Playwright drove axe-core,
+the 320 px and 200% checks, a keyboard tab walk on every screen, and the
+per-color pixel contrast measurement.
+
+## Summary (first audit, Oct 11)
 
 The app passed automated checks before this pass, but manual review found
 problems with keyboard focus, sticky bars, hover and dark-mode states, and
