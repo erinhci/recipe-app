@@ -60,6 +60,11 @@
   --text-xl: 1.875rem;           /* 30: h1 */
   --text-3xl: 2.125rem;          /* 34: timer clock, top magnet number */
   --text-cook: var(--text-2xl);  /* cooking mode step text */
+  /* Numbers that change on screen (scaled amounts, servings, counts,
+     stats, timers) use tabular figures: every digit is the same width, so
+     "1 1/2" to "3" or 9 to 10 doesn't shift the text around it, and the
+     width stays predictable at any text size. Numbers in running prose
+     keep proportional figures. Add class "num" to new dynamic numbers. */
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -2354,4 +2359,14 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .ingredient-mosaic > li::before, .ingredient-mosaic > li::after { display: none; }
   /* Icons drawn in your color take the system text color instead. */
   .icon { color: inherit !important; }
+}
+
+/* Dynamic numbers: tabular figures (see the type scale note at the top). */
+.num,
+.scaled-amount, .cook-needs, .cook-count, .servings-bar .stepper > p,
+.stat-value, .stat-unit, .row-value, .nutrient-value, .star-value, .meal-servings,
+.recipe-card-meta, .library-count, .icon-btn-count, .setup-progress,
+.badge-number, .badge-progress, .bu-number, .chart-value, .pie-pct, .pie-label,
+.podium-step, .most-made-count, .im-number, .im-count, .other-timers, .comment-meta {
+  font-variant-numeric: tabular-nums;
 }

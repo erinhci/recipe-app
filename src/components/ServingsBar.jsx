@@ -14,7 +14,7 @@ export default function ServingsBar({ servings, base, onChange, note }) {
         >
           −
         </button>
-        <p style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
+        <p className="num" style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
           {servings} {servings === 1 ? 'serving' : 'servings'}
         </p>
         <button className="btn btn-secondary" type="button" onClick={() => onChange(servings + 1)} aria-label="One more serving">

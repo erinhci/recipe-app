@@ -281,7 +281,7 @@ export default function RecipeView() {
             >
               −
             </button>
-            <p style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
+            <p className="num" style={{ margin: 0, fontWeight: 600 }} aria-live="polite">
               {servings} {Number(servings) === 1 ? 'serving' : 'servings'}
             </p>
             <button
@@ -328,7 +328,7 @@ export default function RecipeView() {
                 const shown = displayIngredient(ing, factor, system)
                 return (
                   <li key={ing.id} style={{ marginBottom: 'var(--space-2)' }}>
-                    {shown.text && <strong>{shown.text} </strong>}
+                    {shown.text && <strong className="num">{shown.text} </strong>}
                     {ing.item}
                     {ing.prep_note ? `, ${ing.prep_note}` : ''}
                     {shown.note && <div className="hint">{shown.note}</div>}
