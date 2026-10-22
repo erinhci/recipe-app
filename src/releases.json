@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.42.0",
+    "date": "2026-10-22",
+    "notes": [
+      "New type: titles and headings in Young Serif, big numbers and the timer in Syne",
+      "Cook-mode step text is back in your phone’s own font, for easy reading from the counter",
+      "A timer that runs an hour or more fits on narrow phones: the Start button moves below the time"
+    ]
+  },
+  {
     "version": "0.41.0",
     "date": "2026-10-22",
     "notes": [
