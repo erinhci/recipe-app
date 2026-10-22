@@ -157,11 +157,11 @@ export default function Import() {
   return (
     <Page title="Add a recipe">
       <p className="meta" style={{ fontSize: 'var(--text-md)' }}>
-        Bring it in however you have it. You check it before it's saved.
+        Bring it in however you have it. You check it before it’s saved.
       </p>
       {!online && (
         <p className="hint">
-          You're offline. Links and Gemini need a connection, but this phone can still read screenshots and text PDFs, and you can paste or
+          You’re offline. Links and Gemini need a connection, but this phone can still read screenshots and text PDFs, and you can paste or
           type a recipe.
         </p>
       )}

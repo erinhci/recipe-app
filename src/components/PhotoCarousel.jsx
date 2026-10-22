@@ -81,7 +81,7 @@ export default function PhotoCarousel({
     const by = photoBy(open);
     if (
       !window.confirm(
-        `Remove ${by === "You" ? "your" : `${by}'s`} photo from ${formatDay(open.cooked_on)}?`,
+        `Remove ${by === "You" ? "your" : `${by}’s`} photo from ${formatDay(open.cooked_on)}?`,
       )
     )
       return;
@@ -155,7 +155,7 @@ export default function PhotoCarousel({
               />
             ) : (
               <div className="carousel-add is-full">
-                <span>You've added {PHOTOS_PER_COOK} photos</span>
+                <span>You’ve added {PHOTOS_PER_COOK} photos</span>
                 <span className="carousel-add-note">
                   Tap one of yours to replace or remove it.
                 </span>

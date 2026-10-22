@@ -8,7 +8,7 @@ import { supabase } from './supabase.js'
 function failure(error) {
   const text = String(error?.message ?? error ?? '')
   if (/fetch|network|load failed/i.test(text)) {
-    return { ok: false, offline: true, message: "Couldn't reach the server. Your check-offs are kept on this phone." }
+    return { ok: false, offline: true, message: "Couldn’t reach the server. Your check-offs are kept on this phone." }
   }
   if (error?.code === 'PGRST202' || /could not find the function|does not exist/i.test(text)) {
     return { ok: false, message: 'Two-chef mode isn\'t set up yet. Run the newest migrations in Supabase (0007 and 0008).' }

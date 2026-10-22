@@ -25,7 +25,7 @@ function SyncStatus() {
     idle: lastSyncedAt ? `Synced ${timeFormat.format(new Date(lastSyncedAt))}` : 'Not synced yet',
     syncing: 'Syncing…',
     offline: 'Offline',
-    error: "Didn't sync",
+    error: "Didn’t sync",
   }[state]
   return (
     <div className="sync-status">
@@ -48,15 +48,15 @@ function SyncStatus() {
 function SyncProblem() {
   const { state, error } = useSyncStatus()
   if (state === 'offline') {
-    return <p className="hint">Changes are saved on this phone and sync when you're back online.</p>
+    return <p className="hint">Changes are saved on this phone and sync when you’re back online.</p>
   }
   if (state !== 'error') return null
   const network = /fetch|network|load failed/i.test(String(error))
   return (
     <p className="notice-line notice" style={{ padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius)' }}>
       {network
-        ? "Couldn't reach the server. Changes are saved on this phone and will sync when the connection is back."
-        : `Some changes didn't sync. Try the sync button; if it keeps happening, tell us this: ${String(error)}`}
+        ? "Couldn’t reach the server. Changes are saved on this phone and will sync when the connection is back."
+        : `Some changes didn’t sync. Try the sync button; if it keeps happening, tell us this: ${String(error)}`}
     </p>
   )
 }
@@ -238,7 +238,7 @@ export default function Settings() {
 
       <details className="settings-row">
         <summary>
-          <span>What's new</span>
+          <span>What’s new</span>
           <span className="row-value">
             {current.version}
             <span className="chev" aria-hidden="true">

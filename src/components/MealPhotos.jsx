@@ -82,7 +82,7 @@ export function PhotoThumb({ photo, recipeTitle, byName, onStatus }) {
   const alt =`${recipeTitle}, ${formatPhotoDay(photo.cooked_on)}, added by ${byName}`
 
   async function remove() {
-    if (!window.confirm(`Remove ${byName === 'You' ? 'your' : `${byName}'s`} photo from ${formatPhotoDay(photo.cooked_on)}?`)) return
+    if (!window.confirm(`Remove ${byName === 'You' ? 'your' : `${byName}’s`} photo from ${formatPhotoDay(photo.cooked_on)}?`)) return
     dialogRef.current?.close()
     await removeMealPhotos([photo])
     onStatus?.({ text: 'Photo removed.' })

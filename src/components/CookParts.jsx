@@ -24,7 +24,7 @@ export function StepNeeds({ needed, factor, system }) {
       <div className="row-between">
         <h3 id="needs-heading" className="needs-heading">
           <Icon name="meals" size={22} />
-          You'll need
+          You’ll need
         </h3>
         <span className="hint">
           {needed.length} {needed.length === 1 ? 'item' : 'items'}
@@ -210,7 +210,7 @@ export function StepTimer({ stepId, text, timers }) {
           <span className="kt-done-face">
             <KitchenDial secondsLeft={0} size={40} />
           </span>
-          <span className="timer-done-text">{checking ? 'Check it' : "Time's up"}</span>
+          <span className="timer-done-text">{checking ? 'Check it' : "Time’s up"}</span>
           <span className="timer-done-actions">
             <button
               className="timer-inner-btn"
@@ -280,14 +280,14 @@ export function OtherTimers({ timers, currentId, onGoTo }) {
   return (
     <>
     <p className="sr-only" role="alert">
-      {finished.length > 0 && `Time's up: ${finished.join(', ')} timer`}
+      {finished.length > 0 && `Time’s up: ${finished.join(', ')} timer`}
     </p>
     <ul className="other-timers plain-list" aria-label="Other timers">
       {others.map(([id, t]) => (
         <li key={id} className={t.state === 'done' ? 'is-done' : ''}>
           <Icon name="clock" size={20} />
           <span>
-            {t.label} timer: <strong>{t.state === 'done' ? "time's up" : clock(t.secondsLeft)}</strong>
+            {t.label} timer: <strong>{t.state === 'done' ? "time’s up" : clock(t.secondsLeft)}</strong>
             {t.state === 'paused' && ' (paused)'}
           </span>
           {onGoTo && (

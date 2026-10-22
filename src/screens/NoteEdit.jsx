@@ -64,7 +64,7 @@ export default function NoteEdit() {
     if (!answer.ok) return setResult({ status: 'error', message: answer.message })
     const applied = applyChanges(base, answer.changes ?? [])
     if (applied.items.length === 0) {
-      return setResult({ status: 'none', reason: answer.no_change_reason || "The note doesn't describe a change to the recipe." })
+      return setResult({ status: 'none', reason: answer.no_change_reason || "The note doesn’t describe a change to the recipe." })
     }
     setResult({ status: 'ready', summary: answer.summary, base, ...applied, skipped: applied.skipped + (answer.skipped ?? 0) })
   }, [id, source])
@@ -84,7 +84,7 @@ export default function NoteEdit() {
   if (source === null) {
     return (
       <Page title="Change from a note">
-        <p>That recipe or note isn't on this phone.</p>
+        <p>That recipe or note isn’t on this phone.</p>
         <Link className="btn" to={`/recipe/${id}`}>
           Back to the recipe
         </Link>
@@ -132,7 +132,7 @@ export default function NoteEdit() {
       navigate(`/recipe/${id}`, { replace: true, state: { message: 'Recipe updated. The note now shows what it changed.' } })
     } catch (error) {
       setSaving(false)
-      setSaveError(`Couldn't save: ${error.message}`)
+      setSaveError(`Couldn’t save: ${error.message}`)
     }
   }
 
@@ -214,7 +214,7 @@ export default function NoteEdit() {
           <p role="status">{result.summary}</p>
           {result.skipped > 0 && (
             <p className="card notice">
-              Gemini suggested {result.skipped} more {result.skipped === 1 ? 'change' : 'changes'} that couldn't be applied, so
+              Gemini suggested {result.skipped} more {result.skipped === 1 ? 'change' : 'changes'} that couldn’t be applied, so
               this may not cover the whole note. Compare it with the note, then use Edit before saving to add anything missing.
             </p>
           )}

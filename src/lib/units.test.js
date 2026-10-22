@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { displayIngredient, formatNumber, normalizeUnit, parseQuantity, scaleFactor } from './units.js'
+import { displayIngredient, formatNumber, normalizeUnit, parseQuantity, scaleFactor, unitLabel } from './units.js'
 
 const show = (quantity, unit, item, factor, system) =>
   displayIngredient({ quantity, unit, item }, factor, system).text
@@ -100,4 +100,13 @@ test('scale factor guards bad servings', () => {
   assert.equal(scaleFactor(4, 2), 0.5)
   assert.equal(scaleFactor(0, 2), 1)
   assert.equal(scaleFactor(null, 2), 1)
+})
+
+test('a unit saved in the plural is not pluralized again', () => {
+  assert.equal(unitLabel('cups', 2), 'cups')
+  assert.equal(unitLabel('cups', 1), 'cup')
+  assert.equal(unitLabel('cloves', 3), 'cloves')
+  assert.equal(unitLabel('cloves', 1), 'clove')
+  assert.equal(unitLabel('pinches', 2), 'pinches')
+  assert.equal(unitLabel('clove', 2), 'cloves')
 })

@@ -17,7 +17,7 @@ export default function RecentlyDeleted() {
   const members = useLiveQuery(() => db.members.toArray(), [])
 
   async function forget(recipe) {
-    const question = `Delete "${recipe.title}" forever? Its notes, cook log, ratings, and photos are deleted too. This can't be undone.`
+    const question = `Delete "${recipe.title}" forever? Its notes, cook log, ratings, and photos are deleted too. This can’t be undone.`
     if (!window.confirm(question)) return
     await deleteRecipeForever(recipe.id)
   }

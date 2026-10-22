@@ -261,7 +261,7 @@ export default function Setup() {
         {step === 2 && (
           <>
             <Intro headingRef={headingRef} title="Name your kitchen">
-              It's the shared home for your recipes. Both of you see this name.
+              It’s the shared home for your recipes. Both of you see this name.
             </Intro>
             <div className="field">
               <label htmlFor="kitchen-name" className="sr-only">
@@ -325,7 +325,7 @@ export default function Setup() {
                 <span id="reward-title" className="reward-title">
                   Signed up
                 </span>
-                <span className="hint">Unlocked: the chef hat. It's on.</span>
+                <span className="hint">Unlocked: the chef hat. It’s on.</span>
               </div>
             </div>
           </>

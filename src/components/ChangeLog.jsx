@@ -30,7 +30,7 @@ export default function ChangeLog({ recipeId, member }) {
     if (!required.check(text)) return
     await addNote(recipeId, text, member, today)
     setText('')
-    setStatus("Saved with today's cook. The recipe stays as written.")
+    setStatus("Saved with today’s cook. The recipe stays as written.")
   }
 
   return (

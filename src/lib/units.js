@@ -167,8 +167,11 @@ const UNIT_LABEL = {
   pinch: ['pinch', 'pinches'],
 }
 
-export function unitLabel(unit, quantity) {
+export function unitLabel(rawUnit, quantity) {
   const plural = quantity != null && quantity > 1
+  // Units saved before normalizing (or by hand) may already be plural
+  // ("cups", "cloves"), so start from the singular form.
+  const unit = normalizeUnit(rawUnit) ?? rawUnit
   const labels = UNIT_LABEL[unit]
   if (labels) return plural ? labels[1] : labels[0]
   // Count words like "clove" or "can": simple English plurals.

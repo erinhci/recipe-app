@@ -109,7 +109,7 @@ function Note({ note, replies = [], likes, member, people, nameFor, used, usedBy
   const name = nameFor(note.author_id)
   const noteLikes = likes.filter((l) => l.note_id === note.id)
   const iLiked = noteLikes.some((l) => l.member_id === member.user_id)
-  const owner = mine ? 'your' : `${name}'s`
+  const owner = mine ? 'your' : `${name}’s`
   // Notes the app used to post after a change ("Changed the recipe from
   // ..."). They describe a change already made, so they get no "Turn into
   // a recipe change".

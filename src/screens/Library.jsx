@@ -96,7 +96,7 @@ export default function Library() {
         <div className="card">
           <h2>No recipes yet</h2>
           <p style={{ margin: 0 }}>
-            Add your first one from a screenshot, a PDF, a link, or by typing it in. Anything one of you adds shows up on the other's phone.
+            Add your first one from a screenshot, a PDF, a link, or by typing it in. Anything one of you adds shows up on the other’s phone.
           </p>
         </div>
       ) : (

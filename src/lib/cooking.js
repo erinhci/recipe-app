@@ -348,3 +348,11 @@ export function emphasize(text) {
   if (last < source.length) parts.push({ text: source.slice(last), strong: false })
   return parts
 }
+
+// For display only: number ranges written with a hyphen ("3-4 minutes",
+// "350-375°F") read with an en dash ("3–4 minutes"). Mixed numbers like
+// "1-1/2 cups" keep their hyphen, since that one means one and a half.
+// The saved recipe keeps the text as written.
+export function rangeDash(text) {
+  return String(text ?? '').replace(/(\d)\s?-\s?(?=\d+(?![\d/]))/g, '$1–')
+}

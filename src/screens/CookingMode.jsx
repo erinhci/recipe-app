@@ -100,7 +100,7 @@ export default function CookingMode() {
   if (!data.recipe || data.recipe.deleted_at) {
     return (
       <Page title="Recipe not found">
-        <p>This recipe was deleted or isn't on this phone yet.</p>
+        <p>This recipe was deleted or isn’t on this phone yet.</p>
         <Link className="btn" to="/">
           Back to Recipes
         </Link>
@@ -134,7 +134,7 @@ export default function CookingMode() {
         {[
           timeSummary(recipe),
           wakeLock === 'failed' && 'Screen may dim. Tap anywhere to keep it on',
-          wakeLock === 'unsupported' && "Screen may dim; this browser can't keep it on",
+          wakeLock === 'unsupported' && "Screen may dim; this browser can’t keep it on",
         ]
           .filter(Boolean)
           .join(' · ')}

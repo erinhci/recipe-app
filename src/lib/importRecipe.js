@@ -17,10 +17,10 @@ const GENERIC = /non-2xx|failed to send|functionsfetcherror|functionshttperror|f
 function friendly(status, message) {
   if (message && !GENERIC.test(message)) return message
   if (status === 413) return 'That file is too big to send. Try screenshots of the recipe instead.'
-  if (status === 404) return "The import isn't set up yet. Deploy the import-recipe function in Supabase."
+  if (status === 404) return "The import isn’t set up yet. Deploy the import-recipe function in Supabase."
   if (status >= 500) return `The import ran into a problem on the server (error ${status}). Try again in a minute.`
-  if (status) return `The import didn't work (error ${status}). Try again, or use screenshots instead.`
-  return "Couldn't reach the server. Check the connection and try again."
+  if (status) return `The import didn’t work (error ${status}). Try again, or use screenshots instead.`
+  return "Couldn’t reach the server. Check the connection and try again."
 }
 
 // Calls the import-recipe Edge Function. Returns
@@ -61,18 +61,18 @@ export async function importPdf(file, onStep) {
     return callImport({ kind: 'pdf', pdf: { mimeType: 'application/pdf', data: await blobToBase64(file) } })
   }
   const { readPdfText, renderPdfPages } = await import('./readers.js')
-  onStep?.("Reading the PDF on this phone first, since it's a large file…")
+  onStep?.("Reading the PDF on this phone first, since it’s a large file…")
   let text = null
   try {
     text = await readPdfText(file)
   } catch {
-    return { ok: false, status: 0, message: "This phone couldn't open that PDF. Try screenshots of the recipe instead." }
+    return { ok: false, status: 0, message: "This phone couldn’t open that PDF. Try screenshots of the recipe instead." }
   }
   onStep?.('Gemini is reading the recipe…')
   if (text) return callImport({ kind: 'text', text: text.slice(0, 30000) })
   // A scanned PDF: send its first pages as images.
   const pages = await renderPdfPages(file)
-  if (pages.length === 0) return { ok: false, status: 0, message: "This phone couldn't read that PDF. Try screenshots instead." }
+  if (pages.length === 0) return { ok: false, status: 0, message: "This phone couldn’t read that PDF. Try screenshots instead." }
   const images = await Promise.all(pages.map((blob) => compressImage(blob)))
   return importImages(images)
 }

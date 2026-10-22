@@ -193,7 +193,7 @@ export default function TwoChef() {
   if (!data.recipe || data.recipe.deleted_at) {
     return (
       <Page title="Recipe not found">
-        <p>This recipe was deleted or isn't on this phone yet.</p>
+        <p>This recipe was deleted or isn’t on this phone yet.</p>
         <Link className="btn" to="/">
           Back to Recipes
         </Link>
@@ -256,10 +256,10 @@ export default function TwoChef() {
         {missingPrep.length > 0 && (
           <section className="card" aria-labelledby="missing-prep-heading">
             <h2 id="missing-prep-heading" style={{ fontSize: 'var(--text-md)' }}>
-              Prep isn't in the steps yet
+              Prep isn’t in the steps yet
             </h2>
             <p>
-              The ingredient list has prep that no step does, so there's less to split. Add it as steps first:
+              The ingredient list has prep that no step does, so there’s less to split. Add it as steps first:
             </p>
             <ul>
               {missingPrep.map((idea) => (
@@ -276,7 +276,7 @@ export default function TwoChef() {
         {split.state === 'unsplittable' ? (
           <>
             <p>
-              <strong>This recipe doesn't split well.</strong> {split.reason}
+              <strong>This recipe doesn’t split well.</strong> {split.reason}
             </p>
             <p className="actions">
               <Link to={backToRecipe}>Back to the recipe</Link>
@@ -454,11 +454,11 @@ export default function TwoChef() {
           </p>
         )}
         <section aria-labelledby="pick-heading">
-          <h2 id="pick-heading">Who's making what?</h2>
+          <h2 id="pick-heading">Who’s making what?</h2>
           <p className="hint">
             {live && partner
               ? `${partner.display_name} gets the other part on their phone.`
-              : "This phone isn't connected, so pick your part here and the other cook picks on theirs."}
+              : "This phone isn’t connected, so pick your part here and the other cook picks on theirs."}
           </p>
           <div className="pick-list">
             {['a', 'b'].map((track) => {
@@ -466,7 +466,7 @@ export default function TwoChef() {
               const taken = live && (track === 'a' ? cook.chef_a : cook.chef_b)
               return (
                 <button key={track} className="btn btn-secondary pick" type="button" onClick={() => pickSide(track)}>
-                  I'll make the {names[track].toLowerCase()}
+                  I’ll make the {names[track].toLowerCase()}
                   <span className="hint">
                     {' '}
                     · {count} {count === 1 ? 'step' : 'steps'}
@@ -518,7 +518,7 @@ export default function TwoChef() {
     <>
       {meet && !isNext(meet) && (
         <p style={{ margin: 'var(--space-2) 0 0' }}>
-          You'll work together at step {meet.number}: <StepText text={meet.step.text} ingredients={ingredients} factor={factor} system={system} />
+          You’ll work together at step {meet.number}: <StepText text={meet.step.text} ingredients={ingredients} factor={factor} system={system} />
         </p>
       )}
       <h3>While you wait</h3>
@@ -529,7 +529,7 @@ export default function TwoChef() {
           ))}
         </ul>
       ) : (
-        <p style={{ margin: 0 }}>Put away what you're done with and rinse your bowls and tools.</p>
+        <p style={{ margin: 0 }}>Put away what you’re done with and rinse your bowls and tools.</p>
       )}
     </>
   )
@@ -552,7 +552,7 @@ export default function TwoChef() {
         {[
           timeSummary(recipe),
           wakeLock === 'failed' && 'Screen may dim. Tap anywhere to keep it on',
-          wakeLock === 'unsupported' && "Screen may dim; this browser can't keep it on",
+          wakeLock === 'unsupported' && "Screen may dim; this browser can’t keep it on",
           !live && 'Offline: progress stays on this phone',
         ]
           .filter(Boolean)
@@ -619,8 +619,8 @@ export default function TwoChef() {
               </p>
               {unchecked.length > 0 && (
                 <p>
-                  {live ? otherName : 'The other cook'} hasn't checked off step{unchecked.length === 1 ? '' : 's'}{' '}
-                  {listNumbers(unchecked.map((w) => w.number))} yet. Start when you're both ready.
+                  {live ? otherName : 'The other cook'} hasn’t checked off step{unchecked.length === 1 ? '' : 's'}{' '}
+                  {listNumbers(unchecked.map((w) => w.number))} yet. Start when you’re both ready.
                 </p>
               )}
               {unchecked.length > 0 && whileWaiting}
@@ -685,7 +685,7 @@ export default function TwoChef() {
           <h2 id="all-steps-heading">All steps</h2>
           {side !== 'all' && (
             <button className="link-btn" type="button" aria-pressed={showTheirs} onClick={() => setShowTheirs((v) => !v)}>
-              {`${showTheirs ? 'Shorten' : 'Show'} ${otherName === 'The other cook' ? "the other cook's" : `${otherName}'s`} steps${showTheirs ? '' : ' in full'}`}
+              {`${showTheirs ? 'Shorten' : 'Show'} ${otherName === 'The other cook' ? "the other cook’s" : `${otherName}’s`} steps${showTheirs ? '' : ' in full'}`}
             </button>
           )}
         </div>

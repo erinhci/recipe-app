@@ -54,7 +54,7 @@ export default function ColorPicker({ value, onChange, takenBy = {}, large = fal
       {!large && takenColor && (
         <p id={noteId} className="color-note">
           <span className="cook-dot" aria-hidden="true" style={{ background: `var(--cook-${takenColor.id})` }} />
-          {takenColor.label} is {owner(takenColor.id).name}'s. Two cooks can't share a color.
+          {takenColor.label} is {owner(takenColor.id).name}’s. Two cooks can’t share a color.
         </p>
       )}
     </fieldset>

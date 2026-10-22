@@ -16,7 +16,7 @@ export default function UpdateBanner() {
   const registration = useRef(null)
   const lastCheck = useRef(0)
   const [dismissed, setDismissed] = useState(false)
-  const [next, setNext] = useState(null) // the waiting version's release entry
+  const [next, setNext] = useState(null) // the waiting version’s release entry
   const { pathname } = useLocation()
   const {
     needRefresh: [needRefresh],

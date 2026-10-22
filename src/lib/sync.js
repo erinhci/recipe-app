@@ -97,11 +97,11 @@ async function pushPhotoFile(entry) {
   if (isStorageNetworkError(error)) throw error
   // Migration 0010 hasn't been run yet: keep the photo and try next time.
   if (/bucket not found/i.test(error.message ?? '')) {
-    setStatus({ error: "Photos aren't set up on the server yet (migration 0010). They're kept on this phone until then." })
+    setStatus({ error: "Photos aren’t set up on the server yet (migration 0010). They’re kept on this phone until then." })
     return 'later'
   }
   console.error('Photo refused', entry, error)
-  setStatus({ error: `A photo couldn't be saved: ${error.message}` })
+  setStatus({ error: `A photo couldn’t be saved: ${error.message}` })
   return 'refused'
 }
 
@@ -151,7 +151,7 @@ async function pushOutbox() {
       // the other phone). Drop it so it doesn't block everything after it,
       // and show the reason.
       console.error('Sync change refused', entry, error)
-      setStatus({ error: `A change couldn't be saved: ${error.message}` })
+      setStatus({ error: `A change couldn’t be saved: ${error.message}` })
       // A photo refused after its file went up (the kitchen's limit):
       // take the file back down so it doesn't use storage.
       if (entry.table === 'meal_photos' && entry.op !== 'delete') {

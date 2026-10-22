@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ingredientName, ingredientsForStep, keyWords, scaleStepText } from './cooking.js'
+import { ingredientName, ingredientsForStep, keyWords, rangeDash, scaleStepText } from './cooking.js'
 
 const ingredients = [
   { id: 1, item: 'silken tofu' },
@@ -215,4 +215,11 @@ test('notes after the name never hide an ingredient from its step', () => {
   const step = 'Fry the eggs: in a skillet, heat avocado oil. Crack in the eggs and fry sunny-side up.'
   assert.deepEqual(ingredientsForStep(step, ings).map((i) => i.id), [1, 2])
   assert.deepEqual(ingredientsForStep('Add the garlic.', ings).map((i) => i.id), [3])
+})
+
+test('number ranges show with an en dash, mixed numbers keep their hyphen', () => {
+  assert.equal(rangeDash('cook 3-4 minutes'), 'cook 3–4 minutes')
+  assert.equal(rangeDash('bake at 350-375°F for 18 - 20 minutes'), 'bake at 350–375°F for 18–20 minutes')
+  assert.equal(rangeDash('add 1-1/2 cups flour'), 'add 1-1/2 cups flour')
+  assert.equal(rangeDash('medium-high heat'), 'medium-high heat')
 })

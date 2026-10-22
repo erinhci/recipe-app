@@ -388,13 +388,13 @@ function MissingTime({ stats }) {
     }
     setDismissed(true)
   }
-  const title = `${count} ${count === 1 ? "meal isn't" : "meals aren't"} in the hours yet`
+  const title = `${count} ${count === 1 ? "meal isn’t" : "meals aren’t"} in the hours yet`
   return (
     <div className="missing-time">
       <details open>
         <summary>{title}</summary>
         <p className="hint" style={{ margin: '0 0 var(--space-1)' }}>
-          Hours come from each recipe's prep and cook times. Add the time and its meals count.
+          Hours come from each recipe’s prep and cook times. Add the time and its meals count.
         </p>
         <ul className="plain-list divided" style={{ marginTop: 0 }}>
           {stats.untimedRecipes.map((r) => (

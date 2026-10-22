@@ -61,7 +61,7 @@ export async function shrinkPhoto(file) {
   try {
     image = await decode(file)
   } catch {
-    throw new Error("That file couldn't be opened as a photo. Try a JPEG or PNG, or take the photo from the app.")
+    throw new Error("That file couldn’t be opened as a photo. Try a JPEG or PNG, or take the photo from the app.")
   }
   let { width, height } = fitWithin(image.width, image.height)
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -75,7 +75,7 @@ export async function shrinkPhoto(file) {
     }
     ;({ width, height } = fitWithin(width, height, Math.round(Math.max(width, height) * 0.8)))
   }
-  throw new Error("That photo couldn't be made small enough. Try another one.")
+  throw new Error("That photo couldn’t be made small enough. Try another one.")
 }
 
 // Adds a photo of a meal. replacing: a photo to swap out (it keeps its

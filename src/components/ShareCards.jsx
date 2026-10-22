@@ -52,7 +52,7 @@ export function LookCard({ cook, svgRef }) {
         </g>
       </g>
       <text x="180" y="322" textAnchor="middle" fontSize="28" fontWeight="700" fill="#111111">
-        {cook.name}'s look
+        {cook.name}’s look
       </text>
       <text x="180" y="352" textAnchor="middle" fontSize="17" fill="#525252">
         {words.replace(/, /g, ' · ')}
@@ -66,7 +66,7 @@ export function LookCard({ cook, svgRef }) {
 
 export const lookCardAlt = (cook) => {
   const worn = describeLook(cook.look)
-  return `${cook.name}'s look in Our Kitchen${worn ? `: ${worn}` : ''}, waving.`
+  return `${cook.name}’s look in Our Kitchen${worn ? `: ${worn}` : ''}, waving.`
 }
 
 // Both cooks in the kitchen's scene and pose.

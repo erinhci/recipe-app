@@ -125,7 +125,7 @@ export default function RecipeView() {
   if (!data.recipe || data.recipe.deleted_at) {
     return (
       <Page title="Recipe not found">
-        <p>This recipe was deleted or isn't on this phone yet.</p>
+        <p>This recipe was deleted or isn’t on this phone yet.</p>
         <Link className="btn" to="/">
           Back to Recipes
         </Link>
@@ -168,7 +168,7 @@ export default function RecipeView() {
       ...new Set(ratings.filter((r) => meal.ids.includes(r.cook_log_id) && r.member_id !== member.user_id).map((r) => nameFor(r.member_id))),
     ]
     const warning = othersHere.length
-      ? ` ${othersHere.join(' and ')}'s rating is saved with this entry and will be removed; they can rate again.`
+      ? ` ${othersHere.join(' and ')}’s rating is saved with this entry and will be removed; they can rate again.`
       : ' Your rating stays.'
     const mealPhotos = photosFor(meal.cooked_on)
     const photoWarning = mealPhotos.length ? ` Its ${mealPhotos.length === 1 ? 'photo is' : 'photos are'} removed too.` : ''
@@ -358,7 +358,7 @@ export default function RecipeView() {
         )}
         {factor !== 1 && (
           <p className="hint">
-            Amounts are scaled. Times and pan sizes aren't.
+            Amounts are scaled. Times and pan sizes aren’t.
           </p>
         )}
       </Section>
@@ -371,7 +371,7 @@ export default function RecipeView() {
         headingRef={logHeadingRef}
       >
         {meals.length === 0 ? (
-          <p className="hint">Rate it once you've made it.</p>
+          <p className="hint">Rate it once you’ve made it.</p>
         ) : myStars === undefined || changingRating ? (
           <>
             <StarPicker
@@ -442,7 +442,7 @@ export default function RecipeView() {
         <h3 className="subheading">Cook log</h3>
         {!(recipe.total_time_minutes > 0) && (
           <p className="hint" style={{ marginTop: 0 }}>
-            No total time, so it won't count toward time together. <Link to={`/recipe/${recipe.id}/edit`}>Add one</Link>
+            No total time, so it won’t count toward time together. <Link to={`/recipe/${recipe.id}/edit`}>Add one</Link>
           </p>
         )}
         <form onSubmit={handleLogMeal}>

@@ -76,6 +76,16 @@
   --nav-height: 84px; /* the floating tab bar (60px) and the gap under it */
   --cook-nav-height: 80px;
   --page-width: 40rem;
+
+  /* Motion. Presses are quick, things that appear settle, and only
+     celebrations (badges, podium, magnets, the timer wind-up) bounce.
+     Celebration durations are set per animation, since each is staged. */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);     /* settle: most motion */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);    /* back-and-forth loops */
+  --ease-spring: cubic-bezier(0.3, 1.4, 0.5, 1);  /* celebrations only */
+  --dur-press: 80ms;
+  --dur-quick: 160ms;
+  --dur-settle: 240ms;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -138,6 +148,8 @@ h2 { font-size: var(--text-lg); }
 h3 { font-size: var(--text-md); }
 
 p { margin: 0 0 var(--space-3); }
+/* Keep a lone word off the last line of paragraphs and list items. */
+p, li, dd { text-wrap: pretty; }
 ul, ol { margin: 0 0 var(--space-3); padding-left: var(--space-6); }
 li + li { margin-top: var(--space-2); }
 
@@ -545,13 +557,15 @@ textarea {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* No spinning; the seconds counter still shows it's working. */
+  /* No spinning: the dot fades slowly in and out instead, with no
+     movement across the screen. The seconds counter still shows progress. */
   .spinner {
-    animation: none;
+    animation: spinner-pulse 1.6s var(--ease-in-out) infinite alternate;
     border-top-color: var(--color-border);
     background: radial-gradient(circle, var(--color-accent) 0 4px, transparent 5px);
   }
 }
+@keyframes spinner-pulse { from { opacity: 0.35; } to { opacity: 1; } }
 
 /* Notes, laid out like a comments thread */
 .comments {
@@ -985,10 +999,10 @@ ul + h3,
   border-left: 3px solid transparent;
   padding-left: var(--space-3);
   margin-left: calc(-1 * var(--space-3) - 3px);
-  transition: border-color 160ms ease, transform 200ms ease;
+  transition: border-color var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
   transform-origin: left center;
 }
-.scroll-focus > li.in-focus { border-left-color: var(--me); transform: scale(1.02); }
+.scroll-focus > li.in-focus { border-left-color: var(--me-line); transform: scale(1.02); }
 /* Numbered lists keep their numbers in the list's gutter: the bar sits
    between the number and the text instead of pulling the item (and its
    number) out to the screen edge. */
@@ -1128,7 +1142,7 @@ fieldset.field legend { font-weight: 600; padding: 0; margin-bottom: var(--space
 .nut-peek > summary { justify-content: space-between; gap: var(--space-3); min-height: 48px; padding: 0 var(--space-4); font-weight: 400; font-size: var(--text-sm); list-style: none; }
 .nut-peek > summary::-webkit-details-marker { display: none; }
 .nut-peek .muted { color: var(--color-text-muted); white-space: nowrap; }
-.nut-peek .chev { display: flex; color: var(--color-text-muted); transition: transform 160ms ease; }
+.nut-peek .chev { display: flex; color: var(--color-text-muted); transition: transform var(--dur-quick) var(--ease-out); }
 .nut-peek[open] .chev { transform: rotate(180deg); }
 .nut-body { padding: 0 var(--space-4) var(--space-3); }
 .nut-body .nutrient-tiles { margin-bottom: var(--space-2); }
@@ -1202,7 +1216,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .partner-step > summary { display: block; min-height: var(--target); font-weight: 400; list-style: none; }
 .partner-step > summary::-webkit-details-marker { display: none; }
 .partner-step .step-owner { display: flex; align-items: center; gap: var(--space-1); }
-.partner-step .chev { display: flex; margin-left: auto; color: var(--color-text-muted); transition: transform 160ms ease; }
+.partner-step .chev { display: flex; margin-left: auto; color: var(--color-text-muted); transition: transform var(--dur-quick) var(--ease-out); }
 .partner-step[open] .chev { transform: rotate(180deg); }
 .partner-step[open] .step-reminder { display: none; }
 .partner-step .step-text { color: var(--color-text); }
@@ -1264,7 +1278,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .settings-row > summary { list-style: none; }
 .settings-row > summary::-webkit-details-marker { display: none; }
 .row-value { display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm); font-weight: 400; text-align: right; }
-.settings-row .chev { display: flex; transition: transform 160ms ease; }
+.settings-row .chev { display: flex; transition: transform var(--dur-quick) var(--ease-out); }
 .settings-row[open] > summary .chev { transform: rotate(180deg); }
 .settings-row[open] > summary { border-bottom: 0; }
 .row-body { padding: 0 0 var(--space-4); border-bottom: 1px solid var(--color-divider); }
@@ -1358,7 +1372,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .carousel-add:focus-within { outline: 3px solid var(--color-focus); outline-offset: -3px; }
 .carousel-dots { display: flex; justify-content: center; gap: 0; margin-top: var(--space-1); }
 .carousel-dot { display: flex; align-items: center; justify-content: center; width: 32px; height: var(--target); padding: 0; border: 0; background: none; color: var(--color-border); cursor: pointer; }
-.carousel-dot > span { display: block; width: 8px; height: 8px; border-radius: 999px; background: var(--color-border); transition: width 160ms ease; }
+.carousel-dot > span { display: block; width: 8px; height: 8px; border-radius: 999px; background: var(--color-border); transition: width var(--dur-quick) var(--ease-out); }
 .carousel-dot[aria-current='true'] > span { width: 20px; background: var(--color-text); }
 .carousel-dot.is-add[aria-current='true'] { color: var(--color-text); }
 .carousel-caption { margin: 0; text-align: center; }
@@ -1369,7 +1383,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .sec-title { display: flex; flex-direction: column; gap: 2px; }
 .sec-title h2 { margin: 0; }
 .sec-note { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-muted); }
-.sec .chev { display: flex; flex: none; transition: transform 160ms ease; }
+.sec .chev { display: flex; flex: none; transition: transform var(--dur-quick) var(--ease-out); }
 .sec[open] > summary .chev { transform: rotate(180deg); }
 .sec-body { padding: var(--space-1) 0 var(--space-6); }
 .cook-actions + .sec, .page > section + .sec { margin-top: var(--space-6); }
@@ -1469,7 +1483,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
 .avatar-face > span { flex: none; }
 .avatar-portrait > span { flex: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .avatar-hat.drops { animation: hat-drop 0.6s cubic-bezier(0.3, 1.4, 0.6, 1) both; }
+  .avatar-hat.drops { animation: hat-drop 0.6s var(--ease-spring) both; }
 }
 @keyframes hat-drop {
   from { transform: translateY(-36px); opacity: 0; }
@@ -1853,8 +1867,8 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 }
 .badges.is-large .badge:not(.is-earned) .badge-medal { box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.12); }
 @media (prefers-reduced-motion: no-preference) {
-  .badges.is-large .badge.is-earned .badge-medal { animation: bd-flip 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  .badges.is-large .badge.is-earned .badge-medal::after { animation: bd-shine 1s ease 0.85s both; }
+  .badges.is-large .badge.is-earned .badge-medal { animation: bd-flip 0.9s var(--ease-out) both; }
+  .badges.is-large .badge.is-earned .badge-medal::after { animation: bd-shine 1s var(--ease-out) 0.85s both; }
 }
 @keyframes bd-flip { from { transform: perspective(420px) rotateY(-180deg) scale(0.85); } to { transform: perspective(420px) rotateY(0) scale(1); } }
 @keyframes bd-shine { 0% { opacity: 1; transform: translateX(-150%) skewX(-20deg); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(260%) skewX(-20deg); } }
@@ -1903,17 +1917,17 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .bu-reward-name { font-size: var(--text-lg); font-weight: 700; line-height: 1.25; }
 .bu-text .actions { margin-top: auto; justify-content: space-between; }
 @media (prefers-reduced-motion: no-preference) {
-  .bu-glow { opacity: 0; animation: bu-glow-in 0.5s ease 1.75s both, bu-rays 14s linear 1.75s infinite; }
-  .bu-halo { animation: bu-halo 1.2s ease-out 1.7s both; }
-  .bu-float { animation: bu-bob 1.6s ease-in-out both, bu-collect 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) 1.7s both; }
+  .bu-glow { opacity: 0; animation: bu-glow-in 0.5s var(--ease-out) 1.75s both, bu-rays 14s linear 1.75s infinite; }
+  .bu-halo { animation: bu-halo 1.2s var(--ease-out) 1.7s both; }
+  .bu-float { animation: bu-bob 1.6s var(--ease-in-out) both, bu-collect 0.7s var(--ease-spring) 1.7s both; }
   .bu-coin { animation: bu-spin 0.55s linear 3 both; }
-  .bu-medal::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: 0; width: 45%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent); opacity: 0; animation: bu-shine 0.9s ease 2.1s both; }
-  .bu-spark { animation: bu-spark 0.9s ease-out 1.75s both; }
-  .bu-a { animation: bu-jump 1.05s cubic-bezier(0.3, 0, 0.4, 1) 0.55s both; }
-  .bu-b { animation: bu-jump 1.05s cubic-bezier(0.3, 0, 0.4, 1) 0.7s both; }
-  .bu-in { animation: bu-rise 0.5s ease 2.35s both; }
-  .bu-in2 { animation: bu-rise 0.5s ease 2.6s both; }
-  .bu-in3 { animation: bu-rise 0.5s ease 2.85s both; }
+  .bu-medal::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: 0; width: 45%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent); opacity: 0; animation: bu-shine 0.9s var(--ease-out) 2.1s both; }
+  .bu-spark { animation: bu-spark 0.9s var(--ease-out) 1.75s both; }
+  .bu-a { animation: bu-jump 1.05s var(--ease-in-out) 0.55s both; }
+  .bu-b { animation: bu-jump 1.05s var(--ease-in-out) 0.7s both; }
+  .bu-in { animation: bu-rise 0.5s var(--ease-out) 2.35s both; }
+  .bu-in2 { animation: bu-rise 0.5s var(--ease-out) 2.6s both; }
+  .bu-in3 { animation: bu-rise 0.5s var(--ease-out) 2.85s both; }
 }
 @keyframes bu-bob { 0% { transform: translateY(-30px) scale(0.6); opacity: 0; } 25% { transform: translateY(0) scale(1); opacity: 1; } 60% { transform: translateY(-6px); } 100% { transform: translateY(0); } }
 @keyframes bu-spin { from { transform: perspective(500px) rotateY(0); } to { transform: perspective(500px) rotateY(360deg); } }
@@ -1944,18 +1958,18 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .kt-bezel { fill: url(#kt-g-bezel); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.28)); }
 .kt-well { fill: var(--kt-well); }
 .kt-tick { stroke: var(--color-text-muted); stroke-linecap: round; }
-.kt-arc { fill: none; stroke: var(--me-line); stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray 0.15s ease; }
+.kt-arc { fill: none; stroke: var(--me-line); stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray var(--dur-quick) var(--ease-out); }
 .kt-face { fill: url(#kt-g-face); filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.32)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.18)); }
 .kt-rim { fill: none; stroke: #fff; stroke-opacity: 0.55; stroke-width: 1; }
 .kt-groove { fill: none; stroke: var(--kt-face-lo); stroke-width: 1.5; }
-.kt-fin { transform-box: view-box; transform-origin: 100px 100px; transform: rotate(var(--kt-a)); transition: transform 0.15s ease; }
-.kt-pointer { fill: var(--me); }
+.kt-fin { transform-box: view-box; transform-origin: 100px 100px; transform: rotate(var(--kt-a)); transition: transform var(--dur-quick) var(--ease-out); }
+.kt-pointer { fill: var(--me-line); }
 .kt-done-face { display: flex; padding: 4px; border-radius: 50%; background: var(--color-bg); }
 .kt-done-face .kt { transform-origin: 50% 50%; }
 @media (prefers-reduced-motion: no-preference) {
-  .timer-card .kt-fin { animation: kt-wind 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  .timer-card .kt-arc { animation: kt-arc 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  .timer-pill.is-done .kt { animation: kt-ring 0.6s ease-in-out 3; }
+  .timer-card .kt-fin { animation: kt-wind 0.9s var(--ease-out) both; }
+  .timer-card .kt-arc { animation: kt-arc 0.9s var(--ease-out) both; }
+  .timer-pill.is-done .kt { animation: kt-ring 0.6s var(--ease-in-out) 3; }
 }
 @keyframes kt-wind { from { transform: rotate(0deg); } }
 @keyframes kt-arc { from { stroke-dasharray: 0 100; } }
@@ -1997,8 +2011,8 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 /* Tacked up one at a time, left to right: each print is pressed onto the
    fridge, then its pin pushes in with a small bounce, before the next. */
 @media (prefers-reduced-motion: no-preference) {
-  .most-made-print { animation: mm-place 0.4s cubic-bezier(0.2, 0.8, 0.3, 1) var(--d, 0s) backwards; }
-  .most-made-print::before { animation: mm-tack 0.32s cubic-bezier(0.3, 1.4, 0.5, 1) calc(var(--d, 0s) + 0.3s) backwards; }
+  .most-made-print { animation: mm-place 0.4s var(--ease-out) var(--d, 0s) backwards; }
+  .most-made-print::before { animation: mm-tack 0.32s var(--ease-spring) calc(var(--d, 0s) + 0.3s) backwards; }
 }
 @keyframes mm-place { 0% { opacity: 0; transform: translateY(-6px) rotate(0deg) scale(1.08); } 60% { opacity: 1; transform: rotate(var(--rot, 0deg)) scale(0.98); } 100% { transform: rotate(var(--rot, 0deg)) scale(1); } }
 @keyframes mm-tack { 0% { opacity: 0; transform: translateY(-14px) scale(1.6); } 70% { opacity: 1; transform: translateY(1px) scale(0.9); } 100% { transform: none; } }
@@ -2060,7 +2074,7 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
    it shows all at once. */
 @keyframes wc-reveal { from { clip-path: inset(-12px 100% -12px -12px); } to { clip-path: inset(-12px -12px -12px -12px); } }
 @media (prefers-reduced-motion: no-preference) {
-  .line-chart { animation: wc-reveal 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both; }
+  .line-chart { animation: wc-reveal 1.4s var(--ease-in-out) 0.2s both; }
 }
 
 /* The podium builds up on first load: third place's step rises and its
@@ -2070,16 +2084,16 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 @keyframes pd-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes pd-drop { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pd-win {
-  0% { opacity: 0; transform: translateY(-16px); animation-timing-function: ease-out; }
-  28% { opacity: 1; transform: translateY(0); animation-timing-function: ease-out; }
+  0% { opacity: 0; transform: translateY(-16px); animation-timing-function: var(--ease-out); }
+  28% { opacity: 1; transform: translateY(0); animation-timing-function: var(--ease-out); }
   52% { transform: translateY(-22px); animation-timing-function: ease-in; }
-  74% { transform: translateY(0); animation-timing-function: ease-out; }
+  74% { transform: translateY(0); animation-timing-function: var(--ease-out); }
   86% { transform: translateY(-6px); animation-timing-function: ease-in; }
   100% { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .podium-step { transform-origin: 50% 100%; animation: pd-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  .podium-place a { animation: pd-drop 0.4s ease-out both; }
+  .podium-step { transform-origin: 50% 100%; animation: pd-rise 0.45s var(--ease-out) both; }
+  .podium-place a { animation: pd-drop 0.4s var(--ease-out) both; }
   .podium-place.is-3 .podium-step { animation-delay: 0.1s; }
   .podium-place.is-3 a { animation-delay: 0.45s; }
   .podium-place.is-2 .podium-step { animation-delay: 0.7s; }
@@ -2088,7 +2102,7 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .podium-place.is-1 a { animation: none; }
   .podium-place.is-1 .podium-photo { animation: pd-win 1.1s linear 1.65s both; }
   .podium-place.is-1 .podium-title,
-  .podium-place.is-1 .podium-stars { animation: pd-drop 0.4s ease-out 1.65s both; }
+  .podium-place.is-1 .podium-stars { animation: pd-drop 0.4s var(--ease-out) 1.65s both; }
 }
 
 /* Stats: animations wait until their section first scrolls into view
@@ -2098,7 +2112,7 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 /* Cuisines: each bar grows in from the left, one after another. */
 @keyframes mt-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: no-preference) {
-  .share-list .meter > span { transform-origin: 0 50%; animation: mt-grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .share-list .meter > span { transform-origin: 0 50%; animation: mt-grow 0.7s var(--ease-out) both; }
   .share-list > li:nth-child(2) .meter > span { animation-delay: 0.15s; }
   .share-list > li:nth-child(3) .meter > span { animation-delay: 0.3s; }
   .share-list > li:nth-child(4) .meter > span { animation-delay: 0.45s; }
@@ -2111,15 +2125,15 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
    fades in. Delays come from --pop and --land. Reduced motion: no
    jumping. */
 @keyframes pie-pop { 0% { transform: translate(0, 0); } 45% { transform: translate(calc(var(--dx) * 3.2), calc(var(--dy) * 3.2)); } 100% { transform: translate(0, 0); } }
-@keyframes pie-land { 0% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1); } 55% { transform: translate(calc(var(--dx) * 2.6), calc(var(--dy) * 2.6)); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); } 100% { transform: translate(var(--dx), var(--dy)); } }
+@keyframes pie-land { 0% { transform: translate(0, 0); animation-timing-function: var(--ease-in-out); } 55% { transform: translate(calc(var(--dx) * 2.6), calc(var(--dy) * 2.6)); animation-timing-function: var(--ease-in-out); } 100% { transform: translate(var(--dx), var(--dy)); } }
 @keyframes pie-fade { from { opacity: 0; } to { opacity: 1; } }
-.pie-slice { transition: transform 0.25s ease; }
+.pie-slice { transition: transform var(--dur-settle) var(--ease-out); }
 @media (prefers-reduced-motion: no-preference) {
-  .pie-slice { animation: pie-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) var(--pop, 0s) backwards; }
+  .pie-slice { animation: pie-pop 0.5s var(--ease-spring) var(--pop, 0s) backwards; }
   /* Listed first so the round's pop wins while it runs; the land holds the
      slice in place until its turn, then ends where the slice rests. */
-  .pie-slice.is-largest { animation: pie-land 0.8s linear var(--land, 0s) backwards, pie-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) var(--pop, 0s) backwards; }
-  .pie-pct, .pie-label { animation: pie-fade 0.4s ease backwards; }
+  .pie-slice.is-largest { animation: pie-land 0.8s linear var(--land, 0s) backwards, pie-pop 0.5s var(--ease-spring) var(--pop, 0s) backwards; }
+  .pie-pct, .pie-label { animation: pie-fade 0.4s var(--ease-out) backwards; }
 }
 
 /* Stats: Top ingredients as a mosaic. --r is each one's share of the top
@@ -2157,7 +2171,7 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .btn:not(.btn-secondary) {
   background: var(--me-fill);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 0 color-mix(in srgb, var(--me) 62%, #000), 0 10px 14px -8px rgba(0, 0, 0, 0.4);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  transition: transform var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out);
 }
 .btn:not(.btn-secondary):hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--me-ink), 0 4px 0 color-mix(in srgb, var(--me) 62%, #000), 0 10px 14px -8px rgba(0, 0, 0, 0.4); }
 .btn:not(.btn-secondary):active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 0 color-mix(in srgb, var(--me) 62%, #000); }
@@ -2166,7 +2180,7 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   border: 1px solid var(--color-divider);
   background: linear-gradient(180deg, var(--color-surface), var(--color-subtle));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 0 var(--color-divider), 0 8px 12px -8px rgba(0, 0, 0, 0.35);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  transition: transform var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out);
 }
 .stepper .btn-secondary:active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 0 var(--color-divider); }
 /* Step and list checkboxes: a socket set into the page; checked, it fills
@@ -2204,7 +2218,7 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 }
 .choice input[type='checkbox']:focus-visible, .check-row input[type='checkbox']:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
 @media (prefers-reduced-motion: no-preference) {
-  .choice input[type='checkbox']:checked::after, .check-row input[type='checkbox']:checked::after { animation: check-stamp 0.28s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+  .choice input[type='checkbox']:checked::after, .check-row input[type='checkbox']:checked::after { animation: check-stamp 0.28s var(--ease-spring) both; }
 }
 @keyframes check-stamp { from { opacity: 0; transform: rotate(45deg) scale(1.8); } to { opacity: 1; transform: rotate(45deg) scale(1); } }
 
@@ -2288,7 +2302,7 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   .ingredient-mosaic > li::after { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0)); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .ingredient-mosaic > li { animation: mg-snap 0.45s cubic-bezier(0.3, 1.3, 0.5, 1) var(--d, 0s) backwards; }
+  .ingredient-mosaic > li { animation: mg-snap 0.45s var(--ease-spring) var(--d, 0s) backwards; }
 }
 @keyframes mg-snap { 0% { opacity: 0; transform: translateY(-10px) rotate(0deg) scale(1.04); } 70% { opacity: 1; transform: translateY(1px) rotate(var(--tilt, 0deg)) scale(0.99); } 100% { transform: translateY(0) rotate(var(--tilt, 0deg)) scale(1); } }
 
@@ -2323,3 +2337,21 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
 .scene.is-compact .clay-counter { height: 24px; border-radius: 12px 12px 0 0; }
 .scene.is-compact.is-home .scene-cooks { bottom: 12px; }
 
+
+/* Windows High Contrast and other forced-color modes replace colors with
+   the system palette and drop backgrounds and shadows, so filled and gray
+   buttons, checkboxes and cards would lose their edges. Give them a
+   system-color border; focus rings use the system highlight. */
+@media (forced-colors: active) {
+  .btn, .btn-secondary, .chip-btn, .fab, .icon-btn, .timer-inner-btn, .smart-go, .tab[aria-selected='true'],
+  .choice input[type='checkbox'], .check-row input[type='checkbox'],
+  .card, .timer-card, .timer-pill, .bottom-nav, .ingredient-mosaic > li, .badge-medal {
+    border: 1px solid CanvasText;
+  }
+  .btn:not(.btn-secondary), .fab { border-color: ButtonText; }
+  .bottom-nav a[aria-current='page'] { outline: 2px solid Highlight; }
+  :focus-visible { outline-color: Highlight; }
+  .ingredient-mosaic > li::before, .ingredient-mosaic > li::after { display: none; }
+  /* Icons drawn in your color take the system text color instead. */
+  .icon { color: inherit !important; }
+}

@@ -41,7 +41,7 @@ export default function SignIn() {
           </button>
           <p className="hint flow-note">
             {invited
-              ? "You've been invited to a shared kitchen. Create an account or sign in to join it."
+              ? "You’ve been invited to a shared kitchen. Create an account or sign in to join it."
               : 'Got an invite from your partner? Open their link to join their kitchen.'}
           </p>
         </div>

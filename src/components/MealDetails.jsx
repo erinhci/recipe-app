@@ -63,7 +63,7 @@ export default function MealDetails({ recipe, meal, changes, online }) {
         </span>
       ) : (
         servings &&
-        !recipe.nutrition?.items?.length && <span className="meal-nutrition">Estimate the recipe's nutrition to see this cook's.</span>
+        !recipe.nutrition?.items?.length && <span className="meal-nutrition">Estimate the recipe’s nutrition to see this cook’s.</span>
       )}
       {totals && changeTexts.length > 0 && !estimated && (
         <button className="link-btn" type="button" onClick={estimate} disabled={!online || busy}>

@@ -1,13 +1,27 @@
 [
   {
+    "version": "0.40.7",
+    "date": "2026-10-22",
+    "notes": [
+      "Fixed amounts like “2 cupses” when a unit was saved in the plural",
+      "Steps show number ranges with an en dash, like “cook 3–4 minutes”",
+      "Apostrophes across the app are typographic (’), and a test keeps them that way",
+      "Paragraphs avoid leaving one word alone on the last line",
+      "Animations share one set of speeds and curves; only celebrations bounce",
+      "With reduced motion on, the loading indicator fades slowly instead of sitting still",
+      "The current-step bar and timer pointer use the darker shade of your color so they stand out on the page",
+      "Buttons, checkboxes and cards keep visible edges in Windows High Contrast"
+    ]
+  },
+  {
     "version": "0.40.6",
     "date": "2026-10-22",
     "notes": [
       "Buttons filled with the ocean color are easier to read: the fill now darkens under white text",
       "Top ingredients in dark mode keep their text readable with every cook color",
       "Stats, the avatar tabs and cook mode no longer cut off text on narrow phones or with large text",
-      "Post, Reply, Log it, Ask and the add-recipe arrow stay tappable when empty and say what's missing",
-      "Small text is 12px or larger and every size follows your phone's text size setting",
+      "Post, Reply, Log it, Ask and the add-recipe arrow stay tappable when empty and say what’s missing",
+      "Small text is 12px or larger and every size follows your phone’s text size setting",
       "Step numbers in Coming up sit inside the page margin again"
     ]
   },
@@ -18,7 +32,7 @@
       "Ingredients with a note after the name, like \"2 large eggs (optional)\" or \"garlic, minced\", now show in the steps that use them",
       "Top ingredients shows six and leaves out pantry basics like oils, salt, sugar, flour and butter",
       "A timer for a range like 18 to 20 minutes stops at 18 with Check it and a button for the last 2 minutes",
-      "Add a minute to any timer, while it runs or after time's up"
+      "Add a minute to any timer, while it runs or after time’s up"
     ]
   },
   {
@@ -56,7 +70,7 @@
     "date": "2026-10-19",
     "notes": [
       "Avatars are back to the line style",
-      "Two-chef mode: panels and step cards are light glass tinted with each cook's color; steps you do together fade from your color into theirs",
+      "Two-chef mode: panels and step cards are light glass tinted with each cook’s color; steps you do together fade from your color into theirs",
       "Top ingredients look like laminated fridge magnets and snap on when you scroll to them",
       "Badges look like enamel pins in your color",
       "The kitchen scene is soft clay, with a window light and a counter"
@@ -178,7 +192,7 @@
     "version": "0.35.0",
     "date": "2026-10-19",
     "notes": [
-      "Your color now shows across the app: the current step's bar in cooking mode, the step you're reading, the active tab, progress bars, the meals-by-week dots, first place on the podium and the kitchen timer's pointer"
+      "Your color now shows across the app: the current step’s bar in cooking mode, the step you’re reading, the active tab, progress bars, the meals-by-week dots, first place on the podium and the kitchen timer’s pointer"
     ]
   },
   {
@@ -186,7 +200,7 @@
     "date": "2026-10-19",
     "notes": [
       "Two-chef mode opens scrolled to your parts and the current step",
-      "Each cook's part shows in their color"
+      "Each cook’s part shows in their color"
     ]
   },
   {
@@ -207,7 +221,7 @@
     "version": "0.34.0",
     "date": "2026-10-19",
     "notes": [
-      "Top rated on Stats is a podium: first, second and third place with each recipe's photo and rating"
+      "Top rated on Stats is a podium: first, second and third place with each recipe’s photo and rating"
     ]
   },
   {
@@ -251,10 +265,10 @@
     "date": "2026-10-13",
     "notes": [
       "The Settings tab shows your avatar in your color",
-      "In cooking mode and two-chef mode, the step comes first, then its timer and what you'll need",
+      "In cooking mode and two-chef mode, the step comes first, then its timer and what you’ll need",
       "A step only lists the ingredients it uses: \"onion\" no longer matches \"green onion\", and \"egg mixture\" no longer lists the eggs",
       "Your kitchen scene in Settings has a border in your color",
-      "Two-chef mode's band sits above the title, with both cooks' names",
+      "Two-chef mode’s band sits above the title, with both cooks' names",
       "Badges are larger, two across, and the filter sheet has a handle"
     ]
   },
@@ -263,7 +277,7 @@
     "date": "2026-10-13",
     "notes": [
       "When an ingredient is listed prepped, like \"1/2 onion, diced\", adding or editing the recipe offers the prep as steps to confirm",
-      "Two-chef mode points out prep that isn't in the steps yet, so it can be split too"
+      "Two-chef mode points out prep that isn’t in the steps yet, so it can be split too"
     ]
   },
   {
@@ -277,7 +291,7 @@
     "version": "0.30.1",
     "date": "2026-10-13",
     "notes": [
-      "New cook colors: berry, orange, green, ocean and violet. If you'd picked a color before, you get the closest new one"
+      "New cook colors: berry, orange, green, ocean and violet. If you’d picked a color before, you get the closest new one"
     ]
   },
   {
@@ -285,9 +299,9 @@
     "date": "2026-10-13",
     "notes": [
       "Your avatar has a Look tab: 12 skin tones and 15 hair styles, including braids, locs, puffs, a bob and a mullet. Nothing there is locked",
-      "Tap your portrait, or the scene on Scenes and Poses, to share it as an image. If your phone can't share images, it saves to your downloads",
+      "Tap your portrait, or the scene on Scenes and Poses, to share it as an image. If your phone can’t share images, it saves to your downloads",
       "The beanie is white now, so it shows on dark hair",
-      "In Settings, your partner's color shows their face and says it's theirs"
+      "In Settings, your partner’s color shows their face and says it’s theirs"
     ]
   },
   {
@@ -302,8 +316,8 @@
     "date": "2026-10-13",
     "notes": [
       "Avatars: each cook has one, shown together in a scene at the top of Settings. Tap it to change outfits, hats, the scene and your pose together",
-      "Badges unlock new outfits, hats, scenes and poses. The Badges page says what each one unlocks and what's next",
-      "Pick your own color in Settings. It marks your steps in two-chef mode, with your avatar's face on each step",
+      "Badges unlock new outfits, hats, scenes and poses. The Badges page says what each one unlocks and what’s next",
+      "Pick your own color in Settings. It marks your steps in two-chef mode, with your avatar’s face on each step",
       "Notes can be liked and replied to",
       "New welcome, sign-in and setup screens, one question at a time",
       "Needs the newest database update (migration 0014) for colors, avatars, likes and replies to sync"
@@ -334,7 +348,7 @@
     "version": "0.27.1",
     "date": "2026-10-13",
     "notes": [
-      "Recipe photos: tap a photo to see it with its options. Your own photos show an Edit tag and can be replaced or removed there. The last slide always says Add photo, for the latest meal you haven't added one to",
+      "Recipe photos: tap a photo to see it with its options. Your own photos show an Edit tag and can be replaced or removed there. The last slide always says Add photo, for the latest meal you haven’t added one to",
       "Checking a recipe: section names like \"Sauce\" show as headings in \"How the ingredients were read\", not as bullet points"
     ]
   },
@@ -361,18 +375,18 @@
     "date": "2026-10-13",
     "notes": [
       "A cleaner look: softer corners, gray fills instead of outlines, and quieter secondary buttons",
-      "Cooking: the step's ingredients now sit in their own card above the step, nutrition is one tap away, and steps that wait 3 minutes or more have a timer that keeps running when you move on",
-      "Two-chef mode has a band at the top so it's clear which mode you're in, the other cook's steps open with a tap, and the time-left estimate is gone",
+      "Cooking: the step’s ingredients now sit in their own card above the step, nutrition is one tap away, and steps that wait 3 minutes or more have a timer that keeps running when you move on",
+      "Two-chef mode has a band at the top so it’s clear which mode you’re in, the other cook’s steps open with a tap, and the time-left estimate is gone",
       "Library: filter and sort are two buttons next to search; filters open in a sheet",
       "Add a recipe: one field for a link or pasted text, then Camera, Photos and PDF",
-      "Settings is one short list; Kitchen, Recently deleted and What's new open in place, and sync is a button by the title"
+      "Settings is one short list; Kitchen, Recently deleted and What’s new open in place, and sync is a button by the title"
     ]
   },
   {
     "version": "0.25.2",
     "date": "2026-10-13",
     "notes": [
-      "\"You'll need\" lists the right ingredients: when a recipe lists something twice (water for the pudding and water for the syrup), each step shows only its own, and a passing mention like \"water droplets\" no longer counts",
+      "\"You’ll need\" lists the right ingredients: when a recipe lists something twice (water for the pudding and water for the syrup), each step shows only its own, and a passing mention like \"water droplets\" no longer counts",
       "Keeping the screen on while cooking works on iPhone: if the phone refuses at first, your next tap turns it on"
     ]
   },
@@ -381,7 +395,7 @@
     "date": "2026-10-11",
     "notes": [
       "Main buttons sit on the right, within reach of your thumb: Save recipe, Sort it, Choose files, Estimate again, Sync now, Edit",
-      "Ways out and deletes sit on the far left of the same row, so they're harder to hit by mistake: Cancel, Delete, Delete forever (now well apart from Restore), Stop cooking (now with space above it, away from Log it)"
+      "Ways out and deletes sit on the far left of the same row, so they’re harder to hit by mistake: Cancel, Delete, Delete forever (now well apart from Restore), Stop cooking (now with space above it, away from Log it)"
     ]
   },
   {
@@ -398,19 +412,19 @@
     "date": "2026-10-11",
     "notes": [
       "Units are set once, in Settings (or when you set up), and every recipe and cooking mode follows them. In metric, cup amounts show in milliliters at any size; spoon measures stay spoons",
-      "Two chefs: the plan at the top is gone, since the step list already shows your steps in full and the other cook's as reminders",
-      "Two chefs: steps are labeled You (filled), the other cook (dashed), or Together, and the other cook's current step has a dashed outline"
+      "Two chefs: the plan at the top is gone, since the step list already shows your steps in full and the other cook’s as reminders",
+      "Two chefs: steps are labeled You (filled), the other cook (dashed), or Together, and the other cook’s current step has a dashed outline"
     ]
   },
   {
     "version": "0.23.0",
     "date": "2026-10-11",
     "notes": [
-      "Steps are easier to scan: actions, amounts, temperatures, and times are bold, and the step you're reading stands out as you scroll",
+      "Steps are easier to scan: actions, amounts, temperatures, and times are bold, and the step you’re reading stands out as you scroll",
       "Ask about a step: tap one of the likely questions for that step, or type your own. Ask sits to the right of the field",
-      "Changes this time: log what you changed while cooking (like 2 more eggs). It's saved with that day's cook, and you can update the recipe from it",
+      "Changes this time: log what you changed while cooking (like 2 more eggs). It’s saved with that day’s cook, and you can update the recipe from it",
       "Each cook in the log shows how many servings you made, your changes, and nutrition for what you actually made",
-      "Two chefs: a plan of your steps and times up front, and the other cook's steps as one-line reminders you can expand",
+      "Two chefs: a plan of your steps and times up front, and the other cook’s steps as one-line reminders you can expand",
       "Library: search (titles, cuisines, ingredients), sort, and filter by meal type, cuisine, or not made yet"
     ]
   },
@@ -438,7 +452,7 @@
     "date": "2026-10-11",
     "notes": [
       "Two-chef mode: checking off a step also checks your earlier steps, and checking a shared step checks both parts before it, so you can catch up with one tap. Undo is next to the message",
-      "Shared steps no longer wait for the other cook's check-offs. If their part isn't checked off, the step says so and you start when you're both ready"
+      "Shared steps no longer wait for the other cook’s check-offs. If their part isn’t checked off, the step says so and you start when you’re both ready"
     ]
   },
   {
@@ -499,9 +513,9 @@
     "version": "0.15.0",
     "date": "2026-10-11",
     "notes": [
-      "Add cooking time from a recipe's cook log, for when you didn't use cooking mode",
-      "The cook log shows each day's cooking time, and you can remove it",
-      "Time from cooking mode on a day that wasn't logged now shows in the cook log too"
+      "Add cooking time from a recipe’s cook log, for when you didn’t use cooking mode",
+      "The cook log shows each day’s cooking time, and you can remove it",
+      "Time from cooking mode on a day that wasn’t logged now shows in the cook log too"
     ]
   },
   {
@@ -535,9 +549,9 @@
     "version": "0.11.0",
     "date": "2026-10-11",
     "notes": [
-      "Settings shows a version number and what's new in it, with earlier versions underneath",
+      "Settings shows a version number and what’s new in it, with earlier versions underneath",
       "The update banner says which version is ready and what it changes",
-      "After an update, the app shows what's new once"
+      "After an update, the app shows what’s new once"
     ],
     "commit": "e341f26"
   },
@@ -546,7 +560,7 @@
     "date": "2026-10-11",
     "commit": "a947736",
     "notes": [
-      "Imported screenshots and PDFs aren't kept after you save; they show only while you check the recipe",
+      "Imported screenshots and PDFs aren’t kept after you save; they show only while you check the recipe",
       "Import picks up who a recipe is credited to, and the recipe shows \"From ...\"",
       "New Credit field when adding or editing a recipe"
     ]
@@ -556,7 +570,7 @@
     "date": "2026-10-11",
     "commit": "ea8e5ef",
     "notes": [
-      "Recipe cards in the Library show the average rating and how often you've made it",
+      "Recipe cards in the Library show the average rating and how often you’ve made it",
       "The update banner stays pinned to the top of the screen, and the app checks for updates more often"
     ]
   },
@@ -591,7 +605,7 @@
     "date": "2026-10-11",
     "commit": "f39d1d0",
     "notes": [
-      "Changes from a note cover every part of the note, and anything Gemini couldn't apply is flagged",
+      "Changes from a note cover every part of the note, and anything Gemini couldn’t apply is flagged",
       "Saving a change from a note no longer posts a duplicate note",
       "You can delete notes you wrote"
     ]

@@ -7,9 +7,9 @@ export async function invokeFunction(name, body) {
   if (!error) return { ok: true, data }
 
   const status = error.context?.status ?? 0
-  let message = "Couldn't reach the server. Check the connection and try again."
+  let message = "Couldn’t reach the server. Check the connection and try again."
   if (status === 404) {
-    message = `This feature isn't set up yet. Deploy the ${name} function in Supabase.`
+    message = `This feature isn’t set up yet. Deploy the ${name} function in Supabase.`
   } else if (error.context && typeof error.context.json === 'function') {
     try {
       const payload = await error.context.json()

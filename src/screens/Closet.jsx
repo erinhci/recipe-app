@@ -45,7 +45,7 @@ function badgeLabel(key) {
 const SHARE_MESSAGES = {
   shared: 'Shared.',
   downloaded: 'Image saved to your downloads.',
-  failed: "Couldn't share the image. Try again.",
+  failed: "Couldn’t share the image. Try again.",
   cancelled: '',
 }
 
@@ -222,7 +222,7 @@ export default function Closet() {
           </button>
           <p className="hint with-icon">
             <Icon name="users" size={18} />
-            Shared with {partner?.name ?? 'your partner'}. It's how you both show at the top of Settings.
+            Shared with {partner?.name ?? 'your partner'}. It’s how you both show at the top of Settings.
           </p>
         </div>
       ) : (

@@ -178,7 +178,7 @@ export default function RecipeEdit() {
   if (!isNew && !existing) {
     return (
       <Page title="Recipe not found">
-        <p>This recipe isn't on this phone. It may have been deleted.</p>
+        <p>This recipe isn’t on this phone. It may have been deleted.</p>
       </Page>
     )
   }
@@ -196,12 +196,12 @@ export default function RecipeEdit() {
           </p>
           <OriginalPanel originals={incoming.originals} />
           {incoming.originals?.files?.length > 0 && (
-            <p className="hint">The original isn't kept after saving; credit goes in Credit.</p>
+            <p className="hint">The original isn’t kept after saving; credit goes in Credit.</p>
           )}
         </>
       )}
       {proposed && (
-        <p>Gemini's suggested change is filled in below. Adjust it, then save. Nothing is saved until you do.</p>
+        <p>Gemini’s suggested change is filled in below. Adjust it, then save. Nothing is saved until you do.</p>
       )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="field">

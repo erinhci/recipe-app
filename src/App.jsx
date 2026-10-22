@@ -89,7 +89,7 @@ function Shell() {
       <MyColor />
       {!online && (
         <p className="offline-banner" role="status">
-          You're offline. Recipes still work; changes sync when you reconnect.
+          You’re offline. Recipes still work; changes sync when you reconnect.
         </p>
       )}
       <Routes>
@@ -108,7 +108,7 @@ function Shell() {
         <Route path="/settings" element={<Settings />} />
         <Route
           path="*"
-          element={<ComingSoon title="Not found" description="That page doesn't exist." />}
+          element={<ComingSoon title="Not found" description="That page doesn’t exist." />}
         />
       </Routes>
       {!cooking && <BottomNav />}
