@@ -5,6 +5,7 @@ import Icon from '../components/Icon'
 import Working from '../components/Working'
 import { useOnline } from '../lib/useOnline'
 import { draftToForm, importImages, importPdf, importUrl, prepareImages, textToForm } from '../lib/importRecipe'
+import { useRequired } from '../lib/useRequired'
 
 const hasRecipe = (draft) => Boolean(draft && (draft.ingredients?.length || draft.ingredient_lines?.length || draft.steps?.length))
 
@@ -22,6 +23,7 @@ export default function Import() {
 
   const [files, setFiles] = useState(null) // { kind: 'images' | 'pdf', list }
   const [pasted, setPasted] = useState('')
+  const required = useRequired('pasted', 'Paste a link or a recipe first.')
   const [busy, setBusy] = useState('') // which source is working
   const [status, setStatus] = useState('')
   const [progress, setProgress] = useState('')
@@ -128,7 +130,7 @@ export default function Import() {
   function submitField(event) {
     event.preventDefault()
     const text = pasted.trim()
-    if (!text) return
+    if (!required.check(text)) return
     if (validUrl(text)) {
       if (online) readWithGemini('url', text)
       else setFailure({ source: 'url', message: 'Links need a connection. Paste the recipe text instead, or try again online.' })
@@ -177,15 +179,20 @@ export default function Import() {
             id="pasted"
             rows={4}
             value={pasted}
-            onChange={(e) => setPasted(e.target.value)}
+            ref={required.ref}
+            onChange={(e) => {
+              setPasted(e.target.value)
+              required.clear()
+            }}
             onPaste={pasteIntoField}
-            aria-describedby="pasted-hint"
+            {...required.field('pasted-hint')}
             placeholder="https://… or the whole recipe"
           />
-          <button className="smart-go" type="submit" aria-label={busy === 'url' ? 'Reading' : 'Read recipe'} disabled={!pasted.trim() || !!busy}>
+          <button className="smart-go" type="submit" aria-label={busy === 'url' ? 'Reading' : 'Read recipe'} disabled={!!busy}>
             <Icon name="arrow" size={22} />
           </button>
         </div>
+        {required.error}
         <p id="pasted-hint" className="hint" style={{ margin: 'var(--space-2) 0 0' }}>
           {online ? 'Links read right away. Pasted text works offline.' : 'Pasted text works offline. Links need a connection.'}
         </p>

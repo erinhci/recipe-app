@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.40.6",
+    "date": "2026-10-22",
+    "notes": [
+      "Buttons filled with the ocean color are easier to read: the fill now darkens under white text",
+      "Top ingredients in dark mode keep their text readable with every cook color",
+      "Stats, the avatar tabs and cook mode no longer cut off text on narrow phones or with large text",
+      "Post, Reply, Log it, Ask and the add-recipe arrow stay tappable when empty and say what's missing",
+      "Small text is 12px or larger and every size follows your phone's text size setting",
+      "Step numbers in Coming up sit inside the page margin again"
+    ]
+  },
+  {
     "version": "0.40.5",
     "date": "2026-10-20",
     "notes": [

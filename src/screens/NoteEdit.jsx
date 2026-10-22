@@ -225,7 +225,7 @@ export default function NoteEdit() {
           <ul className="plain-list">
             {result.items.map((item) => (
               <li key={`${item.target}-${item.action}-${item.number}-${item.after}`} className="card">
-                <h3 style={{ fontSize: '1rem', margin: '0 0 var(--space-2)' }}>{itemHeading(item)}</h3>
+                <h3 style={{ fontSize: 'var(--text-base)', margin: '0 0 var(--space-2)' }}>{itemHeading(item)}</h3>
                 {item.reason && (
                   <p className="hint" style={{ margin: '0 0 var(--space-2)' }}>
                     {item.reason}

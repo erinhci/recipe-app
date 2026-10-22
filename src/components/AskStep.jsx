@@ -3,6 +3,7 @@ import Working from './Working'
 import { askStep } from '../lib/askStep'
 import { ingredientLine, scaledStepString } from '../lib/cooking'
 import { fetchQuestions, savedQuestions } from '../lib/stepQuestions'
+import { useRequired } from '../lib/useRequired'
 
 // "Ask about this step": tap a likely question for the step, or type your
 // own. Gemini answers for this recipe at the amounts shown. Answers stay
@@ -13,6 +14,7 @@ export default function AskStep({ recipe, steps, ingredients, factor, system, se
   const [asking, setAsking] = useState(false)
   const [suggested, setSuggested] = useState(null) // one list per step
   const id = useId()
+  const required = useRequired(`${id}-question`, 'Type a question first.')
   const stepAnswers = answers[stepIndex] ?? []
 
   // Saved suggestions first; fetched once when there are none.
@@ -87,7 +89,7 @@ export default function AskStep({ recipe, steps, ingredients, factor, system, se
         className="inline-form"
         onSubmit={(event) => {
           event.preventDefault()
-          ask(question.trim())
+          if (required.check(question)) ask(question.trim())
         }}
       >
         <div className="field">
@@ -98,17 +100,22 @@ export default function AskStep({ recipe, steps, ingredients, factor, system, se
             id={`${id}-question`}
             type="text"
             value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            ref={required.ref}
+            onChange={(e) => {
+              setQuestion(e.target.value)
+              required.clear()
+            }}
             placeholder={chips.length ? 'Or ask your own' : 'Ask about this step'}
             maxLength={500}
             disabled={!online}
-            aria-describedby={`${id}-hint`}
+            {...required.field(`${id}-hint`)}
           />
         </div>
-        <button className="btn btn-secondary" type="submit" disabled={!online || asking || !question.trim()}>
+        <button className="btn btn-secondary" type="submit" disabled={!online || asking}>
           {asking ? 'Asking…' : 'Ask'}
         </button>
       </form>
+      {required.error}
       <p id={`${id}-hint`} className="hint" style={{ margin: online ? 0 : 'var(--space-2) 0 0' }}>
         {online ? '' : 'Questions need the internet.'}
       </p>

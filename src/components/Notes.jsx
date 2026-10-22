@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import { AvatarFace } from './Avatar'
 import { addNote, deleteNote, toggleLike } from '../lib/data'
+import { useRequired } from '../lib/useRequired'
 
 const shortDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
 
@@ -22,13 +23,14 @@ export function notesSummary(notes) {
 // people: from useKitchenPeople, for faces and colors.
 export default function Notes({ recipe, notes, likes, member, people, nameFor, changesFromNote, online }) {
   const [text, setText] = useState('')
+  const required = useRequired('note', 'Write a note first.')
   const [replyTo, setReplyTo] = useState(null) // note id
   const top = notes.filter((n) => !n.parent_id || !notes.some((p) => p.id === n.parent_id))
   const repliesTo = (id) => notes.filter((n) => n.parent_id === id)
 
   async function post(event) {
     event.preventDefault()
-    if (!text.trim()) return
+    if (!required.check(text)) return
     await addNote(recipe.id, text, member)
     setText('')
   }
@@ -64,11 +66,23 @@ export default function Notes({ recipe, notes, likes, member, people, nameFor, c
         <label htmlFor="note" className="sr-only">
           Add a note
         </label>
-        <textarea id="note" rows={2} placeholder="Add a note…" value={text} onChange={(e) => setText(e.target.value)} />
-        <button className="btn" type="submit" disabled={!text.trim()}>
+        <textarea
+          ref={required.ref}
+          id="note"
+          rows={2}
+          placeholder="Add a note…"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value)
+            required.clear()
+          }}
+          {...required.field()}
+        />
+        <button className="btn" type="submit">
           Post
         </button>
       </form>
+      {required.error}
     </>
   )
 }
@@ -198,14 +212,15 @@ function Note({ note, replies = [], likes, member, people, nameFor, used, usedBy
 
 function ReplyForm({ recipe, parent, member, owner, onDone }) {
   const [text, setText] = useState('')
-  const ref = useRef(null)
+  const id = `reply-${parent.id}`
+  const required = useRequired(id, 'Write a reply first.')
+  const { ref } = required
   useEffect(() => {
     ref.current?.focus()
-  }, [])
-  const id = `reply-${parent.id}`
+  }, [ref])
   async function post(event) {
     event.preventDefault()
-    if (!text.trim()) return
+    if (!required.check(text)) return
     await addNote(recipe.id, text, member, null, parent.id)
     onDone()
   }
@@ -221,13 +236,18 @@ function ReplyForm({ recipe, parent, member, owner, onDone }) {
           rows={2}
           placeholder="Write a reply…"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value)
+            required.clear()
+          }}
           onKeyDown={(e) => e.key === 'Escape' && onDone()}
+          {...required.field()}
         />
-        <button className="btn" type="submit" disabled={!text.trim()}>
+        <button className="btn" type="submit">
           Reply
         </button>
       </form>
+      {required.error}
     </li>
   )
 }

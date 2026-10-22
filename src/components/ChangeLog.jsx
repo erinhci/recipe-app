@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
 import { addNote, localDate } from '../lib/data'
+import { useRequired } from '../lib/useRequired'
 
 // Changes made while cooking ("added a teaspoon of chicken bouillon",
 // "2 more eggs"). Each is saved with today's cook, so the recipe stays as
@@ -11,6 +12,7 @@ export default function ChangeLog({ recipeId, member }) {
   const [text, setText] = useState('')
   const [status, setStatus] = useState('')
   const id = useId()
+  const required = useRequired(`${id}-change`, 'Write what you changed first.')
   const today = localDate()
   const changes =
     useLiveQuery(
@@ -25,7 +27,7 @@ export default function ChangeLog({ recipeId, member }) {
 
   async function save(event) {
     event.preventDefault()
-    if (!text.trim()) return
+    if (!required.check(text)) return
     await addNote(recipeId, text, member, today)
     setText('')
     setStatus("Saved with today's cook. The recipe stays as written.")
@@ -52,21 +54,24 @@ export default function ChangeLog({ recipeId, member }) {
             A change you made
           </label>
           <input
+            ref={required.ref}
             id={`${id}-change`}
             type="text"
             value={text}
             placeholder="Added 2 more eggs…"
-            aria-describedby={`${id}-hint`}
             onChange={(e) => {
               setText(e.target.value)
               setStatus('')
+              required.clear()
             }}
+            {...required.field(`${id}-hint`)}
           />
         </div>
-        <button className="btn btn-secondary" type="submit" disabled={!text.trim()}>
+        <button className="btn btn-secondary" type="submit">
           Log it
         </button>
       </form>
+      {required.error}
       <p id={`${id}-hint`} className="hint" role="status" style={{ margin: status ? 'var(--space-2) 0 0' : 0 }}>
         {status}
       </p>

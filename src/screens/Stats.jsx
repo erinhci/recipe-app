@@ -88,23 +88,27 @@ export function WeeklyChart({ weeks }) {
           <span key={week.start.toISOString()}>{i === weeks.length - 1 ? 'This wk' : shortDay.format(week.start)}</span>
         ))}
       </div>
-      <table className="sr-only">
-        <caption>Meals cooked each week</caption>
-        <thead>
-          <tr>
-            <th scope="col">Week of</th>
-            <th scope="col">Meals</th>
-          </tr>
-        </thead>
-        <tbody>
-          {weeks.map((week) => (
-            <tr key={week.start.toISOString()}>
-              <td>{shortDay.format(week.start)}</td>
-              <td>{week.count}</td>
+      {/* Hidden in a div: a table ignores the 1px width of .sr-only and
+          would widen the page at large text sizes. */}
+      <div className="sr-only">
+        <table>
+          <caption>Meals cooked each week</caption>
+          <thead>
+            <tr>
+              <th scope="col">Week of</th>
+              <th scope="col">Meals</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {weeks.map((week) => (
+              <tr key={week.start.toISOString()}>
+                <td>{shortDay.format(week.start)}</td>
+                <td>{week.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   )
 }

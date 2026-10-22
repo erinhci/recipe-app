@@ -462,7 +462,7 @@ export default function RecipeView() {
                 }}
               />
             </div>
-            <button className="btn" type="submit" disabled={!logDate || Boolean(sameDay)}>
+            <button className="btn" type="submit">
               Add to log
             </button>
           </div>

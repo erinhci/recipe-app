@@ -40,7 +40,7 @@ export default function WhatsNew() {
   }
   return (
     <section className="update-banner" aria-labelledby="whats-new-heading" aria-live="polite" style={{ display: 'block' }}>
-      <h2 id="whats-new-heading" style={{ fontSize: '1.125rem', margin: '0 0 var(--space-2)' }}>
+      <h2 id="whats-new-heading" style={{ fontSize: 'var(--text-lead)', margin: '0 0 var(--space-2)' }}>
         Updated to version {current.version}
       </h2>
       <div style={{ maxHeight: '40vh', overflowY: 'auto', fontWeight: 400 }}>
