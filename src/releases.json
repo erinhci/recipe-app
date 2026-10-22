@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.41.0",
+    "date": "2026-10-22",
+    "notes": [
+      "New display type: titles and big numbers use Recursive in its casual style, the timer uses its fixed-width style, and cook-mode step text uses its calm style for reading from the counter",
+      "Body text and buttons stay in your phone’s own font",
+      "The font is stored with the app, so it looks the same offline"
+    ]
+  },
+  {
     "version": "0.40.8",
     "date": "2026-10-22",
     "notes": [
