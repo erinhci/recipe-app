@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.42.1",
+    "date": "2026-10-23",
+    "notes": [
+      "Gemini features (reading recipes, step questions, change drafts, nutrition and two-chef splits) only work for your own kitchen, so other accounts can’t use up your Gemini key"
+    ]
+  },
+  {
     "version": "0.42.0",
     "date": "2026-10-22",
     "notes": [

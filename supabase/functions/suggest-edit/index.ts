@@ -8,8 +8,8 @@
 // recipe, so lines the note doesn't touch can't drift.
 //
 // The Gemini key is read from the GEMINI_API_KEY secret and never leaves
-// the server. Only signed-in users can call this function (JWT
-// verification stays on when it's deployed).
+// the server. Only signed-in cooks in a kitchen listed in the AI_KITCHEN_IDS secret can
+// use it (see checkCaller below).
 //
 // Request body (JSON):
 //   { title, base_servings, usual_servings, ingredients: string[], steps: string[], note }
@@ -213,9 +213,49 @@ async function askGemini(prompt: string, apiKey: string, models: string[]) {
   }
 }
 
+// --- Who may spend the Gemini key (the same block is in every function) ---
+// JWT verification alone isn't enough: the app's anon key ships in every
+// page and also passes it, and anyone can create an account. So each call
+// is checked here: the caller must be signed in (Supabase Auth confirms
+// the token), and their kitchen must be listed in the AI_KITCHEN_IDS
+// secret (kitchen ids, comma-separated). With that secret unset nobody
+// gets through, so the key can't be spent by accident.
+export const AI_OFF_MESSAGE = 'Gemini features are turned off for this kitchen. Everything else in the app still works.'
+
+export function allowedKitchens(raw: unknown): Set<string> {
+  return new Set(String(raw ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean))
+}
+
+export async function checkCaller(request: Request): Promise<Response | null> {
+  const url = Deno.env.get('SUPABASE_URL')
+  const apikey = request.headers.get('apikey') || Deno.env.get('SUPABASE_ANON_KEY')
+  if (!url || !apikey) return json({ error: 'The server is missing its Supabase settings.' }, 500)
+  const token = (request.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim()
+  const signedOut = json({ error: 'Sign in to use this.', code: 'signed_out' }, 401)
+  if (!token || token === apikey) return signedOut
+  const headers = { apikey, Authorization: `Bearer ${token}` }
+  const userResponse = await fetch(`${url}/auth/v1/user`, { headers })
+  if (!userResponse.ok) return signedOut
+  const user = await userResponse.json()
+  if (!user?.id) return signedOut
+  const allowed = allowedKitchens(Deno.env.get('AI_KITCHEN_IDS'))
+  if (allowed.size === 0) return json({ error: AI_OFF_MESSAGE, code: 'ai_not_enabled' }, 403)
+  const membersResponse = await fetch(
+    `${url}/rest/v1/members?select=kitchen_id&removed_at=is.null&user_id=eq.${encodeURIComponent(user.id)}`,
+    { headers },
+  )
+  const rows = membersResponse.ok ? await membersResponse.json() : []
+  const ok = Array.isArray(rows) && rows.some((row) => allowed.has(String(row?.kitchen_id ?? '').toLowerCase()))
+  return ok ? null : json({ error: AI_OFF_MESSAGE, code: 'ai_not_enabled' }, 403)
+}
+// --- end of the shared access block ---
+
 async function handle(request: Request): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (request.method !== 'POST') return json({ error: 'Use POST.' }, 405)
+
+  const denied = await checkCaller(request)
+  if (denied) return denied
 
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) return json({ error: 'The Gemini key is not set up yet.' }, 500)

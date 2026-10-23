@@ -38,13 +38,20 @@ Next: the Next features in the build spec.
 4. After both cooks have created accounts, turn off **Allow new users to
    sign up** on the same page, so nobody else can make an account.
 5. In **Edge Functions**, open **Secrets** and add `GEMINI_API_KEY` with a
-   Gemini API key from Google AI Studio. Optional: `GEMINI_MODELS`, a
+   Gemini API key from Google AI Studio. Also add `AI_KITCHEN_IDS`: your
+   kitchen's id (in **Table Editor**, open `kitchens` and copy the `id`).
+   Only cooks in a kitchen listed there can use the Gemini features; list
+   several ids separated by commas. Without it, every Gemini feature is
+   off. This matters because the repo is public and the app's anon key
+   ships in the page: neither proves a caller is one of you. Optional: `GEMINI_MODELS`, a
    comma-separated list of models to try in order (default:
    `gemini-3.8-flash,gemini-3.5-flash-lite`).
 6. In **Edge Functions**, deploy a new function named `import-recipe` using
    the browser editor, and paste in
-   `supabase/functions/import-recipe/index.ts`. Leave JWT verification on,
-   so only signed-in cooks can use your Gemini quota.
+   `supabase/functions/import-recipe/index.ts`. Leave JWT verification on.
+   Each function also checks the caller itself (signed in, and in a kitchen
+   listed in `AI_KITCHEN_IDS`), so a stranger with an account or the anon
+   key can't spend your Gemini quota.
 7. Do the same for a function named `ask-step`, pasting in
    `supabase/functions/ask-step/index.ts`. It answers questions typed in
    cooking mode, suggests likely questions for each step, and uses the
