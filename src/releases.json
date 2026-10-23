@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.44.0",
+    "date": "2026-10-23",
+    "notes": [
+      "Back to one font: your phone’s own, tuned. Big titles and numbers are bold and set a little tighter, and numbers keep same-width digits",
+      "Nothing to download, so the app opens with its final look every time"
+    ]
+  },
+  {
     "version": "0.43.0",
     "date": "2026-10-23",
     "notes": [

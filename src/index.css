@@ -21,18 +21,6 @@
   and chips are a gray fill; their label or icon identifies them.
   Remeasure every pair after changing a color or a tint.
 */
-@font-face {
-  font-family: 'Syne';
-  src: url('/fonts/syne.woff2') format('woff2');
-  font-weight: 400 800;
-  font-style: normal;
-  /* optional: the font is used only if it's ready almost at once (it's
-     preloaded and cached offline, so it nearly always is). Otherwise the
-     page stays in the system font for that visit instead of drawing in
-     one font and jumping to another. */
-  font-display: optional;
-}
-
 :root {
   /* Your color, set from your cook color once it's known (see MyColor).
      Used where it helps tell things apart, never as the only signal or
@@ -73,12 +61,11 @@
   --text-3xl: 2.125rem;          /* 34: timer clock, top magnet number */
   --text-cook: var(--text-2xl);  /* cooking mode step text */
 
-  /* Two fonts in the app: Syne (OFL, self-hosted, cached offline, 33 KB)
-     for titles, section headings and big numbers, at 700. Its digits stay
-     distinct at 700 (at 800 they flatten and 3, 8 and 0 start to look
-     alike). Everything else, including cook-mode step text, uses the
-     phone's own font. */
-  --font-display: 'Syne', var(--font-body);
+  /* One font: the phone's own (San Francisco on iPhone, Roboto on
+     Android), tuned. Large titles and numbers are tracked in a little and
+     set bold; numbers use equal-width digits (see .num below). No
+     download, so nothing swaps while the app opens. */
+  --font-display: var(--font-body);
   /* Numbers that change on screen (scaled amounts, servings, counts,
      stats, timers) use tabular figures: every digit is the same width, so
      "1 1/2" to "3" or 9 to 10 doesn't shift the text around it, and the
@@ -2393,9 +2380,12 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   font-variant-numeric: tabular-nums;
 }
 
-/* Display type (see --font-display). */
+/* Display type: the system font, tuned. Text at 24px and up is tracked
+   in slightly so big type doesn't look loose; body text keeps 0. */
 h1, h2, .recipe-card-photo.is-empty, .podium-photo,
 .stat-value, .bu-number, .im-number, .podium-step, .badge-number, .nutrient-value, .pie-pct, .timer-clock {
   font-family: var(--font-display);
   font-weight: 700;
 }
+h1, .stat-value, .bu-number, .is-top .im-number, .timer-clock, .pie-pct { letter-spacing: -0.02em; }
+h2 { letter-spacing: -0.01em; }

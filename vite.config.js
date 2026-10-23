@@ -46,9 +46,8 @@ export default defineConfig({
       workbox: {
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
-        // Include the PDF reader's worker (.mjs) so PDFs can be read offline,
-        // and the display font (.woff2) so titles look the same offline.
-        globPatterns: ['**/*.{js,mjs,css,html,svg,webmanifest,woff2}'],
+        // Include the PDF reader's worker (.mjs) so PDFs can be read offline.
+        globPatterns: ['**/*.{js,mjs,css,html,svg,webmanifest}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           {
