@@ -1,5 +1,13 @@
 [
   {
+    "version": "0.43.0",
+    "date": "2026-10-23",
+    "notes": [
+      "Two fonts instead of three: titles, headings and big numbers in Syne, everything else in your phone’s own font",
+      "Titles no longer flash in one font and jump to another while the app opens"
+    ]
+  },
+  {
     "version": "0.42.1",
     "date": "2026-10-23",
     "notes": [
