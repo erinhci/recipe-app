@@ -13,6 +13,7 @@ import ColorPicker from '../components/ColorPicker'
 import Scene from '../components/Scene'
 import { Link } from 'react-router-dom'
 import { useKitchenPeople } from '../lib/useKitchen'
+import { THEMES, getTheme, setTheme } from '../lib/theme'
 import { saveMyMember } from '../lib/avatars'
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
@@ -65,6 +66,7 @@ export default function Settings() {
   const { member, refreshMember, signOut } = useAuth()
   const online = useOnline()
   const [inviteLink, setInviteLink] = useState('')
+  const [theme, setThemeState] = useState(getTheme)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -178,6 +180,24 @@ export default function Settings() {
           <select id="units" className="row-select" value={member.unit_pref} onChange={changeUnits} disabled={!online}>
             <option value="us">US</option>
             <option value="metric">Metric</option>
+          </select>
+        </li>
+        <li className="settings-row-static">
+          <label htmlFor="appearance">Appearance</label>
+          <select
+            id="appearance"
+            className="row-select"
+            value={theme}
+            onChange={(e) => {
+              setThemeState(e.target.value)
+              setTheme(e.target.value)
+            }}
+          >
+            {THEMES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </li>
       </ul>

@@ -1,5 +1,12 @@
 [
   {
+    "version": "0.45.0",
+    "date": "2026-10-24",
+    "notes": [
+      "Settings has Appearance: Match phone, Light or Dark. It’s saved on each phone, so you and your partner can each pick your own"
+    ]
+  },
+  {
     "version": "0.44.0",
     "date": "2026-10-23",
     "notes": [

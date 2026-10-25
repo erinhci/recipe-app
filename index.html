@@ -11,6 +11,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Our Kitchen" />
     <title>Our Kitchen</title>
+    <script>
+      // Apply the saved Appearance before anything draws (see src/lib/theme.js).
+      try {
+        var t = localStorage.getItem('appearance')
+        if (t === 'light' || t === 'dark') {
+          document.documentElement.dataset.theme = t
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.content = t === 'dark' ? '#121212' : '#ffffff' })
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

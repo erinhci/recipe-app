@@ -99,8 +99,15 @@
   --dur-settle: 240ms;
 }
 
+/* Appearance setting (Settings > Appearance): data-theme on <html> forces
+   light or dark; with no data-theme the phone's setting decides. Every
+   dark block below applies when the phone is dark unless the app is set
+   to light, and again whenever the app is set to dark. */
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --color-bg: #121212;
     --color-surface: #1c1c1c;
     --color-subtle: #262626;
@@ -116,6 +123,21 @@
     --color-error: #ff8a80;
   }
 }
+:root[data-theme='dark'] {
+    --color-bg: #121212;
+    --color-surface: #1c1c1c;
+    --color-subtle: #262626;
+    --color-subtle-hover: #333333;
+    --color-text: #f2f2f2;
+    --color-text-muted: #b0b0b0;
+    --color-accent: #f2f2f2;
+    --color-accent-hover: #d0d0d0;
+    --color-accent-text: #111111;
+    --color-border: #8a8a8a;
+    --color-divider: #3d3d3d;
+    --color-focus: #f2f2f2;
+    --color-error: #ff8a80;
+  }
 
 *,
 *::before,
@@ -1469,7 +1491,7 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
   --line-violet: #8a6399;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --line-berry: #e0457f;
     --line-orange: #f58a27;
     --line-green: #8bc34a;
@@ -1477,6 +1499,13 @@ button.timer-pill:hover { background: var(--color-subtle-hover); }
     --line-violet: #9c72ac;
   }
 }
+:root[data-theme='dark'] {
+    --line-berry: #e0457f;
+    --line-orange: #f58a27;
+    --line-green: #8bc34a;
+    --line-ocean: #3a9ad9;
+    --line-violet: #9c72ac;
+  }
 /* Icons in the tab bar and on gray buttons are drawn in your color. */
 .bottom-nav .icon,
 .btn-secondary .icon { color: var(--me-line); }
@@ -1967,8 +1996,9 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   flex: none; display: block; overflow: visible;
 }
 @media (prefers-color-scheme: dark) {
-  .kt { --kt-bezel-hi: #3d3d3d; --kt-bezel-lo: #1a1a1a; --kt-face-hi: #4d4d4d; --kt-face-lo: #262626; --kt-well: #181818; }
+  :root:not([data-theme='light']) .kt { --kt-bezel-hi: #3d3d3d; --kt-bezel-lo: #1a1a1a; --kt-face-hi: #4d4d4d; --kt-face-lo: #262626; --kt-well: #181818; }
 }
+:root[data-theme='dark'] .kt { --kt-bezel-hi: #3d3d3d; --kt-bezel-lo: #1a1a1a; --kt-face-hi: #4d4d4d; --kt-face-lo: #262626; --kt-well: #181818; }
 .kt-bezel { fill: url(#kt-g-bezel); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.28)); }
 .kt-well { fill: var(--kt-well); }
 .kt-tick { stroke: var(--color-text-muted); stroke-linecap: round; }
@@ -2253,8 +2283,9 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   --glass-drop: 0 10px 24px -16px rgba(0, 0, 0, 0.35);
 }
 @media (prefers-color-scheme: dark) {
-  .page:has(.two-chef-steps) { --glass-hi: 9%; --glass-lo: 3%; --glass-base: color-mix(in srgb, var(--color-bg) 70%, transparent); --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.1); --glass-drop: 0 10px 24px -16px rgba(0, 0, 0, 0.8); }
+  :root:not([data-theme='light']) .page:has(.two-chef-steps) { --glass-hi: 9%; --glass-lo: 3%; --glass-base: color-mix(in srgb, var(--color-bg) 70%, transparent); --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.1); --glass-drop: 0 10px 24px -16px rgba(0, 0, 0, 0.8); }
 }
+:root[data-theme='dark'] .page:has(.two-chef-steps) { --glass-hi: 9%; --glass-lo: 3%; --glass-base: color-mix(in srgb, var(--color-bg) 70%, transparent); --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.1); --glass-drop: 0 10px 24px -16px rgba(0, 0, 0, 0.8); }
 .page:has(.two-chef-steps) :is(.cook-needs-card, .nut-peek, #all-ingredients),
 .two-chef-steps > li:is(.is-next, .theirs) {
   background: linear-gradient(180deg, color-mix(in srgb, var(--tint) var(--glass-hi), transparent), color-mix(in srgb, var(--tint) var(--glass-lo), transparent)), var(--glass-base);
@@ -2279,13 +2310,19 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   box-shadow: var(--glass-rim), var(--glass-drop);
 }
 @media (prefers-color-scheme: dark) {
-  .two-chef-steps > li.together {
+  :root:not([data-theme='light']) .two-chef-steps > li.together {
     background:
       linear-gradient(90deg, color-mix(in srgb, var(--me) var(--glass-hi), transparent), color-mix(in srgb, var(--them) var(--glass-hi), transparent)) padding-box,
       linear-gradient(var(--color-bg), var(--color-bg)) padding-box,
       linear-gradient(90deg, color-mix(in srgb, var(--me-line) 60%, transparent), color-mix(in srgb, var(--them-line) 60%, transparent)) border-box;
   }
 }
+:root[data-theme='dark'] .two-chef-steps > li.together {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--me) var(--glass-hi), transparent), color-mix(in srgb, var(--them) var(--glass-hi), transparent)) padding-box,
+      linear-gradient(var(--color-bg), var(--color-bg)) padding-box,
+      linear-gradient(90deg, color-mix(in srgb, var(--me-line) 60%, transparent), color-mix(in srgb, var(--them-line) 60%, transparent)) border-box;
+  }
 @media (prefers-reduced-transparency: reduce) {
   .page:has(.two-chef-steps) :is(.cook-needs-card, .nut-peek, #all-ingredients), .two-chef-steps > li:is(.is-next, .theirs) { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
@@ -2310,11 +2347,15 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
   /* Light colors (orange, green) tinted this strongly would drop the
      white text under 4.5:1, so the dark tint is your color at 60% with
      black. Worst case green, 4.85:1 under the gloss. */
-  .ingredient-mosaic > li { background: color-mix(in srgb, color-mix(in srgb, var(--me) 60%, #000) calc(16% + 36% * var(--r)), var(--color-bg)); }
-  .ingredient-mosaic > li { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 3px 0 color-mix(in srgb, var(--me) 40%, #000), 0 12px 16px -8px rgba(0, 0, 0, 0.6); }
-  .ingredient-mosaic > li::before { background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0) 43%, rgba(0, 0, 0, 0.18) 100%); }
-  .ingredient-mosaic > li::after { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0)); }
+  :root:not([data-theme='light']) .ingredient-mosaic > li { background: color-mix(in srgb, color-mix(in srgb, var(--me) 60%, #000) calc(16% + 36% * var(--r)), var(--color-bg)); }
+  :root:not([data-theme='light']) .ingredient-mosaic > li { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 3px 0 color-mix(in srgb, var(--me) 40%, #000), 0 12px 16px -8px rgba(0, 0, 0, 0.6); }
+  :root:not([data-theme='light']) .ingredient-mosaic > li::before { background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0) 43%, rgba(0, 0, 0, 0.18) 100%); }
+  :root:not([data-theme='light']) .ingredient-mosaic > li::after { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0)); }
 }
+:root[data-theme='dark'] .ingredient-mosaic > li { background: color-mix(in srgb, color-mix(in srgb, var(--me) 60%, #000) calc(16% + 36% * var(--r)), var(--color-bg)); }
+  :root[data-theme='dark'] .ingredient-mosaic > li { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 3px 0 color-mix(in srgb, var(--me) 40%, #000), 0 12px 16px -8px rgba(0, 0, 0, 0.6); }
+  :root[data-theme='dark'] .ingredient-mosaic > li::before { background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0) 43%, rgba(0, 0, 0, 0.18) 100%); }
+  :root[data-theme='dark'] .ingredient-mosaic > li::after { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0)); }
 @media (prefers-reduced-motion: no-preference) {
   .ingredient-mosaic > li { animation: mg-snap 0.45s var(--ease-spring) var(--d, 0s) backwards; }
 }
@@ -2324,7 +2365,8 @@ button.closet-hero.share-tile { display: flex; flex-direction: column; align-ite
    on top (4.5:1 or more), in a metal rim with one highlight; ones still
    to earn are matte gray enamel in the same rim. */
 :root { --metal-hi: #f5f5f5; --metal-lo: #a9a9a9; }
-@media (prefers-color-scheme: dark) { :root { --metal-hi: #d9d9d9; --metal-lo: #7d7d7d; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --metal-hi: #d9d9d9; --metal-lo: #7d7d7d; } }
+:root[data-theme='dark'] { --metal-hi: #d9d9d9; --metal-lo: #7d7d7d; }
 .badge-medal, .badges.is-large .badge-medal, .badges.is-large .badge:not(.is-earned) .badge-medal {
   border: 4px solid transparent;
   background: linear-gradient(var(--color-subtle), var(--color-subtle)) padding-box, linear-gradient(135deg, var(--metal-hi), var(--metal-lo) 50%, var(--metal-hi)) border-box;
